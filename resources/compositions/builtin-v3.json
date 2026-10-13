@@ -46065,5 +46065,5952 @@
         }
       }
     ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "40000000-0000-4000-8000-000000000004",
+    "slug": "rich-text-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [],
+    "blocks": [
+      {
+        "instance_id": "40000000-0000-4000-8000-000000000003",
+        "block_version": 1,
+        "name": "본문 · 자유 서식",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000001",
+              "block_version": 1,
+              "name": "내용을 작성해 주세요",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 28,
+                  "unit": "px"
+                },
+                "font_weight": 700
+              },
+              "responsive": {},
+              "type": "content.heading",
+              "props": {
+                "level": 2,
+                "runs": [
+                  {
+                    "text": "내용을 작성해 주세요"
+                  }
+                ]
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000002",
+              "block_version": 1,
+              "name": "리치텍스트 본문",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 16,
+                  "unit": "px"
+                },
+                "line_height": 1.7
+              },
+              "responsive": {},
+              "type": "content.text",
+              "props": {
+                "paragraphs": [
+                  [
+                    {
+                      "text": "이 부분은 굵게 강조합니다.",
+                      "bold": true
+                    },
+                    {
+                      "text": " 일반 문장도 같은 본문에서 직접 편집합니다."
+                    }
+                  ],
+                  [
+                    {
+                      "text": "부분 서식",
+                      "italic": true
+                    },
+                    {
+                      "text": "과 링크를 사용해 내용을 구체적으로 구성해 주세요."
+                    }
+                  ],
+                  [
+                    {
+                      "text": "이용 안내",
+                      "link": {
+                        "url": "/pages/guide",
+                        "new_tab": false
+                      }
+                    }
+                  ]
+                ]
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill"
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "40000000-0000-4000-8000-000000000017",
+    "slug": "icon-list-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [],
+    "blocks": [
+      {
+        "instance_id": "40000000-0000-4000-8000-000000000016",
+        "block_version": 1,
+        "name": "아이콘 목록",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000005",
+              "block_version": 1,
+              "name": "주요 장점",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 28,
+                  "unit": "px"
+                },
+                "font_weight": 700
+              },
+              "responsive": {},
+              "type": "content.heading",
+              "props": {
+                "level": 2,
+                "runs": [
+                  {
+                    "text": "주요 장점"
+                  }
+                ]
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000015",
+              "block_version": 1,
+              "name": "목록",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000008",
+                    "block_version": 1,
+                    "name": "간편하게 시작합니다",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000006",
+                          "block_version": 1,
+                          "name": "check",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "width": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "height": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "media.icon",
+                          "props": {
+                            "icon": "check",
+                            "label": "",
+                            "decorative": true
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000007",
+                          "block_version": 1,
+                          "name": "간편하게 시작합니다",
+                          "locked": false,
+                          "slots": {},
+                          "style": {},
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "간편하게 시작합니다"
+                                }
+                              ]
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "row",
+                      "row_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      },
+                      "align": "center",
+                      "column_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000011",
+                    "block_version": 1,
+                    "name": "정밀하게 디자인합니다",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000009",
+                          "block_version": 1,
+                          "name": "check",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "width": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "height": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "media.icon",
+                          "props": {
+                            "icon": "check",
+                            "label": "",
+                            "decorative": true
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000010",
+                          "block_version": 1,
+                          "name": "정밀하게 디자인합니다",
+                          "locked": false,
+                          "slots": {},
+                          "style": {},
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "정밀하게 디자인합니다"
+                                }
+                              ]
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "row",
+                      "row_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      },
+                      "align": "center",
+                      "column_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000014",
+                    "block_version": 1,
+                    "name": "변경을 안전하게 보존합니다",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000012",
+                          "block_version": 1,
+                          "name": "check",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "width": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "height": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "media.icon",
+                          "props": {
+                            "icon": "check",
+                            "label": "",
+                            "decorative": true
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000013",
+                          "block_version": 1,
+                          "name": "변경을 안전하게 보존합니다",
+                          "locked": false,
+                          "slots": {},
+                          "style": {},
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "변경을 안전하게 보존합니다"
+                                }
+                              ]
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "row",
+                      "row_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      },
+                      "align": "center",
+                      "column_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "column",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill"
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "40000000-0000-4000-8000-000000000033",
+    "slug": "features-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [],
+    "blocks": [
+      {
+        "instance_id": "40000000-0000-4000-8000-000000000032",
+        "block_version": 1,
+        "name": "특징 목록",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000018",
+              "block_version": 1,
+              "name": "서비스의 특징",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 28,
+                  "unit": "px"
+                },
+                "font_weight": 700
+              },
+              "responsive": {},
+              "type": "content.heading",
+              "props": {
+                "level": 2,
+                "runs": [
+                  {
+                    "text": "서비스의 특징"
+                  }
+                ]
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000031",
+              "block_version": 1,
+              "name": "특징 그리드",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000022",
+                    "block_version": 1,
+                    "name": "신뢰",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000019",
+                          "block_version": 1,
+                          "name": "shield",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "width": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "height": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "media.icon",
+                          "props": {
+                            "icon": "shield",
+                            "label": "",
+                            "decorative": true
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000020",
+                          "block_version": 1,
+                          "name": "신뢰",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "font_size": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "font_weight": 700
+                          },
+                          "responsive": {},
+                          "type": "content.heading",
+                          "props": {
+                            "level": 2,
+                            "runs": [
+                              {
+                                "text": "신뢰"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000021",
+                          "block_version": 1,
+                          "name": "내용·아이콘·배치·크기를 자유롭게 수정해 주세요.",
+                          "locked": false,
+                          "slots": {},
+                          "style": {},
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "내용·아이콘·배치·크기를 자유롭게 수정해 주세요."
+                                }
+                              ]
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "column",
+                      "row_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000026",
+                    "block_version": 1,
+                    "name": "유연함",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000023",
+                          "block_version": 1,
+                          "name": "layers",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "width": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "height": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "media.icon",
+                          "props": {
+                            "icon": "layers",
+                            "label": "",
+                            "decorative": true
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000024",
+                          "block_version": 1,
+                          "name": "유연함",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "font_size": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "font_weight": 700
+                          },
+                          "responsive": {},
+                          "type": "content.heading",
+                          "props": {
+                            "level": 2,
+                            "runs": [
+                              {
+                                "text": "유연함"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000025",
+                          "block_version": 1,
+                          "name": "내용·아이콘·배치·크기를 자유롭게 수정해 주세요.",
+                          "locked": false,
+                          "slots": {},
+                          "style": {},
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "내용·아이콘·배치·크기를 자유롭게 수정해 주세요."
+                                }
+                              ]
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "column",
+                      "row_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000030",
+                    "block_version": 1,
+                    "name": "성장",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000027",
+                          "block_version": 1,
+                          "name": "trend",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "width": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "height": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "media.icon",
+                          "props": {
+                            "icon": "trend",
+                            "label": "",
+                            "decorative": true
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000028",
+                          "block_version": 1,
+                          "name": "성장",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "font_size": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "font_weight": 700
+                          },
+                          "responsive": {},
+                          "type": "content.heading",
+                          "props": {
+                            "level": 2,
+                            "runs": [
+                              {
+                                "text": "성장"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000029",
+                          "block_version": 1,
+                          "name": "내용·아이콘·배치·크기를 자유롭게 수정해 주세요.",
+                          "locked": false,
+                          "slots": {},
+                          "style": {},
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "내용·아이콘·배치·크기를 자유롭게 수정해 주세요."
+                                }
+                              ]
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "column",
+                      "row_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "grid",
+                "direction": "column",
+                "row_gap": {
+                  "value": 24,
+                  "unit": "px"
+                },
+                "columns": [
+                  {
+                    "fr": 1
+                  },
+                  {
+                    "fr": 1
+                  },
+                  {
+                    "fr": 1
+                  }
+                ],
+                "column_gap": {
+                  "value": 24,
+                  "unit": "px"
+                }
+              },
+              "responsive": {
+                "mobile": {
+                  "columns": [
+                    {
+                      "fr": 1
+                    }
+                  ]
+                }
+              },
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill"
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "40000000-0000-4000-8000-000000000040",
+    "slug": "contact-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [],
+    "blocks": [
+      {
+        "instance_id": "40000000-0000-4000-8000-000000000039",
+        "block_version": 1,
+        "name": "연락처",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000034",
+              "block_version": 1,
+              "name": "연락해 주세요",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 28,
+                  "unit": "px"
+                },
+                "font_weight": 700
+              },
+              "responsive": {},
+              "type": "content.heading",
+              "props": {
+                "level": 2,
+                "runs": [
+                  {
+                    "text": "연락해 주세요"
+                  }
+                ]
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000035",
+              "block_version": 1,
+              "name": "서울특별시 · 주소를 수정해 주세요.",
+              "locked": false,
+              "slots": {},
+              "style": {},
+              "responsive": {},
+              "type": "content.text",
+              "props": {
+                "paragraphs": [
+                  [
+                    {
+                      "text": "서울특별시 · 주소를 수정해 주세요."
+                    }
+                  ]
+                ]
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000036",
+              "block_version": 1,
+              "name": "02-1234-5678",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "color": {
+                  "kind": "token",
+                  "value": "primary"
+                },
+                "text_decoration": "underline"
+              },
+              "responsive": {},
+              "type": "action.link",
+              "props": {
+                "label": "02-1234-5678",
+                "link": {
+                  "url": "tel:0212345678",
+                  "new_tab": false
+                }
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000037",
+              "block_version": 1,
+              "name": "contact@example.com",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "color": {
+                  "kind": "token",
+                  "value": "primary"
+                },
+                "text_decoration": "underline"
+              },
+              "responsive": {},
+              "type": "action.link",
+              "props": {
+                "label": "contact@example.com",
+                "link": {
+                  "url": "mailto:contact@example.com",
+                  "new_tab": false
+                }
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000038",
+              "block_version": 1,
+              "name": "월–금 09:00–18:00",
+              "locked": false,
+              "slots": {},
+              "style": {},
+              "responsive": {},
+              "type": "content.text",
+              "props": {
+                "paragraphs": [
+                  [
+                    {
+                      "text": "월–금 09:00–18:00"
+                    }
+                  ]
+                ]
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill"
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "40000000-0000-4000-8000-000000000056",
+    "slug": "stats-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [],
+    "blocks": [
+      {
+        "instance_id": "40000000-0000-4000-8000-000000000055",
+        "block_version": 1,
+        "name": "숫자·아이콘 지표",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000041",
+              "block_version": 1,
+              "name": "숫자로 보는 성과",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 28,
+                  "unit": "px"
+                },
+                "font_weight": 700
+              },
+              "responsive": {},
+              "type": "content.heading",
+              "props": {
+                "level": 2,
+                "runs": [
+                  {
+                    "text": "숫자로 보는 성과"
+                  }
+                ]
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000054",
+              "block_version": 1,
+              "name": "지표 그리드",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000045",
+                    "block_version": 1,
+                    "name": "축적된 경험",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000042",
+                          "block_version": 1,
+                          "name": "chart",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "width": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "height": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "media.icon",
+                          "props": {
+                            "icon": "chart",
+                            "label": "",
+                            "decorative": true
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000043",
+                          "block_version": 1,
+                          "name": "10+",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "font_size": {
+                              "value": 40,
+                              "unit": "px"
+                            },
+                            "font_weight": 700
+                          },
+                          "responsive": {},
+                          "type": "content.heading",
+                          "props": {
+                            "level": 3,
+                            "runs": [
+                              {
+                                "text": "10+"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000044",
+                          "block_version": 1,
+                          "name": "축적된 경험",
+                          "locked": false,
+                          "slots": {},
+                          "style": {},
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "축적된 경험"
+                                }
+                              ]
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "column",
+                      "row_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000049",
+                    "block_version": 1,
+                    "name": "완료한 프로젝트",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000046",
+                          "block_version": 1,
+                          "name": "chart",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "width": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "height": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "media.icon",
+                          "props": {
+                            "icon": "chart",
+                            "label": "",
+                            "decorative": true
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000047",
+                          "block_version": 1,
+                          "name": "100+",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "font_size": {
+                              "value": 40,
+                              "unit": "px"
+                            },
+                            "font_weight": 700
+                          },
+                          "responsive": {},
+                          "type": "content.heading",
+                          "props": {
+                            "level": 3,
+                            "runs": [
+                              {
+                                "text": "100+"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000048",
+                          "block_version": 1,
+                          "name": "완료한 프로젝트",
+                          "locked": false,
+                          "slots": {},
+                          "style": {},
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "완료한 프로젝트"
+                                }
+                              ]
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "column",
+                      "row_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000053",
+                    "block_version": 1,
+                    "name": "고객 만족",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000050",
+                          "block_version": 1,
+                          "name": "chart",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "width": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "height": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "media.icon",
+                          "props": {
+                            "icon": "chart",
+                            "label": "",
+                            "decorative": true
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000051",
+                          "block_version": 1,
+                          "name": "98%",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "font_size": {
+                              "value": 40,
+                              "unit": "px"
+                            },
+                            "font_weight": 700
+                          },
+                          "responsive": {},
+                          "type": "content.heading",
+                          "props": {
+                            "level": 3,
+                            "runs": [
+                              {
+                                "text": "98%"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000052",
+                          "block_version": 1,
+                          "name": "고객 만족",
+                          "locked": false,
+                          "slots": {},
+                          "style": {},
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "고객 만족"
+                                }
+                              ]
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "column",
+                      "row_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "grid",
+                "direction": "column",
+                "row_gap": {
+                  "value": 24,
+                  "unit": "px"
+                },
+                "columns": [
+                  {
+                    "fr": 1
+                  },
+                  {
+                    "fr": 1
+                  },
+                  {
+                    "fr": 1
+                  }
+                ],
+                "column_gap": {
+                  "value": 24,
+                  "unit": "px"
+                }
+              },
+              "responsive": {
+                "mobile": {
+                  "columns": [
+                    {
+                      "fr": 1
+                    }
+                  ]
+                }
+              },
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill"
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "40000000-0000-4000-8000-000000000061",
+    "slug": "map-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [],
+    "blocks": [
+      {
+        "instance_id": "40000000-0000-4000-8000-000000000060",
+        "block_version": 1,
+        "name": "지도·오시는 길",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000057",
+              "block_version": 1,
+              "name": "오시는 길",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 28,
+                  "unit": "px"
+                },
+                "font_weight": 700
+              },
+              "responsive": {},
+              "type": "content.heading",
+              "props": {
+                "level": 2,
+                "runs": [
+                  {
+                    "text": "오시는 길"
+                  }
+                ]
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000058",
+              "block_version": 1,
+              "name": "방문할 위치와 안내 문구를 수정해 주세요.",
+              "locked": false,
+              "slots": {},
+              "style": {},
+              "responsive": {},
+              "type": "content.text",
+              "props": {
+                "paragraphs": [
+                  [
+                    {
+                      "text": "방문할 위치와 안내 문구를 수정해 주세요."
+                    }
+                  ]
+                ]
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000059",
+              "block_version": 1,
+              "name": "방문 지도",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "width": "fill",
+                "height": {
+                  "value": 320,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "media.embed",
+              "props": {
+                "title": "방문 위치 지도",
+                "source": {
+                  "provider": "openstreetmap",
+                  "latitude": 37.5665,
+                  "longitude": 126.978,
+                  "zoom": 14
+                }
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill"
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "40000000-0000-4000-8000-000000000076",
+    "slug": "faq-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [],
+    "blocks": [
+      {
+        "instance_id": "40000000-0000-4000-8000-000000000075",
+        "block_version": 1,
+        "name": "FAQ 아코디언",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000074",
+              "block_version": 1,
+              "name": "자주 묻는 질문",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 28,
+                  "unit": "px"
+                },
+                "font_weight": 700
+              },
+              "responsive": {},
+              "type": "content.heading",
+              "props": {
+                "level": 2,
+                "runs": [
+                  {
+                    "text": "자주 묻는 질문"
+                  }
+                ]
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000065",
+              "block_version": 1,
+              "name": "질문 1",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000062",
+                    "block_version": 1,
+                    "name": "어떻게 시작하나요?",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "어떻게 시작하나요?"
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000064",
+                    "block_version": 1,
+                    "name": "답변 1",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000063",
+                          "block_version": 1,
+                          "name": "안내 답변을 직접 작성해 주세요. 내부에 다른 공통 요소도 삽입할 수 있습니다.",
+                          "locked": false,
+                          "slots": {},
+                          "style": {},
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "안내 답변을 직접 작성해 주세요. 내부에 다른 공통 요소도 삽입할 수 있습니다."
+                                }
+                              ]
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "column",
+                      "row_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "column",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000069",
+              "block_version": 1,
+              "name": "질문 2",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000066",
+                    "block_version": 1,
+                    "name": "반응형으로 편집할 수 있나요?",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "반응형으로 편집할 수 있나요?"
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000068",
+                    "block_version": 1,
+                    "name": "답변 2",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000067",
+                          "block_version": 1,
+                          "name": "안내 답변을 직접 작성해 주세요. 내부에 다른 공통 요소도 삽입할 수 있습니다.",
+                          "locked": false,
+                          "slots": {},
+                          "style": {},
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "안내 답변을 직접 작성해 주세요. 내부에 다른 공통 요소도 삽입할 수 있습니다."
+                                }
+                              ]
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "column",
+                      "row_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "column",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000073",
+              "block_version": 1,
+              "name": "질문 3",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000070",
+                    "block_version": 1,
+                    "name": "수정한 내용을 되돌릴 수 있나요?",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "수정한 내용을 되돌릴 수 있나요?"
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000072",
+                    "block_version": 1,
+                    "name": "답변 3",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000071",
+                          "block_version": 1,
+                          "name": "안내 답변을 직접 작성해 주세요. 내부에 다른 공통 요소도 삽입할 수 있습니다.",
+                          "locked": false,
+                          "slots": {},
+                          "style": {},
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "안내 답변을 직접 작성해 주세요. 내부에 다른 공통 요소도 삽입할 수 있습니다."
+                                }
+                              ]
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "column",
+                      "row_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "column",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill"
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        },
+        "behavior": {
+          "kind": "disclosure",
+          "mode": "single",
+          "pairs": [
+            {
+              "item_id": "40000000-0000-4000-8000-000000000065",
+              "trigger_id": "40000000-0000-4000-8000-000000000062",
+              "panel_id": "40000000-0000-4000-8000-000000000064",
+              "expanded": true
+            },
+            {
+              "item_id": "40000000-0000-4000-8000-000000000069",
+              "trigger_id": "40000000-0000-4000-8000-000000000066",
+              "panel_id": "40000000-0000-4000-8000-000000000068",
+              "expanded": false
+            },
+            {
+              "item_id": "40000000-0000-4000-8000-000000000073",
+              "trigger_id": "40000000-0000-4000-8000-000000000070",
+              "panel_id": "40000000-0000-4000-8000-000000000072",
+              "expanded": false
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "40000000-0000-4000-8000-000000000087",
+    "slug": "tabs-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [],
+    "blocks": [
+      {
+        "instance_id": "40000000-0000-4000-8000-000000000086",
+        "block_version": 1,
+        "name": "탭 콘텐츠",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000079",
+              "block_version": 1,
+              "name": "탭 목록",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000077",
+                    "block_version": 1,
+                    "name": "서비스 안내",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "서비스 안내"
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000078",
+                    "block_version": 1,
+                    "name": "이용 방법",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "이용 방법"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "row",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "column_gap": {
+                  "value": 8,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000082",
+              "block_version": 1,
+              "name": "서비스 안내 패널",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000080",
+                    "block_version": 1,
+                    "name": "서비스 안내",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "font_size": {
+                        "value": 28,
+                        "unit": "px"
+                      },
+                      "font_weight": 700
+                    },
+                    "responsive": {},
+                    "type": "content.heading",
+                    "props": {
+                      "level": 2,
+                      "runs": [
+                        {
+                          "text": "서비스 안내"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000081",
+                    "block_version": 1,
+                    "name": "첫 번째 탭의 내용입니다.",
+                    "locked": false,
+                    "slots": {},
+                    "style": {},
+                    "responsive": {},
+                    "type": "content.text",
+                    "props": {
+                      "paragraphs": [
+                        [
+                          {
+                            "text": "첫 번째 탭의 내용입니다."
+                          }
+                        ]
+                      ]
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "column",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000085",
+              "block_version": 1,
+              "name": "이용 방법 패널",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000083",
+                    "block_version": 1,
+                    "name": "이용 방법",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "font_size": {
+                        "value": 28,
+                        "unit": "px"
+                      },
+                      "font_weight": 700
+                    },
+                    "responsive": {},
+                    "type": "content.heading",
+                    "props": {
+                      "level": 2,
+                      "runs": [
+                        {
+                          "text": "이용 방법"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000084",
+                    "block_version": 1,
+                    "name": "두 번째 탭의 내용입니다.",
+                    "locked": false,
+                    "slots": {},
+                    "style": {},
+                    "responsive": {},
+                    "type": "content.text",
+                    "props": {
+                      "paragraphs": [
+                        [
+                          {
+                            "text": "두 번째 탭의 내용입니다."
+                          }
+                        ]
+                      ]
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "column",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill"
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        },
+        "behavior": {
+          "kind": "tabs",
+          "label": "서비스 탭",
+          "orientation": "horizontal",
+          "tablist_id": "40000000-0000-4000-8000-000000000079",
+          "active_panel_id": "40000000-0000-4000-8000-000000000082",
+          "pairs": [
+            {
+              "trigger_id": "40000000-0000-4000-8000-000000000077",
+              "panel_id": "40000000-0000-4000-8000-000000000082"
+            },
+            {
+              "trigger_id": "40000000-0000-4000-8000-000000000078",
+              "panel_id": "40000000-0000-4000-8000-000000000085"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "40000000-0000-4000-8000-000000000091",
+    "slug": "video-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [],
+    "blocks": [
+      {
+        "instance_id": "40000000-0000-4000-8000-000000000090",
+        "block_version": 1,
+        "name": "영상",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000088",
+              "block_version": 1,
+              "name": "영상으로 만나보세요",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 28,
+                  "unit": "px"
+                },
+                "font_weight": 700
+              },
+              "responsive": {},
+              "type": "content.heading",
+              "props": {
+                "level": 2,
+                "runs": [
+                  {
+                    "text": "영상으로 만나보세요"
+                  }
+                ]
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000089",
+              "block_version": 1,
+              "name": "영상 제공자 설정",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "width": "fill",
+                "height": {
+                  "value": 320,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "media.embed",
+              "props": {
+                "title": "영상 제공자를 선택해 주세요",
+                "source": {
+                  "provider": "none"
+                }
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill"
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "40000000-0000-4000-8000-000000000109",
+    "slug": "logo-carousel-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [],
+    "blocks": [
+      {
+        "instance_id": "40000000-0000-4000-8000-000000000108",
+        "block_version": 1,
+        "name": "로고 캐러셀",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000107",
+              "block_version": 1,
+              "name": "로고 캐러셀",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 28,
+                  "unit": "px"
+                },
+                "font_weight": 700
+              },
+              "responsive": {},
+              "type": "content.heading",
+              "props": {
+                "level": 2,
+                "runs": [
+                  {
+                    "text": "로고 캐러셀"
+                  }
+                ]
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000103",
+              "block_version": 1,
+              "name": "자동 넘김 시작·정지",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "padding_top": {
+                  "value": 10,
+                  "unit": "px"
+                },
+                "padding_bottom": {
+                  "value": 10,
+                  "unit": "px"
+                },
+                "padding_left": {
+                  "value": 16,
+                  "unit": "px"
+                },
+                "padding_right": {
+                  "value": 16,
+                  "unit": "px"
+                },
+                "background": {
+                  "kind": "solid",
+                  "color": {
+                    "kind": "token",
+                    "value": "surface"
+                  }
+                },
+                "color": {
+                  "kind": "token",
+                  "value": "text"
+                },
+                "font_size": {
+                  "value": 16,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "action.button",
+              "props": {
+                "label": "자동 넘김 시작·정지"
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000102",
+              "block_version": 1,
+              "name": "로고 캐러셀 창",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000101",
+                    "block_version": 1,
+                    "name": "로고 캐러셀 트랙",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000094",
+                          "block_version": 1,
+                          "name": "파트너 A",
+                          "locked": false,
+                          "slots": {
+                            "content": [
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000092",
+                                "block_version": 1,
+                                "name": "globe",
+                                "locked": false,
+                                "slots": {},
+                                "style": {
+                                  "width": {
+                                    "value": 28,
+                                    "unit": "px"
+                                  },
+                                  "height": {
+                                    "value": 28,
+                                    "unit": "px"
+                                  },
+                                  "color": {
+                                    "kind": "token",
+                                    "value": "primary"
+                                  }
+                                },
+                                "responsive": {},
+                                "type": "media.icon",
+                                "props": {
+                                  "icon": "globe",
+                                  "label": "",
+                                  "decorative": true
+                                }
+                              },
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000093",
+                                "block_version": 1,
+                                "name": "파트너 A",
+                                "locked": false,
+                                "slots": {},
+                                "style": {},
+                                "responsive": {},
+                                "type": "content.text",
+                                "props": {
+                                  "paragraphs": [
+                                    [
+                                      {
+                                        "text": "파트너 A"
+                                      }
+                                    ]
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "style": {
+                            "display": "flex",
+                            "direction": "column",
+                            "row_gap": {
+                              "value": 12,
+                              "unit": "px"
+                            },
+                            "align": "center"
+                          },
+                          "responsive": {},
+                          "type": "layout.container",
+                          "props": {
+                            "tag": "div"
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000097",
+                          "block_version": 1,
+                          "name": "파트너 B",
+                          "locked": false,
+                          "slots": {
+                            "content": [
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000095",
+                                "block_version": 1,
+                                "name": "globe",
+                                "locked": false,
+                                "slots": {},
+                                "style": {
+                                  "width": {
+                                    "value": 28,
+                                    "unit": "px"
+                                  },
+                                  "height": {
+                                    "value": 28,
+                                    "unit": "px"
+                                  },
+                                  "color": {
+                                    "kind": "token",
+                                    "value": "primary"
+                                  }
+                                },
+                                "responsive": {},
+                                "type": "media.icon",
+                                "props": {
+                                  "icon": "globe",
+                                  "label": "",
+                                  "decorative": true
+                                }
+                              },
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000096",
+                                "block_version": 1,
+                                "name": "파트너 B",
+                                "locked": false,
+                                "slots": {},
+                                "style": {},
+                                "responsive": {},
+                                "type": "content.text",
+                                "props": {
+                                  "paragraphs": [
+                                    [
+                                      {
+                                        "text": "파트너 B"
+                                      }
+                                    ]
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "style": {
+                            "display": "flex",
+                            "direction": "column",
+                            "row_gap": {
+                              "value": 12,
+                              "unit": "px"
+                            },
+                            "align": "center"
+                          },
+                          "responsive": {},
+                          "type": "layout.container",
+                          "props": {
+                            "tag": "div"
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000100",
+                          "block_version": 1,
+                          "name": "파트너 C",
+                          "locked": false,
+                          "slots": {
+                            "content": [
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000098",
+                                "block_version": 1,
+                                "name": "globe",
+                                "locked": false,
+                                "slots": {},
+                                "style": {
+                                  "width": {
+                                    "value": 28,
+                                    "unit": "px"
+                                  },
+                                  "height": {
+                                    "value": 28,
+                                    "unit": "px"
+                                  },
+                                  "color": {
+                                    "kind": "token",
+                                    "value": "primary"
+                                  }
+                                },
+                                "responsive": {},
+                                "type": "media.icon",
+                                "props": {
+                                  "icon": "globe",
+                                  "label": "",
+                                  "decorative": true
+                                }
+                              },
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000099",
+                                "block_version": 1,
+                                "name": "파트너 C",
+                                "locked": false,
+                                "slots": {},
+                                "style": {},
+                                "responsive": {},
+                                "type": "content.text",
+                                "props": {
+                                  "paragraphs": [
+                                    [
+                                      {
+                                        "text": "파트너 C"
+                                      }
+                                    ]
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "style": {
+                            "display": "flex",
+                            "direction": "column",
+                            "row_gap": {
+                              "value": 12,
+                              "unit": "px"
+                            },
+                            "align": "center"
+                          },
+                          "responsive": {},
+                          "type": "layout.container",
+                          "props": {
+                            "tag": "div"
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "row",
+                      "row_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "column",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "width": "fill"
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000106",
+              "block_version": 1,
+              "name": "넘김 버튼",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000104",
+                    "block_version": 1,
+                    "name": "이전",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "이전"
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000105",
+                    "block_version": 1,
+                    "name": "다음",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "다음"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "row",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "column_gap": {
+                  "value": 12,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill"
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        },
+        "behavior": {
+          "kind": "carousel",
+          "label": "로고 캐러셀",
+          "viewport_id": "40000000-0000-4000-8000-000000000102",
+          "track_id": "40000000-0000-4000-8000-000000000101",
+          "active_slide_id": "40000000-0000-4000-8000-000000000094",
+          "previous_id": "40000000-0000-4000-8000-000000000104",
+          "next_id": "40000000-0000-4000-8000-000000000105",
+          "rotation_id": "40000000-0000-4000-8000-000000000103",
+          "autoplay": false,
+          "loop": true,
+          "interval_ms": 5000
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "40000000-0000-4000-8000-000000000127",
+    "slug": "testimonial-slider-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [],
+    "blocks": [
+      {
+        "instance_id": "40000000-0000-4000-8000-000000000126",
+        "block_version": 1,
+        "name": "후기 슬라이더",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000125",
+              "block_version": 1,
+              "name": "후기 슬라이더",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 28,
+                  "unit": "px"
+                },
+                "font_weight": 700
+              },
+              "responsive": {},
+              "type": "content.heading",
+              "props": {
+                "level": 2,
+                "runs": [
+                  {
+                    "text": "후기 슬라이더"
+                  }
+                ]
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000121",
+              "block_version": 1,
+              "name": "자동 넘김 시작·정지",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "padding_top": {
+                  "value": 10,
+                  "unit": "px"
+                },
+                "padding_bottom": {
+                  "value": 10,
+                  "unit": "px"
+                },
+                "padding_left": {
+                  "value": 16,
+                  "unit": "px"
+                },
+                "padding_right": {
+                  "value": 16,
+                  "unit": "px"
+                },
+                "background": {
+                  "kind": "solid",
+                  "color": {
+                    "kind": "token",
+                    "value": "surface"
+                  }
+                },
+                "color": {
+                  "kind": "token",
+                  "value": "text"
+                },
+                "font_size": {
+                  "value": 16,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "action.button",
+              "props": {
+                "label": "자동 넘김 시작·정지"
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000120",
+              "block_version": 1,
+              "name": "후기 슬라이더 창",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000119",
+                    "block_version": 1,
+                    "name": "후기 슬라이더 트랙",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000112",
+                          "block_version": 1,
+                          "name": "고객 A",
+                          "locked": false,
+                          "slots": {
+                            "content": [
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000110",
+                                "block_version": 1,
+                                "name": "“이곳에 고객의 의견을 작성해 주세요.”",
+                                "locked": false,
+                                "slots": {},
+                                "style": {
+                                  "font_size": {
+                                    "value": 24,
+                                    "unit": "px"
+                                  }
+                                },
+                                "responsive": {},
+                                "type": "content.text",
+                                "props": {
+                                  "paragraphs": [
+                                    [
+                                      {
+                                        "text": "“이곳에 고객의 의견을 작성해 주세요.”"
+                                      }
+                                    ]
+                                  ]
+                                }
+                              },
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000111",
+                                "block_version": 1,
+                                "name": "고객 A",
+                                "locked": false,
+                                "slots": {},
+                                "style": {},
+                                "responsive": {},
+                                "type": "content.text",
+                                "props": {
+                                  "paragraphs": [
+                                    [
+                                      {
+                                        "text": "고객 A"
+                                      }
+                                    ]
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "style": {
+                            "display": "flex",
+                            "direction": "column",
+                            "row_gap": {
+                              "value": 12,
+                              "unit": "px"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "layout.container",
+                          "props": {
+                            "tag": "div"
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000115",
+                          "block_version": 1,
+                          "name": "고객 B",
+                          "locked": false,
+                          "slots": {
+                            "content": [
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000113",
+                                "block_version": 1,
+                                "name": "“이곳에 고객의 의견을 작성해 주세요.”",
+                                "locked": false,
+                                "slots": {},
+                                "style": {
+                                  "font_size": {
+                                    "value": 24,
+                                    "unit": "px"
+                                  }
+                                },
+                                "responsive": {},
+                                "type": "content.text",
+                                "props": {
+                                  "paragraphs": [
+                                    [
+                                      {
+                                        "text": "“이곳에 고객의 의견을 작성해 주세요.”"
+                                      }
+                                    ]
+                                  ]
+                                }
+                              },
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000114",
+                                "block_version": 1,
+                                "name": "고객 B",
+                                "locked": false,
+                                "slots": {},
+                                "style": {},
+                                "responsive": {},
+                                "type": "content.text",
+                                "props": {
+                                  "paragraphs": [
+                                    [
+                                      {
+                                        "text": "고객 B"
+                                      }
+                                    ]
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "style": {
+                            "display": "flex",
+                            "direction": "column",
+                            "row_gap": {
+                              "value": 12,
+                              "unit": "px"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "layout.container",
+                          "props": {
+                            "tag": "div"
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000118",
+                          "block_version": 1,
+                          "name": "고객 C",
+                          "locked": false,
+                          "slots": {
+                            "content": [
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000116",
+                                "block_version": 1,
+                                "name": "“이곳에 고객의 의견을 작성해 주세요.”",
+                                "locked": false,
+                                "slots": {},
+                                "style": {
+                                  "font_size": {
+                                    "value": 24,
+                                    "unit": "px"
+                                  }
+                                },
+                                "responsive": {},
+                                "type": "content.text",
+                                "props": {
+                                  "paragraphs": [
+                                    [
+                                      {
+                                        "text": "“이곳에 고객의 의견을 작성해 주세요.”"
+                                      }
+                                    ]
+                                  ]
+                                }
+                              },
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000117",
+                                "block_version": 1,
+                                "name": "고객 C",
+                                "locked": false,
+                                "slots": {},
+                                "style": {},
+                                "responsive": {},
+                                "type": "content.text",
+                                "props": {
+                                  "paragraphs": [
+                                    [
+                                      {
+                                        "text": "고객 C"
+                                      }
+                                    ]
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "style": {
+                            "display": "flex",
+                            "direction": "column",
+                            "row_gap": {
+                              "value": 12,
+                              "unit": "px"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "layout.container",
+                          "props": {
+                            "tag": "div"
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "row",
+                      "row_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "column",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "width": "fill"
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000124",
+              "block_version": 1,
+              "name": "넘김 버튼",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000122",
+                    "block_version": 1,
+                    "name": "이전",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "이전"
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000123",
+                    "block_version": 1,
+                    "name": "다음",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "다음"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "row",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "column_gap": {
+                  "value": 12,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill"
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        },
+        "behavior": {
+          "kind": "carousel",
+          "label": "후기 슬라이더",
+          "viewport_id": "40000000-0000-4000-8000-000000000120",
+          "track_id": "40000000-0000-4000-8000-000000000119",
+          "active_slide_id": "40000000-0000-4000-8000-000000000112",
+          "previous_id": "40000000-0000-4000-8000-000000000122",
+          "next_id": "40000000-0000-4000-8000-000000000123",
+          "rotation_id": "40000000-0000-4000-8000-000000000121",
+          "autoplay": false,
+          "loop": true,
+          "interval_ms": 5000
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "40000000-0000-4000-8000-000000000138",
+    "slug": "anchor-menu-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [],
+    "blocks": [
+      {
+        "instance_id": "40000000-0000-4000-8000-000000000137",
+        "block_version": 1,
+        "name": "섹션 바로가기",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000136",
+              "block_version": 1,
+              "name": "섹션 바로가기",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000134",
+                    "block_version": 1,
+                    "name": "소개 영역",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "color": {
+                        "kind": "token",
+                        "value": "primary"
+                      },
+                      "text_decoration": "underline"
+                    },
+                    "responsive": {},
+                    "type": "action.link",
+                    "props": {
+                      "label": "소개 영역",
+                      "link": {
+                        "url": "#node-40000000-0000-4000-8000-000000000130",
+                        "new_tab": false
+                      }
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000135",
+                    "block_version": 1,
+                    "name": "상세 영역",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "color": {
+                        "kind": "token",
+                        "value": "primary"
+                      },
+                      "text_decoration": "underline"
+                    },
+                    "responsive": {},
+                    "type": "action.link",
+                    "props": {
+                      "label": "상세 영역",
+                      "link": {
+                        "url": "#node-40000000-0000-4000-8000-000000000133",
+                        "new_tab": false
+                      }
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "row",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "column_gap": {
+                  "value": 20,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "nav"
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000130",
+              "block_version": 1,
+              "name": "소개 영역",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000128",
+                    "block_version": 1,
+                    "name": "소개",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "font_size": {
+                        "value": 28,
+                        "unit": "px"
+                      },
+                      "font_weight": 700
+                    },
+                    "responsive": {},
+                    "type": "content.heading",
+                    "props": {
+                      "level": 2,
+                      "runs": [
+                        {
+                          "text": "소개"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000129",
+                    "block_version": 1,
+                    "name": "첫 번째 영역의 내용을 수정해 주세요.",
+                    "locked": false,
+                    "slots": {},
+                    "style": {},
+                    "responsive": {},
+                    "type": "content.text",
+                    "props": {
+                      "paragraphs": [
+                        [
+                          {
+                            "text": "첫 번째 영역의 내용을 수정해 주세요."
+                          }
+                        ]
+                      ]
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "column",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "section"
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000133",
+              "block_version": 1,
+              "name": "상세 영역",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000131",
+                    "block_version": 1,
+                    "name": "상세 안내",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "font_size": {
+                        "value": 28,
+                        "unit": "px"
+                      },
+                      "font_weight": 700
+                    },
+                    "responsive": {},
+                    "type": "content.heading",
+                    "props": {
+                      "level": 2,
+                      "runs": [
+                        {
+                          "text": "상세 안내"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000132",
+                    "block_version": 1,
+                    "name": "두 번째 영역의 내용을 수정해 주세요.",
+                    "locked": false,
+                    "slots": {},
+                    "style": {},
+                    "responsive": {},
+                    "type": "content.text",
+                    "props": {
+                      "paragraphs": [
+                        [
+                          {
+                            "text": "두 번째 영역의 내용을 수정해 주세요."
+                          }
+                        ]
+                      ]
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "column",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "section"
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill"
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "40000000-0000-4000-8000-000000000151",
+    "slug": "social-links-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [],
+    "blocks": [
+      {
+        "instance_id": "40000000-0000-4000-8000-000000000150",
+        "block_version": 1,
+        "name": "소셜 링크",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000139",
+              "block_version": 1,
+              "name": "공식 채널",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 28,
+                  "unit": "px"
+                },
+                "font_weight": 700
+              },
+              "responsive": {},
+              "type": "content.heading",
+              "props": {
+                "level": 2,
+                "runs": [
+                  {
+                    "text": "공식 채널"
+                  }
+                ]
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000149",
+              "block_version": 1,
+              "name": "채널 링크",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000142",
+                    "block_version": 1,
+                    "name": "인스타그램",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000140",
+                          "block_version": 1,
+                          "name": "instagram",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "width": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "height": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "media.icon",
+                          "props": {
+                            "icon": "instagram",
+                            "label": "",
+                            "decorative": true
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000141",
+                          "block_version": 1,
+                          "name": "인스타그램",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            },
+                            "text_decoration": "underline"
+                          },
+                          "responsive": {},
+                          "type": "action.link",
+                          "props": {
+                            "label": "인스타그램",
+                            "link": {
+                              "url": "/",
+                              "new_tab": false
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "row",
+                      "row_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      },
+                      "align": "center",
+                      "column_gap": {
+                        "value": 8,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000145",
+                    "block_version": 1,
+                    "name": "유튜브",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000143",
+                          "block_version": 1,
+                          "name": "youtube",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "width": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "height": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "media.icon",
+                          "props": {
+                            "icon": "youtube",
+                            "label": "",
+                            "decorative": true
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000144",
+                          "block_version": 1,
+                          "name": "유튜브",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            },
+                            "text_decoration": "underline"
+                          },
+                          "responsive": {},
+                          "type": "action.link",
+                          "props": {
+                            "label": "유튜브",
+                            "link": {
+                              "url": "/",
+                              "new_tab": false
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "row",
+                      "row_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      },
+                      "align": "center",
+                      "column_gap": {
+                        "value": 8,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000148",
+                    "block_version": 1,
+                    "name": "웹사이트",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000146",
+                          "block_version": 1,
+                          "name": "website",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "width": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "height": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "media.icon",
+                          "props": {
+                            "icon": "website",
+                            "label": "",
+                            "decorative": true
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000147",
+                          "block_version": 1,
+                          "name": "웹사이트",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            },
+                            "text_decoration": "underline"
+                          },
+                          "responsive": {},
+                          "type": "action.link",
+                          "props": {
+                            "label": "웹사이트",
+                            "link": {
+                              "url": "/",
+                              "new_tab": false
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "row",
+                      "row_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      },
+                      "align": "center",
+                      "column_gap": {
+                        "value": 8,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "row",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "wrap": "wrap",
+                "column_gap": {
+                  "value": 24,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill"
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "40000000-0000-4000-8000-000000000169",
+    "slug": "image-carousel-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [
+      {
+        "asset_id": "00000000-0000-4000-8000-000000000090",
+        "url": "/modules/jiwonpapa-page_builder/store/previews/local-business-hero.webp"
+      }
+    ],
+    "blocks": [
+      {
+        "instance_id": "40000000-0000-4000-8000-000000000168",
+        "block_version": 1,
+        "name": "이미지 캐러셀",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000167",
+              "block_version": 1,
+              "name": "이미지 캐러셀",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 28,
+                  "unit": "px"
+                },
+                "font_weight": 700
+              },
+              "responsive": {},
+              "type": "content.heading",
+              "props": {
+                "level": 2,
+                "runs": [
+                  {
+                    "text": "이미지 캐러셀"
+                  }
+                ]
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000163",
+              "block_version": 1,
+              "name": "자동 넘김 시작·정지",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "padding_top": {
+                  "value": 10,
+                  "unit": "px"
+                },
+                "padding_bottom": {
+                  "value": 10,
+                  "unit": "px"
+                },
+                "padding_left": {
+                  "value": 16,
+                  "unit": "px"
+                },
+                "padding_right": {
+                  "value": 16,
+                  "unit": "px"
+                },
+                "background": {
+                  "kind": "solid",
+                  "color": {
+                    "kind": "token",
+                    "value": "surface"
+                  }
+                },
+                "color": {
+                  "kind": "token",
+                  "value": "text"
+                },
+                "font_size": {
+                  "value": 16,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "action.button",
+              "props": {
+                "label": "자동 넘김 시작·정지"
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000162",
+              "block_version": 1,
+              "name": "이미지 캐러셀 창",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000161",
+                    "block_version": 1,
+                    "name": "이미지 캐러셀 트랙",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000154",
+                          "block_version": 1,
+                          "name": "대표 장면",
+                          "locked": false,
+                          "slots": {
+                            "content": [
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000152",
+                                "block_version": 1,
+                                "name": "대표 장면",
+                                "locked": false,
+                                "slots": {},
+                                "style": {
+                                  "width": "fill",
+                                  "height": {
+                                    "value": 240,
+                                    "unit": "px"
+                                  },
+                                  "object_fit": "cover"
+                                },
+                                "responsive": {},
+                                "type": "media.image",
+                                "props": {
+                                  "asset_id": "00000000-0000-4000-8000-000000000090",
+                                  "alt": "대표 장면"
+                                }
+                              },
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000153",
+                                "block_version": 1,
+                                "name": "대표 장면",
+                                "locked": false,
+                                "slots": {},
+                                "style": {},
+                                "responsive": {},
+                                "type": "content.text",
+                                "props": {
+                                  "paragraphs": [
+                                    [
+                                      {
+                                        "text": "대표 장면"
+                                      }
+                                    ]
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "style": {
+                            "display": "flex",
+                            "direction": "column",
+                            "row_gap": {
+                              "value": 12,
+                              "unit": "px"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "layout.container",
+                          "props": {
+                            "tag": "div"
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000157",
+                          "block_version": 1,
+                          "name": "프로젝트 장면",
+                          "locked": false,
+                          "slots": {
+                            "content": [
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000155",
+                                "block_version": 1,
+                                "name": "프로젝트 장면",
+                                "locked": false,
+                                "slots": {},
+                                "style": {
+                                  "width": "fill",
+                                  "height": {
+                                    "value": 240,
+                                    "unit": "px"
+                                  },
+                                  "object_fit": "cover"
+                                },
+                                "responsive": {},
+                                "type": "media.image",
+                                "props": {
+                                  "asset_id": "00000000-0000-4000-8000-000000000090",
+                                  "alt": "프로젝트 장면"
+                                }
+                              },
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000156",
+                                "block_version": 1,
+                                "name": "프로젝트 장면",
+                                "locked": false,
+                                "slots": {},
+                                "style": {},
+                                "responsive": {},
+                                "type": "content.text",
+                                "props": {
+                                  "paragraphs": [
+                                    [
+                                      {
+                                        "text": "프로젝트 장면"
+                                      }
+                                    ]
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "style": {
+                            "display": "flex",
+                            "direction": "column",
+                            "row_gap": {
+                              "value": 12,
+                              "unit": "px"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "layout.container",
+                          "props": {
+                            "tag": "div"
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000160",
+                          "block_version": 1,
+                          "name": "공간 장면",
+                          "locked": false,
+                          "slots": {
+                            "content": [
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000158",
+                                "block_version": 1,
+                                "name": "공간 장면",
+                                "locked": false,
+                                "slots": {},
+                                "style": {
+                                  "width": "fill",
+                                  "height": {
+                                    "value": 240,
+                                    "unit": "px"
+                                  },
+                                  "object_fit": "cover"
+                                },
+                                "responsive": {},
+                                "type": "media.image",
+                                "props": {
+                                  "asset_id": "00000000-0000-4000-8000-000000000090",
+                                  "alt": "공간 장면"
+                                }
+                              },
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000159",
+                                "block_version": 1,
+                                "name": "공간 장면",
+                                "locked": false,
+                                "slots": {},
+                                "style": {},
+                                "responsive": {},
+                                "type": "content.text",
+                                "props": {
+                                  "paragraphs": [
+                                    [
+                                      {
+                                        "text": "공간 장면"
+                                      }
+                                    ]
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "style": {
+                            "display": "flex",
+                            "direction": "column",
+                            "row_gap": {
+                              "value": 12,
+                              "unit": "px"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "layout.container",
+                          "props": {
+                            "tag": "div"
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "row",
+                      "row_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "column",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "width": "fill"
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000166",
+              "block_version": 1,
+              "name": "넘김 버튼",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000164",
+                    "block_version": 1,
+                    "name": "이전",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "이전"
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000165",
+                    "block_version": 1,
+                    "name": "다음",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "다음"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "row",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "column_gap": {
+                  "value": 12,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill"
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        },
+        "behavior": {
+          "kind": "carousel",
+          "label": "이미지 캐러셀",
+          "viewport_id": "40000000-0000-4000-8000-000000000162",
+          "track_id": "40000000-0000-4000-8000-000000000161",
+          "active_slide_id": "40000000-0000-4000-8000-000000000154",
+          "previous_id": "40000000-0000-4000-8000-000000000164",
+          "next_id": "40000000-0000-4000-8000-000000000165",
+          "rotation_id": "40000000-0000-4000-8000-000000000163",
+          "autoplay": false,
+          "loop": true,
+          "interval_ms": 5000
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "40000000-0000-4000-8000-000000000172",
+    "slug": "icon-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [],
+    "blocks": [
+      {
+        "instance_id": "40000000-0000-4000-8000-000000000171",
+        "block_version": 1,
+        "name": "아이콘",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000170",
+              "block_version": 1,
+              "name": "의미 있는 아이콘",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "width": {
+                  "value": 64,
+                  "unit": "px"
+                },
+                "height": {
+                  "value": 64,
+                  "unit": "px"
+                },
+                "color": {
+                  "kind": "token",
+                  "value": "primary"
+                }
+              },
+              "responsive": {},
+              "type": "media.icon",
+              "props": {
+                "icon": "sparkles",
+                "label": "주요 특징",
+                "decorative": false
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill"
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "40000000-0000-4000-8000-000000000176",
+    "slug": "badge-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [],
+    "blocks": [
+      {
+        "instance_id": "40000000-0000-4000-8000-000000000175",
+        "block_version": 1,
+        "name": "배지",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000174",
+              "block_version": 1,
+              "name": "강조 배지",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000173",
+                    "block_version": 1,
+                    "name": "새 소식",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "font_size": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "font_weight": 700
+                    },
+                    "responsive": {},
+                    "type": "content.text",
+                    "props": {
+                      "paragraphs": [
+                        [
+                          {
+                            "text": "새 소식"
+                          }
+                        ]
+                      ]
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "column",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "width": "hug",
+                "background": {
+                  "kind": "solid",
+                  "color": {
+                    "kind": "token",
+                    "value": "primary"
+                  }
+                },
+                "color": {
+                  "kind": "token",
+                  "value": "surface"
+                },
+                "padding_top": {
+                  "value": 8,
+                  "unit": "px"
+                },
+                "padding_bottom": {
+                  "value": 8,
+                  "unit": "px"
+                },
+                "padding_left": {
+                  "value": 14,
+                  "unit": "px"
+                },
+                "padding_right": {
+                  "value": 14,
+                  "unit": "px"
+                },
+                "radius_top_left": {
+                  "value": 999,
+                  "unit": "px"
+                },
+                "radius_top_right": {
+                  "value": 999,
+                  "unit": "px"
+                },
+                "radius_bottom_left": {
+                  "value": 999,
+                  "unit": "px"
+                },
+                "radius_bottom_right": {
+                  "value": 999,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill"
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "40000000-0000-4000-8000-000000000200",
+    "slug": "hero-slider-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [
+      {
+        "asset_id": "00000000-0000-4000-8000-000000000090",
+        "url": "/modules/jiwonpapa-page_builder/store/previews/local-business-hero.webp"
+      }
+    ],
+    "blocks": [
+      {
+        "instance_id": "40000000-0000-4000-8000-000000000199",
+        "block_version": 1,
+        "name": "슬라이더 히어로",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000198",
+              "block_version": 1,
+              "name": "슬라이더 히어로",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 28,
+                  "unit": "px"
+                },
+                "font_weight": 700
+              },
+              "responsive": {},
+              "type": "content.heading",
+              "props": {
+                "level": 2,
+                "runs": [
+                  {
+                    "text": "슬라이더 히어로"
+                  }
+                ]
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000194",
+              "block_version": 1,
+              "name": "자동 넘김 시작·정지",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "padding_top": {
+                  "value": 10,
+                  "unit": "px"
+                },
+                "padding_bottom": {
+                  "value": 10,
+                  "unit": "px"
+                },
+                "padding_left": {
+                  "value": 16,
+                  "unit": "px"
+                },
+                "padding_right": {
+                  "value": 16,
+                  "unit": "px"
+                },
+                "background": {
+                  "kind": "solid",
+                  "color": {
+                    "kind": "token",
+                    "value": "surface"
+                  }
+                },
+                "color": {
+                  "kind": "token",
+                  "value": "text"
+                },
+                "font_size": {
+                  "value": 16,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "action.button",
+              "props": {
+                "label": "자동 넘김 시작·정지"
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000193",
+              "block_version": 1,
+              "name": "슬라이더 히어로 창",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000192",
+                    "block_version": 1,
+                    "name": "슬라이더 히어로 트랙",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000181",
+                          "block_version": 1,
+                          "name": "첫 번째 이야기",
+                          "locked": false,
+                          "slots": {
+                            "content": [
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000177",
+                                "block_version": 1,
+                                "name": "첫 번째 이야기",
+                                "locked": false,
+                                "slots": {},
+                                "style": {
+                                  "width": "fill",
+                                  "height": {
+                                    "value": 240,
+                                    "unit": "px"
+                                  },
+                                  "object_fit": "cover"
+                                },
+                                "responsive": {},
+                                "type": "media.image",
+                                "props": {
+                                  "asset_id": "00000000-0000-4000-8000-000000000090",
+                                  "alt": "첫 번째 이야기"
+                                }
+                              },
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000178",
+                                "block_version": 1,
+                                "name": "첫 번째 이야기",
+                                "locked": false,
+                                "slots": {},
+                                "style": {
+                                  "font_size": {
+                                    "value": 28,
+                                    "unit": "px"
+                                  },
+                                  "font_weight": 700
+                                },
+                                "responsive": {},
+                                "type": "content.heading",
+                                "props": {
+                                  "level": 2,
+                                  "runs": [
+                                    {
+                                      "text": "첫 번째 이야기"
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000179",
+                                "block_version": 1,
+                                "name": "캠페인 문구와 내부 구성·스타일을 직접 수정해 주세요.",
+                                "locked": false,
+                                "slots": {},
+                                "style": {},
+                                "responsive": {},
+                                "type": "content.text",
+                                "props": {
+                                  "paragraphs": [
+                                    [
+                                      {
+                                        "text": "캠페인 문구와 내부 구성·스타일을 직접 수정해 주세요."
+                                      }
+                                    ]
+                                  ]
+                                }
+                              },
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000180",
+                                "block_version": 1,
+                                "name": "자세히 보기",
+                                "locked": false,
+                                "slots": {},
+                                "style": {
+                                  "color": {
+                                    "kind": "token",
+                                    "value": "primary"
+                                  },
+                                  "text_decoration": "underline"
+                                },
+                                "responsive": {},
+                                "type": "action.link",
+                                "props": {
+                                  "label": "자세히 보기",
+                                  "link": {
+                                    "url": "/pages/guide",
+                                    "new_tab": false
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          "style": {
+                            "display": "flex",
+                            "direction": "column",
+                            "row_gap": {
+                              "value": 12,
+                              "unit": "px"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "layout.container",
+                          "props": {
+                            "tag": "div"
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000186",
+                          "block_version": 1,
+                          "name": "두 번째 이야기",
+                          "locked": false,
+                          "slots": {
+                            "content": [
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000182",
+                                "block_version": 1,
+                                "name": "두 번째 이야기",
+                                "locked": false,
+                                "slots": {},
+                                "style": {
+                                  "width": "fill",
+                                  "height": {
+                                    "value": 240,
+                                    "unit": "px"
+                                  },
+                                  "object_fit": "cover"
+                                },
+                                "responsive": {},
+                                "type": "media.image",
+                                "props": {
+                                  "asset_id": "00000000-0000-4000-8000-000000000090",
+                                  "alt": "두 번째 이야기"
+                                }
+                              },
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000183",
+                                "block_version": 1,
+                                "name": "두 번째 이야기",
+                                "locked": false,
+                                "slots": {},
+                                "style": {
+                                  "font_size": {
+                                    "value": 28,
+                                    "unit": "px"
+                                  },
+                                  "font_weight": 700
+                                },
+                                "responsive": {},
+                                "type": "content.heading",
+                                "props": {
+                                  "level": 2,
+                                  "runs": [
+                                    {
+                                      "text": "두 번째 이야기"
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000184",
+                                "block_version": 1,
+                                "name": "캠페인 문구와 내부 구성·스타일을 직접 수정해 주세요.",
+                                "locked": false,
+                                "slots": {},
+                                "style": {},
+                                "responsive": {},
+                                "type": "content.text",
+                                "props": {
+                                  "paragraphs": [
+                                    [
+                                      {
+                                        "text": "캠페인 문구와 내부 구성·스타일을 직접 수정해 주세요."
+                                      }
+                                    ]
+                                  ]
+                                }
+                              },
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000185",
+                                "block_version": 1,
+                                "name": "자세히 보기",
+                                "locked": false,
+                                "slots": {},
+                                "style": {
+                                  "color": {
+                                    "kind": "token",
+                                    "value": "primary"
+                                  },
+                                  "text_decoration": "underline"
+                                },
+                                "responsive": {},
+                                "type": "action.link",
+                                "props": {
+                                  "label": "자세히 보기",
+                                  "link": {
+                                    "url": "/pages/guide",
+                                    "new_tab": false
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          "style": {
+                            "display": "flex",
+                            "direction": "column",
+                            "row_gap": {
+                              "value": 12,
+                              "unit": "px"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "layout.container",
+                          "props": {
+                            "tag": "div"
+                          }
+                        },
+                        {
+                          "instance_id": "40000000-0000-4000-8000-000000000191",
+                          "block_version": 1,
+                          "name": "세 번째 이야기",
+                          "locked": false,
+                          "slots": {
+                            "content": [
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000187",
+                                "block_version": 1,
+                                "name": "세 번째 이야기",
+                                "locked": false,
+                                "slots": {},
+                                "style": {
+                                  "width": "fill",
+                                  "height": {
+                                    "value": 240,
+                                    "unit": "px"
+                                  },
+                                  "object_fit": "cover"
+                                },
+                                "responsive": {},
+                                "type": "media.image",
+                                "props": {
+                                  "asset_id": "00000000-0000-4000-8000-000000000090",
+                                  "alt": "세 번째 이야기"
+                                }
+                              },
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000188",
+                                "block_version": 1,
+                                "name": "세 번째 이야기",
+                                "locked": false,
+                                "slots": {},
+                                "style": {
+                                  "font_size": {
+                                    "value": 28,
+                                    "unit": "px"
+                                  },
+                                  "font_weight": 700
+                                },
+                                "responsive": {},
+                                "type": "content.heading",
+                                "props": {
+                                  "level": 2,
+                                  "runs": [
+                                    {
+                                      "text": "세 번째 이야기"
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000189",
+                                "block_version": 1,
+                                "name": "캠페인 문구와 내부 구성·스타일을 직접 수정해 주세요.",
+                                "locked": false,
+                                "slots": {},
+                                "style": {},
+                                "responsive": {},
+                                "type": "content.text",
+                                "props": {
+                                  "paragraphs": [
+                                    [
+                                      {
+                                        "text": "캠페인 문구와 내부 구성·스타일을 직접 수정해 주세요."
+                                      }
+                                    ]
+                                  ]
+                                }
+                              },
+                              {
+                                "instance_id": "40000000-0000-4000-8000-000000000190",
+                                "block_version": 1,
+                                "name": "자세히 보기",
+                                "locked": false,
+                                "slots": {},
+                                "style": {
+                                  "color": {
+                                    "kind": "token",
+                                    "value": "primary"
+                                  },
+                                  "text_decoration": "underline"
+                                },
+                                "responsive": {},
+                                "type": "action.link",
+                                "props": {
+                                  "label": "자세히 보기",
+                                  "link": {
+                                    "url": "/pages/guide",
+                                    "new_tab": false
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          "style": {
+                            "display": "flex",
+                            "direction": "column",
+                            "row_gap": {
+                              "value": 12,
+                              "unit": "px"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "layout.container",
+                          "props": {
+                            "tag": "div"
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "row",
+                      "row_gap": {
+                        "value": 12,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "column",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "width": "fill"
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            },
+            {
+              "instance_id": "40000000-0000-4000-8000-000000000197",
+              "block_version": 1,
+              "name": "넘김 버튼",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000195",
+                    "block_version": 1,
+                    "name": "이전",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "이전"
+                    }
+                  },
+                  {
+                    "instance_id": "40000000-0000-4000-8000-000000000196",
+                    "block_version": 1,
+                    "name": "다음",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "다음"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "direction": "row",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "column_gap": {
+                  "value": 12,
+                  "unit": "px"
+                }
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill"
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        },
+        "behavior": {
+          "kind": "carousel",
+          "label": "슬라이더 히어로",
+          "viewport_id": "40000000-0000-4000-8000-000000000193",
+          "track_id": "40000000-0000-4000-8000-000000000192",
+          "active_slide_id": "40000000-0000-4000-8000-000000000181",
+          "previous_id": "40000000-0000-4000-8000-000000000195",
+          "next_id": "40000000-0000-4000-8000-000000000196",
+          "rotation_id": "40000000-0000-4000-8000-000000000194",
+          "autoplay": false,
+          "loop": true,
+          "interval_ms": 5000
+        }
+      }
+    ]
   }
 ]

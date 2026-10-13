@@ -8,7 +8,7 @@ const INQUIRY_PATH = '/pages/__g7pb-public-runtime-contract/inquiries';
 const EFFECTS_ASSET = '/api/modules/assets/jiwonpapa-page_builder/dist/js/page-effects.iife.js';
 const SLIDERS_ASSET = '/api/modules/assets/jiwonpapa-page_builder/dist/js/page-sliders.iife.js';
 const ASSET_VERSION = '?v=public-runtime-fixture';
-type ApiResponse = { status?: number; json: unknown };
+type ApiResponse = { status?: number; json?: unknown; headers?: Record<string, string>; body?: string };
 type ApiHandlers = Record<string, (request: Request) => ApiResponse | Promise<ApiResponse>>;
 
 /** Synthetic DOM/services, actual shipped bundle and native user actions.
@@ -132,8 +132,14 @@ test('hydrates typed public controls and submits only the active inquiry form', 
     <div data-g7pb-accordion data-g7pb-accordion-behavior="single"><div data-g7pb-accordion-item><span role="button" tabindex="0" data-g7pb-accordion-trigger>Open first</span><div data-g7pb-accordion-panel>First answer</div></div><div data-g7pb-accordion-item><span role="button" tabindex="0" data-g7pb-accordion-trigger>Open second</span><div data-g7pb-accordion-panel>Second answer</div></div></div>
     ${inquiryHost(firstId, 'First inquiry')}${inquiryHost(secondId, 'Second inquiry')}
   </main>`;
-  let submissions = 0;
+  let submissions = 0, sessions = 0;
   await withPublicFixture(page, markup, {
+    // Exact synthetic service route: no request may reach the real session API.
+    // Rotate an encoded cookie to prove each explicit attempt uses fresh CSRF,
+    // not the stale meta token retained by the page fixture.
+    'GET /sanctum/csrf-cookie': () => ({ status: 204, body: '', headers: {
+      'set-cookie': `XSRF-TOKEN=${encodeURIComponent('synthetic-refresh=' + ++sessions)}; Path=/; Secure; SameSite=Lax`,
+    } }),
     [`POST ${INQUIRY_PATH}`]: () => ++submissions === 1
       ? { status: 503, json: { message: 'Synthetic temporary failure' } }
       : { json: { success: true } },
@@ -168,9 +174,13 @@ test('hydrates typed public controls and submits only the active inquiry form', 
     await expect(first.getByLabel('Name', { exact: true })).toHaveValue('');
     await expect(second.getByLabel('Name', { exact: true })).toHaveValue('Untouched B');
     await expect(second.getByLabel('Message', { exact: true })).toHaveValue('Other message');
-    expect(requests).toHaveLength(2);
-    for (const request of requests) {
-      expect(request.headers()['x-csrf-token']).toBe('synthetic-csrf');
+    expect(sessions).toBe(2); expect(submissions).toBe(2);
+    expect(requests.map(request => request.method() + ' ' + new URL(request.url()).pathname)).toEqual([
+      'GET /sanctum/csrf-cookie', `POST ${INQUIRY_PATH}`, 'GET /sanctum/csrf-cookie', `POST ${INQUIRY_PATH}`,
+    ]);
+    for (const [index, request] of requests.filter(request => request.method() === 'POST').entries()) {
+      expect(request.headers()['x-xsrf-token']).toBe('synthetic-refresh=' + (index + 1));
+      expect(request.headers()['x-csrf-token']).toBeUndefined();
       const form = await new Response(request.postData(), { headers: { 'Content-Type': request.headers()['content-type'] } }).formData();
       expect(Object.fromEntries(form)).toEqual({
         block_instance_id: firstId, started_at: expect.stringMatching(/^\d+$/u), name: 'Synthetic A', message: 'First message',

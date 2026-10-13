@@ -41,11 +41,11 @@ coord-release:
 
 task-submit:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
-	@$(COORD_HARNESS) submit --task "$(TASK)" $(if $(filter 1,$(FULL)),--full,)
+	@$(COORD_HARNESS) submit --task "$(TASK)" $(if $(filter 1,$(FULL)),--full,) $(if $(filter 1,$(IMPLEMENTATION)),--implementation,)
 
 task-resubmit:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
-	@$(COORD_HARNESS) resubmit --task "$(TASK)" $(if $(filter 1,$(FULL)),--full,)
+	@$(COORD_HARNESS) resubmit --task "$(TASK)" $(if $(filter 1,$(FULL)),--full,) $(if $(filter 1,$(IMPLEMENTATION)),--implementation,)
 
 task-restack:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
@@ -78,21 +78,21 @@ task-replace-submitted-expanded:
 task-integrate:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
 	@test -n "$(INTEGRATION_TASK)" || { echo 'INTEGRATION_TASK is required.' >&2; exit 2; }
-	@$(COORD_HARNESS) integrate --task "$(TASK)" --integration-task "$(INTEGRATION_TASK)" $(if $(filter 1,$(FULL)),--full,)
+	@$(COORD_HARNESS) integrate --task "$(TASK)" --integration-task "$(INTEGRATION_TASK)" $(if $(filter 1,$(FULL)),--full,) $(if $(filter 1,$(IMPLEMENTATION)),--implementation,)
 
 task-integrate-scoped:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
 	@test -n "$(INTEGRATION_TASK)" || { echo 'INTEGRATION_TASK is required.' >&2; exit 2; }
-	@$(COORD_HARNESS) integrate-scoped --task "$(TASK)" --integration-task "$(INTEGRATION_TASK)" $(if $(filter 1,$(FULL)),--full,)
+	@$(COORD_HARNESS) integrate-scoped --task "$(TASK)" --integration-task "$(INTEGRATION_TASK)" $(if $(filter 1,$(FULL)),--full,) $(if $(filter 1,$(IMPLEMENTATION)),--implementation,)
 
 task-integrate-batch:
 	@test -n "$(TASKS)" || { echo 'TASKS is required.' >&2; exit 2; }
 	@test -n "$(INTEGRATION_TASK)" || { echo 'INTEGRATION_TASK is required.' >&2; exit 2; }
-	@$(COORD_HARNESS) integrate-batch --tasks "$(TASKS)" --integration-task "$(INTEGRATION_TASK)" $(if $(filter 1,$(FULL)),--full,)
+	@$(COORD_HARNESS) integrate-batch --tasks "$(TASKS)" --integration-task "$(INTEGRATION_TASK)" $(if $(filter 1,$(FULL)),--full,) $(if $(filter 1,$(IMPLEMENTATION)),--implementation,)
 
 integration-verify:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
-	@$(COORD_HARNESS) verify --task "$(TASK)" $(if $(filter 1,$(FULL)),--full,)
+	@$(COORD_HARNESS) verify --task "$(TASK)" $(if $(filter 1,$(FULL)),--full,) $(if $(filter 1,$(IMPLEMENTATION)),--implementation,)
 
 integration-finish:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }

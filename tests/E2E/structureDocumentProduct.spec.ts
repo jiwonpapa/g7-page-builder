@@ -254,6 +254,107 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
   }
 });
 
+for (const shell of ['none', 'template', 'builder'] as const) test(`publishes common embeds with safe providers responsive sizing and persisted settings ${shell}`, async ({ page, context }, info) => {
+  const token = await authenticateEditorInteractionAdmin(context), api = await editorInteractionApi(token);
+  const slug = `g7pb-embeds-${shell}-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+  let ownedId: string | undefined;
+  const click = (name: string) => page.getByRole('button', { name, exact: true }).click();
+  const viewer = await context.newPage(), preview = await context.newPage();
+  // Verify our actual iframe/hydration/CSP/geometry, not a remote service's availability.
+  await context.route(/^https:\/\/(www\.youtube-nocookie\.com|player\.vimeo\.com|www\.openstreetmap\.org|www\.google\.com)\//,
+    route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><body style="margin:0;background:#e2e8f0;font:16px sans-serif">외부 제공자 검증 대역</body>' }));
+  const length = async (label: string, value: number) => {
+    const field = page.getByLabel(label + ' 지정', { exact: true }), details = field.locator('xpath=ancestor::details');
+    if (await details.getAttribute('open') === null) await details.locator('summary').click();
+    await field.check(); await page.getByLabel(label + ' 형식', { exact: true }).selectOption({ label: 'px' });
+    await page.getByLabel(label + ' 값', { exact: true }).fill(String(value));
+  };
+  const sample = async (surface: Locator) => {
+    const measure = () => surface.locator('[data-v3-node]').evaluateAll(async nodes => {
+      const capture = () => {
+        if (nodes.length !== 4 || nodes.some(node => !node.isConnected || !node.querySelector('iframe')?.isConnected)) return null;
+        return nodes.map(node => {
+          const frame = node.querySelector('iframe')!, box = node.getBoundingClientRect(), inner = frame.getBoundingClientRect();
+          return { id: node.getAttribute('data-v3-node'), src: frame.getAttribute('src'), title: frame.title, fullscreen: frame.allowFullscreen,
+            size: [box.width, box.height, inner.width, inner.height] };
+        });
+      };
+      const first = capture(); await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      const second = capture(); return first && second && JSON.stringify(first) === JSON.stringify(second) ? second : null;
+    });
+    const result: { value: Awaited<ReturnType<typeof measure>> } = { value: null };
+    await expect.poll(async () => { result.value = await measure(); return result.value !== null; }).toBe(true);
+    if (!result.value) throw new Error('Embed output not attached and stable'); return result.value;
+  };
+  try {
+    await page.setViewportSize({ width: 1440, height: 1000 }); await page.goto(`${editor}?editor=structure`);
+    await page.getByLabel('페이지 제목', { exact: true }).fill('공통 임베드 공개 검증 ' + shell);
+    await page.getByLabel('기본 주소 이름', { exact: true }).fill(slug);
+    await page.getByRole('combobox', { name: '페이지 출력 방식', exact: true }).selectOption(shell);
+    const creating = page.waitForResponse(response => response.url().endsWith(documents) && response.request().method() === 'POST');
+    await click('빈 페이지 만들기'); const response = await creating;
+    expect(response.ok(), await response.text()).toBe(true); ownedId = (await response.json()).data.document.document_id;
+    const identities: string[] = [];
+    for (const [index, provider] of ['youtube', 'vimeo', 'openstreetmap', 'google'].entries()) {
+      await page.getByLabel('삽입 위치', { exact: true }).selectOption('root'); await click('영상·지도 삽입');
+      const layers = page.getByTestId(/^layer-/); await expect(layers).toHaveCount(index + 1);
+      const layer = layers.nth(index); identities.push((await layer.getAttribute('data-testid'))!.slice('layer-'.length));
+      await layer.click(); await page.getByLabel('임베드 제공자', { exact: true }).selectOption(provider);
+      await page.getByLabel('임베드 설명', { exact: true }).fill('안내 <문자> ' + provider);
+      if (provider === 'youtube' || provider === 'vimeo') await page.getByLabel('영상 ID', { exact: true }).fill(provider === 'youtube' ? 'dQw4w9WgXcQ' : '123456789');
+      else {
+        await page.getByLabel('위도', { exact: true }).fill('37.566535'); await page.getByLabel('경도', { exact: true }).fill('126.977969');
+        await page.getByLabel('지도 확대', { exact: true }).selectOption('18');
+      }
+      await click('임베드 적용'); await length('너비', 240); await length('높이', 135); await click('디자인 적용');
+    }
+    await page.getByTestId('layer-' + identities[0]).click(); await click('모바일');
+    await length('너비', 300); await length('높이', 200); await click('디자인 적용'); await click('저장');
+    await expect(page.getByTestId('structure-document-status')).toHaveText('초안 저장됨');
+    const before = (await (await api.get(`${documents}/${ownedId}`)).json()).data;
+    expect(before.document.blocks.map((node: { props: { source: { provider: string } } }) => node.props.source.provider)).toEqual(['youtube', 'vimeo', 'openstreetmap', 'google']);
+    await page.reload(); await expect(page.getByTestId(/^layer-/)).toHaveCount(4);
+    await page.getByTestId('layer-' + identities[0]).click(); await expect(page.getByLabel('영상 ID', { exact: true })).toHaveValue('dQw4w9WgXcQ');
+    await click('공개 미리보기 준비'); const previewLink = page.getByRole('link', { name: '공개 미리보기 열기', exact: true });
+    await expect(previewLink).toBeVisible(); const previewUrl = (await previewLink.getAttribute('href'))!;
+    await click('발행 준비'); await expect(page.getByRole('dialog', { name: '이 버전을 공개할까요?' })).toBeVisible(); await click('이 버전 발행');
+    const publicLink = page.getByRole('link', { name: '공개 페이지 열기', exact: true }); await expect(publicLink).toBeVisible();
+    const publicUrl = (await publicLink.getAttribute('href'))!;
+    for (const [label, width] of [['PC · 공통값', 1280], ['태블릿', 768], ['모바일', 360]] as const) {
+      await click(label); await page.getByLabel('작업면 확대', { exact: true }).selectOption('1');
+      const expected = await sample(page.frameLocator('iframe').locator('[data-v3-surface]'));
+      expect(expected[0].size).toEqual(width === 360 ? [300, 200, 300, 200] : [240, 135, 240, 135]);
+      expect(expected.slice(1).every(node => JSON.stringify(node.size) === '[240,135,240,135]')).toBe(true);
+      await click('구조 미리보기'); const authored = await sample(page.getByTestId('v3-preview')); expect(authored).toEqual(expected);
+      await click('구조 미리보기'); const captures = [];
+      for (const [name, target, url] of [['preview', preview, previewUrl], ['public', viewer, publicUrl]] as const) {
+        await target.setViewportSize({ width, height: 1000 }); expect((await target.goto(url))?.ok()).toBe(true);
+        const surface = target.locator('[data-g7pb-v3-public]'); await expect(surface.locator('iframe')).toHaveCount(4);
+        await expect(surface.locator('[data-g7pb-embed]')).toHaveCount(0);
+        const actual = await sample(surface);
+        expect(actual.map(({ size: _size, ...node }) => node)).toEqual(expected.map(({ size: _size, ...node }) => node));
+        for (const [index, node] of actual.entries()) for (let axis = 0; axis < 4; axis++) expect(Math.abs(node.size[axis] - expected[index].size[axis])).toBeLessThanOrEqual(1);
+        captures.push({ name, actual });
+        await info.attach(`embeds-${shell}-${name}-${width}`, { body: await target.screenshot(), contentType: 'image/png' });
+      }
+      await info.attach(`embeds-${shell}-measurements-${width}`, { body: JSON.stringify({ canvas: expected, authored, captures, externalProvider: 'test double, not live playback' }), contentType: 'application/json' });
+    }
+    const current = (await (await api.get(`${documents}/${ownedId}`)).json()).data;
+    expect(current.document).toEqual(before.document); expect(current.active_artifact_sha256).toMatch(/^[a-f0-9]{64}$/);
+    await info.attach('published-common-embeds-source', { body: JSON.stringify(current), contentType: 'application/json' });
+  } finally {
+    await viewer.close(); await preview.close();
+    try {
+      if (ownedId) {
+        const current = (await (await api.get(`${documents}/${ownedId}`)).json()).data; expect(current.document.slug).toBe(slug);
+        const result = await api.post(`${documents}/${ownedId}/archive`, { data: { expected_lock_version: current.lock_version } });
+        expect(result.ok(), await result.text()).toBe(true);
+        await info.attach('owned-document-archived', { body: await result.body(), contentType: 'application/json' });
+      }
+    } finally { await api.dispose(); }
+  }
+});
+
 test('creates an empty page in the installed generic editor and preserves nested edits through authenticated save and reload', async ({ page, context }, testInfo) => {
   const token = await authenticateEditorInteractionAdmin(context), api = await editorInteractionApi(token);
   const slug = `g7pb-product-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;

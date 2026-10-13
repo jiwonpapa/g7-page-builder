@@ -798,6 +798,13 @@
           "commit": "8025bbcec8c3e3d29ad3b4995b264e6326a5a105",
           "result": "pass",
           "path": "docs/audits/2026-10-13-ip7-icon-product-proof.md"
+        },
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-submitted-common-embed",
+          "commit": "202a3e7538c16d7c7622944ad50cd3a8f00231a3",
+          "result": "pass",
+          "path": "docs/audits/2026-10-13-ip7-embed-product-proof.md"
         }
       ],
       "blocked_reason": null,

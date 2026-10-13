@@ -94,7 +94,7 @@ export function SitePartPairEditor({ initial, ports, compositions, onUnsafe, onS
     {kinds.map(kind => <div key={kind} hidden={preview || active !== kind} className="g7pb-site-part-structure__editor" data-part={kind}>
       <StructureEditor document={initial[kind].document.content} sessionId={initial[kind].document.content.document_id}
         serverRevision={pair[kind].lock_version} readonly={disabled || busy || preview || active !== kind}
-        drafts={drafts[kind]} compositions={compositions} nextId={ports.nextId}
+        drafts={drafts[kind]} media={ports.media} compositions={compositions} nextId={ports.nextId}
         onChange={document => changed(kind, document)} onSaved={(_revision, status) => saved(kind, status)} />
     </div>)}
     {preview && <section className="g7pb-site-part-structure__preview" aria-label="Header 본문 Footer 미리보기">

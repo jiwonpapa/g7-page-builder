@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { Inbox, LayoutTemplate, PanelTop } from 'lucide-react';
-import { PageBuilderApiClient, PageBuilderApiError } from '../api/pageBuilderApi';
+import { PageBuilderApiClient, PageBuilderApiError, PAGE_BUILDER_EDITOR_PATH } from '../api/pageBuilderApi';
 import { useManagerStore } from './useManagerStore';
 import { ManagerSiteKitDialog } from './ManagerSiteKitDialog';
 import { ManagerStoreDialogs } from './ManagerStoreDialogs';
@@ -52,6 +52,8 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
           </div>
         </div>
         <div className="g7pb-manager-header__actions">
+          <a className="g7pb-button g7pb-button--primary" href={PAGE_BUILDER_EDITOR_PATH + '?editor=structure'}
+            data-testid="page-builder-manager-precision-create">빈 정밀 페이지</a>
           <a className="g7pb-button g7pb-button--quiet" href="/admin">G7 관리자</a>
           <button className="g7pb-button g7pb-button--primary" type="button" data-testid="manager-site-kits" onClick={() => setSiteKitOpen(true)}>사이트 킷</button>
           <button className="g7pb-button g7pb-button--quiet" type="button"

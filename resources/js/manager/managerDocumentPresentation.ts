@@ -1,7 +1,7 @@
 import { PAGE_BUILDER_EDITOR_PATH, type DocumentResource } from '../api/pageBuilderApi';
 
-export function editorUrl(documentId: string): string {
-  return `${PAGE_BUILDER_EDITOR_PATH}?document=${encodeURIComponent(documentId)}`;
+export function editorUrl(documentId: string, schema?: string): string {
+  return `${PAGE_BUILDER_EDITOR_PATH}?document=${encodeURIComponent(documentId)}${schema === 'g7-page-builder/v3' ? '&editor=structure' : ''}`;
 }
 
 export function formatRevisionDate(value: string): string {

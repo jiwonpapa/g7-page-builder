@@ -350,7 +350,8 @@ class PlannerTests(unittest.TestCase):
         self.write(php, "<?php class Fixture {}")
         self.write(helper, "export class Fixture {}")
         self.write("tests/Harness/test_site_part_fixture.py", "import unittest")
-        specs = ("globalSiteShellRoutes", "sitePartLifecycle", "pageBuilderLifecycle", "siteShellProductQuality")
+        specs = ("globalSiteShellRoutes", "sitePartLifecycle", "pageBuilderLifecycle", "siteShellProductQuality",
+                 "structureSitePartProduct")
         for spec in specs:
             self.write(f"tests/E2E/{spec}.spec.ts", "import './support/sitePartSetFixture'")
         plan = build_plan(self.root, [php, helper])
@@ -1226,7 +1227,7 @@ class PlannerTests(unittest.TestCase):
             self.write(spec, "import './support/sitePartSetFixture'")
         plan = build_plan(self.root, [helper, 'config/design-architecture-debt.json'])
         browser = [g for g in plan.gates if g.name.startswith('browser-registration:')]
-        self.assertEqual(len(browser), 4)
+        self.assertEqual(len(browser), 5)
         self.assertFalse(any(g.runtime for g in plan.gates))
 
     def test_independent_unit_input_does_not_follow_all_changed_sources(self):

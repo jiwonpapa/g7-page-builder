@@ -3,6 +3,7 @@ import json
 import tempfile
 import unittest
 from tools.g7pb.planner import CONTRACT_FIXTURE_CONSUMERS, build_plan, contract_fixture_inputs
+from tools.g7pb.browser_requirements import scenarios_for
 
 
 class DocumentV3ScopeTests(unittest.TestCase):
@@ -10,21 +11,22 @@ class DocumentV3ScopeTests(unittest.TestCase):
         source = "resources/js/editor/v3/StructureEditor.tsx"
         structure = "tests/E2E/structureEditorV3.spec.ts"
         product = "tests/E2E/structureDocumentProduct.spec.ts"
+        required = {scenario.spec for scenario in scenarios_for([source])}
+        self.assertTrue({structure, product}.issubset(required))
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             for path, content in {
                 source: "export const editor = true;",
                 "tests/Unit/editor.test.ts": "import '../../" + source + "';",
-                structure: "import {test} from '@playwright/test';",
-                product: "import {test} from '@playwright/test';",
+                **{spec: "import {test} from '@playwright/test';" for spec in required},
             }.items():
                 target = root / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text(content)
             for command, expected in (
-                ("playwright test tests/E2E/pageBuilderLifecycle.spec.ts", {structure, product}),
-                ("playwright test " + product, {structure}),
-                ("playwright test " + product + " --grep limited", {structure, product}),
+                ("playwright test tests/E2E/pageBuilderLifecycle.spec.ts", required),
+                ("playwright test " + product, required - {product}),
+                ("playwright test " + product + " --grep limited", required),
             ):
                 (root / "package.json").write_text(json.dumps({"scripts": {"test:e2e:product": command}}))
                 for phase in ("submission", "integration", "verification", "ci"):

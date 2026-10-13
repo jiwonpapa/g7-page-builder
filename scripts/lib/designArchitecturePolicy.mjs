@@ -77,6 +77,7 @@ export function readPolicy(root) {
   }
   for (const path of [policy.constitution, policy.debtFile, ...policy.normativeFiles, ...policy.sourceRoots, ...policy.cssTokenSources]) safePath(path);
   if (['ts', 'tsx', 'js', 'php', 'css'].some((kind) => !Object.hasOwn(policy.sourceSize, kind))) throw new Error('A source size rule is missing');
+  if (policy.cssSourceSizeMode !== 'advisory') throw new Error('CSS source size must remain a non-blocking advisory');
   if (!Number.isInteger(policy.maxTypeScriptNodes) || policy.maxTypeScriptNodes < 1 || policy.maxTypeScriptNodes > 15000) throw new Error('Invalid TypeScript structural node limit');
   for (const [kind, limit] of Object.entries(policy.sourceSize)) {
     if (!Number.isInteger(limit) || limit < 1 || limit > 1500) throw new Error(`Invalid source size policy: ${kind}`);
@@ -115,7 +116,15 @@ export function applyDebt(findings, debt, policy) {
   const totals = new Map();
   const errors = [];
   const acknowledged = [];
+  const warnings = [];
   for (const item of findings) {
+    // Only CSS line count is advisory. Syntax, selectors, tokens, dependencies,
+    // and all other languages' size rules still use the existing debt gate.
+    if (policy.cssSourceSizeMode === 'advisory' && item.rule === 'SOURCE-SIZE'
+      && item.path.endsWith('.css') && item.fingerprint === fingerprint('non-empty-lines')) {
+      warnings.push(item);
+      continue;
+    }
     const sourceKey = `${item.rule}:${item.path}:${item.fingerprint}`;
     const key = aliases.get(sourceKey) ?? sourceKey;
     const total = (totals.get(key) ?? 0) + item.value;
@@ -126,7 +135,7 @@ export function applyDebt(findings, debt, policy) {
     } else errors.push(item);
   }
   // A removed violation is reported for ledger retirement, never used as credit for another violation.
-  return { errors, acknowledged, unusedDebt: [...allowances.keys()].filter((key) => !used.has(key)) };
+  return { errors, acknowledged, warnings, unusedDebt: [...allowances.keys()].filter((key) => !used.has(key)) };
 }
 
 export function validateNormativeDocuments(root, selected, policy) {
@@ -144,6 +153,11 @@ export function sizeFinding(path, source, policy) {
   const extension = path.split('.').at(-1);
   const limit = policy.sourceSize[extension];
   const lines = source.split(/\r?\n/).filter((line) => line.trim()).length;
+  if (extension === 'css' && policy.cssSourceSizeMode === 'advisory') {
+    return lines > limit ? [finding('SOURCE-SIZE', path, 1,
+      `${lines} non-empty CSS lines exceeds the ${limit}-line review threshold; non-blocking; split by responsibility when useful`,
+      'non-empty-lines', lines)] : [];
+  }
   return limit && lines > limit ? [finding('SOURCE-SIZE', path, 1,
     `${lines} non-empty lines exceeds ${limit}; split responsibilities or retire existing debt`, 'non-empty-lines', lines)] : [];
 }

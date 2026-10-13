@@ -58,7 +58,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     if (json) process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     else {
       for (const error of report.errors) console.error(`${error.path}:${error.line} [${error.rule}] ${error.detail}`);
-      console.log(`Design architecture: ${report.errors.length ? 'FAIL' : 'OK'}; ${report.checked.length} files; ${report.acknowledged.length} existing debt findings; ${report.unusedDebt.length} retired debt candidates.`);
+      for (const warning of report.warnings) console.warn(`${warning.path}:${warning.line} [${warning.rule} advisory] ${warning.detail}`);
+      console.log(`Design architecture: ${report.errors.length ? 'FAIL' : 'OK'}; ${report.checked.length} files; ${report.acknowledged.length} existing debt findings; ${report.warnings.length} size advisories; ${report.unusedDebt.length} retired debt candidates.`);
     }
     process.exitCode = report.errors.length ? 1 : 0;
   } catch (error) {

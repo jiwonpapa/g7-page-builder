@@ -784,6 +784,20 @@
           "commit": "a3fe48d47588c49e5e6143271b612ba6ed357f64",
           "result": "pass",
           "path": "docs/audits/2026-10-13-ip7-site-part-editor.md"
+        },
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-integrated-site-part-editor",
+          "commit": "59116bfa685959d5eb56bbedc629c8a6053eed12",
+          "result": "pass",
+          "path": "docs/audits/2026-10-13-ip7-site-part-editor.md"
+        },
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-common-icon-submission",
+          "commit": "8fc034dc1b84ecdca2b9eda131282e23e9167773",
+          "result": "pass",
+          "path": "docs/audits/2026-10-13-ip7-icon-product-proof.md"
         }
       ],
       "blocked_reason": null,

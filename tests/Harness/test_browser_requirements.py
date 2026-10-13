@@ -117,11 +117,25 @@ class BrowserRequirementsTests(unittest.TestCase):
         for path in ("resources/js/editor/v3/PublicationControls.tsx", "resources/js/editor/v3/apiPublicationPort.ts",
                      "resources/js/editor-application/v3/publication.ts"):
             self.assertEqual(scenarios_for([path]), (V3_PRODUCT,))
-        self.assertEqual(len(V3_PRODUCT.titles), 4)
+        self.assertEqual(len(V3_PRODUCT.titles), 7)
         self.assertIn("creates an empty page in the installed generic editor and preserves nested edits through authenticated save and reload", V3_PRODUCT.titles)
         for shell in ("none", "template", "builder"):
             self.assertIn("publishes generic elements through the installed UI with explicit confirmation and preserves the live version " + shell,
                           V3_PRODUCT.titles)
+            self.assertIn("publishes common icons with authored sizing meaning and safe hydration " + shell, V3_PRODUCT.titles)
+
+    def test_common_icon_owners_require_independent_and_installed_output(self):
+        title = "v3 common icon insertion meaning history responsive styles and PHP parity without a catalog"
+        self.assertIn(title, V3_STRUCTURE.titles)
+        self.assertEqual(V3_STRUCTURE.titles.count(title), 1)
+        for path in ("resources/js/editor/v3/IconInspector.tsx", "resources/js/editor/v3/NodeRenderer.tsx",
+                     "src/Application/Compilation/V3/ElementMarkup.php"):
+            self.assertEqual(set(scenarios_for([path])), {V3_STRUCTURE, V3_PRODUCT})
+        for scenario in (V3_STRUCTURE, V3_PRODUCT):
+            self.assertIn("--retries=0", scenario.arguments())
+        # The shared icon recovery change still requires every existing public role.
+        self.assertEqual(set(scenarios_for(["resources/js/public/publicHydration.ts"])),
+                         {PUBLIC, public_roles(PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_SHELL)})
 
     def test_installed_structure_entry_requires_real_authenticated_product_flow(self):
         for path in ("resources/js/editor/v3/StructureDocumentHost.tsx", "vite.structure.config.ts"):
@@ -152,7 +166,7 @@ class BrowserRequirementsTests(unittest.TestCase):
                      "src/Application/Compilation/V3/Presentation.php", "src/Application/Compilation/V3/DraftRenderer.php"):
             self.assertEqual(scenarios_for([path]), (V3_STRUCTURE,))
         self.assertEqual(V3_STRUCTURE.projects, ("desktop",))
-        self.assertEqual(len(V3_STRUCTURE.titles), 87)
+        self.assertEqual(len(V3_STRUCTURE.titles), 88)
         self.assertIn("v3 empty catalog builds an interactive composition from primitive insertions", V3_STRUCTURE.titles)
         for kind in ("tabs", "disclosure", "carousel", "nested"):
             self.assertIn("v3 common behavior connections edit save reopen and match PHP output " + kind, V3_STRUCTURE.titles)

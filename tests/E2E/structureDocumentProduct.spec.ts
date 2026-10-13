@@ -125,6 +125,106 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes ge
   }
 });
 
+for (const shell of ['none', 'template', 'builder'] as const) test(`publishes common icons with authored sizing meaning and safe hydration ${shell}`, async ({ page, context }, info) => {
+  const token = await authenticateEditorInteractionAdmin(context), api = await editorInteractionApi(token);
+  const slug = `g7pb-icons-${shell}-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+  let ownedId: string | undefined;
+  const click = (name: string) => page.getByRole('button', { name, exact: true }).click();
+  const viewer = await context.newPage(), preview = await context.newPage();
+  const length = async (label: string, value: number) => {
+    const field = page.getByLabel(label + ' 지정', { exact: true }), details = field.locator('xpath=ancestor::details');
+    if (await details.getAttribute('open') === null) await details.locator('summary').click();
+    await field.check(); await page.getByLabel(label + ' 형식', { exact: true }).selectOption({ label: 'px' });
+    await page.getByLabel(label + ' 값', { exact: true }).fill(String(value));
+  };
+  const sample = async (surface: Locator) => surface.locator('[data-v3-node]').evaluateAll(nodes => nodes.map(node => {
+    const svg = node.querySelector('svg')!, box = node.getBoundingClientRect(), graphic = svg.getBoundingClientRect();
+    return { id: node.getAttribute('data-v3-node'), role: node.getAttribute('role'), label: node.getAttribute('aria-label'),
+      hidden: node.getAttribute('aria-hidden'), color: getComputedStyle(svg).color, viewBox: svg.getAttribute('viewBox'),
+      stroke: getComputedStyle(svg).stroke, strokeWidth: getComputedStyle(svg).strokeWidth,
+      shapes: [...svg.children].map(child => ({ tag: child.tagName, attributes: Object.fromEntries([...child.attributes]
+        .filter(attribute => attribute.name !== 'class').map(attribute => [attribute.name, attribute.value])) })),
+      size: [box.width, box.height, graphic.width, graphic.height] };
+  }));
+  try {
+    await page.setViewportSize({ width: 1440, height: 1000 }); await page.goto(`${editor}?editor=structure`);
+    await page.getByLabel('페이지 제목', { exact: true }).fill('공통 아이콘 공개 검증 ' + shell);
+    await page.getByLabel('기본 주소 이름', { exact: true }).fill(slug);
+    await page.getByRole('combobox', { name: '페이지 출력 방식', exact: true }).selectOption(shell);
+    const creating = page.waitForResponse(response => response.url().endsWith(documents) && response.request().method() === 'POST');
+    await click('빈 페이지 만들기'); const response = await creating;
+    expect(response.ok(), await response.text()).toBe(true); ownedId = (await response.json()).data.document.document_id;
+    const identities: string[] = [];
+    for (const [index, icon] of ['star', 'check', 'target'].entries()) {
+      await page.getByLabel('삽입 위치', { exact: true }).selectOption('root'); await click('아이콘 삽입');
+      const layers = page.getByTestId(/^layer-/); await expect(layers).toHaveCount(index + 1);
+      const layer = layers.nth(index); identities.push((await layer.getAttribute('data-testid'))!.slice('layer-'.length));
+      await layer.click(); await page.getByLabel('아이콘 종류', { exact: true }).selectOption(icon);
+      if (index !== 1) {
+        await page.getByLabel('장식용 아이콘', { exact: true }).uncheck();
+        await page.getByLabel('아이콘 설명', { exact: true }).fill('안내 <문자> ' + icon);
+      }
+      await click('아이콘 적용');
+    }
+    await page.getByTestId('layer-' + identities[0]).click();
+    await length('너비', 48); await length('높이', 32); await click('디자인 적용');
+    await click('모바일'); await length('너비', 20); await length('높이', 20); await click('디자인 적용');
+    await click('저장'); await expect(page.getByTestId('structure-document-status')).toHaveText('초안 저장됨');
+    const before = (await (await api.get(`${documents}/${ownedId}`)).json()).data;
+    expect(before.document.blocks.map((node: { props: unknown }) => node.props)).toEqual([
+      { icon: 'star', label: '안내 <문자> star', decorative: false },
+      { icon: 'check', label: '', decorative: true },
+      { icon: 'target', label: '안내 <문자> target', decorative: false },
+    ]);
+    await page.reload(); await expect(page.getByTestId(/^layer-/)).toHaveCount(3);
+    await click('공개 미리보기 준비');
+    const previewLink = page.getByRole('link', { name: '공개 미리보기 열기', exact: true }); await expect(previewLink).toBeVisible();
+    const previewUrl = (await previewLink.getAttribute('href'))!;
+    await click('발행 준비'); await expect(page.getByRole('dialog', { name: '이 버전을 공개할까요?' })).toBeVisible();
+    await click('이 버전 발행');
+    const publicLink = page.getByRole('link', { name: '공개 페이지 열기', exact: true }); await expect(publicLink).toBeVisible();
+    const publicUrl = (await publicLink.getAttribute('href'))!;
+    for (const [label, width] of [['PC · 공통값', 1280], ['태블릿', 768], ['모바일', 360]] as const) {
+      await click(label); await click('화면 맞춤');
+      const canvas = page.frameLocator('iframe').locator('[data-v3-surface]');
+      await expect(canvas.locator('svg')).toHaveCount(3);
+      const expected = await sample(canvas);
+      expect(expected[0].size).toEqual(width === 360 ? [20, 20, 20, 20] : [48, 32, 48, 32]);
+      expect(expected[1]).toMatchObject({ role: null, label: null, hidden: 'true', size: [24, 24, 24, 24] });
+      expect(expected[2]).toMatchObject({ role: 'img', label: '안내 <문자> target', hidden: null });
+      const captures = [];
+      for (const [name, target, url] of [['preview', preview, previewUrl], ['public', viewer, publicUrl]] as const) {
+        await target.setViewportSize({ width, height: 1000 }); expect((await target.goto(url))?.ok()).toBe(true);
+        const surface = target.locator('[data-g7pb-v3-public]'); await expect(surface.locator('svg')).toHaveCount(3);
+        await expect(surface.locator('[data-g7pb-runtime-icon]')).toHaveCount(0);
+        await expect(surface.locator('script,iframe')).toHaveCount(0);
+        const actual = await sample(surface);
+        expect(actual.map(({ size: _size, ...node }) => node)).toEqual(expected.map(({ size: _size, ...node }) => node));
+        for (const [index, node] of actual.entries()) for (let axis = 0; axis < 4; axis++) {
+          expect(Math.abs(node.size[axis] - expected[index].size[axis]), `${shell}/${width}/${index}/${axis}`).toBeLessThanOrEqual(1);
+        }
+        captures.push({ name, actual });
+        await info.attach(`icons-${shell}-${name}-${width}`, { body: await target.screenshot(), contentType: 'image/png' });
+      }
+      await info.attach(`icons-${shell}-measurements-${width}`, { body: JSON.stringify({ expected, captures }), contentType: 'application/json' });
+    }
+    const current = (await (await api.get(`${documents}/${ownedId}`)).json()).data;
+    expect(current.document).toEqual(before.document); expect(current.active_artifact_sha256).toMatch(/^[a-f0-9]{64}$/);
+    await info.attach('published-common-icons-source', { body: JSON.stringify(current), contentType: 'application/json' });
+  } finally {
+    await viewer.close(); await preview.close();
+    try {
+      if (ownedId) {
+        const current = (await (await api.get(`${documents}/${ownedId}`)).json()).data;
+        expect(current.document.slug).toBe(slug);
+        const result = await api.post(`${documents}/${ownedId}/archive`, { data: { expected_lock_version: current.lock_version } });
+        expect(result.ok(), await result.text()).toBe(true);
+        await info.attach('owned-document-archived', { body: await result.body(), contentType: 'application/json' });
+      }
+    } finally { await api.dispose(); }
+  }
+});
+
 test('creates an empty page in the installed generic editor and preserves nested edits through authenticated save and reload', async ({ page, context }, testInfo) => {
   const token = await authenticateEditorInteractionAdmin(context), api = await editorInteractionApi(token);
   const slug = `g7pb-product-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;

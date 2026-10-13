@@ -37,3 +37,13 @@ UI 재제출 `a3fe48d47588c49e5e6143271b612ba6ed357f64`와 fixture 제출의 결
 앞선 세 폭의 실제 캡처에서 미리보기의 투명 배경이 편집기 베이지색을 비추고, 캔버스와 독립 공개 화면은 흰색인 차이를 확인했다. 치수·문구·글자 크기 통과만으로 외형 일치를 선언하지 않는다.
 
 같은 소유 task의 미리보기 래퍼에 기존 작업면의 `--g7pb-surface-strong` 토큰을 적용한다. 작성한 문서·요소 배경·저장값은 수정하지 않는다. 미리보기 전환 시 원본 참조를 보존하는 단위 회귀는 수정 전 기대 배경 누락으로 실패했다. E2E는 투명 iframe 밖 실제 작업면까지 배경을 측정하고 Header/Footer 각각의 글자색·배경색을 편집/미리보기/공개 간 비교한다. 기존 1px 기준은 유지하며 새 색상 검사는 실행 결과와 캡처 확인 후 판정한다.
+
+## 최종 통합 결과
+
+UI 제출 `5682e47c1fba316ef547fa6e78906158f019df9c`와 fixture 제출 `39e4487fe424a8eceda3796598c99820523ad08f`는 `59116bfa685959d5eb56bbedc629c8a6053eed12`로 공식 batch 통합됐다. Local은 깨끗하며 원래 `jwsoft-business01` 0.3.1을 복구했다. 두 테마 관련 파일의 집계 해시는 앞선 `92b96b54a6e26e4c9dc2fe8e0525367d9f0bdb557094af3313f7cec2f76994f6`과 같다.
+
+새 Site Part 시험은 6개가 통과했고 실패·건너뛰기·flaky는 0이다. 증거는 `output/playwright/gates/integration-ip7-20261012/25ef5ca9f3cfdfc585cfd6b4723bdaacd1edac0fe3db479596b2f5f8c85aafc9/7ddb348731784158bf64069b7885800a/`에 있으며 여섯 소유 fixture 세션 모두 복구했다. 1280/768/360px의 미리보기·공개 화면 여섯 장을 육안 확인했다. Header/Footer 배경은 모두 흰색, 글자색은 검정이며 각 요소의 비교 치수 차이는 0px다. 미리보기 본문의 150px 빈 자리와 공개 viewer의 최소 화면 높이는 의도된 차이로, 본문 전체 위치 일치의 근거로 사용하지 않는다.
+
+같은 실행에서 기존 공통 셸 18개, Site Kit 2개, 설치형 v3 4개, 독립 v3 87개가 통과했다. 전체 gate는 PHP·정적 검사·프런트·빌드·예산·G7 검사와 PHP Integration 88개·816 assertions를 통과했다. 기존 PHPUnit notice 1건을 보존한다. 기존 제품 브라우저 49개 중 페이지 수명주기 1건은 첫 실행 실패 후 재시도에서 통과했고, 후속 Site Shell 45개는 통과했다. 하네스가 통합을 허용했지만 이 전체 실행을 flaky 0으로 보고하지 않는다. 최종 제품 수용 전 해당 수명주기는 재시도 없는 검증이 필요하다.
+
+전체 gate fixture journal `output/playwright/gates/integration-ip7-20261012/0c71dd898bdc75c2d87478c061ce1470c950e2db670694d0a0e4390ab3895d48/2d4772c81d884296ad969b863360fadd/site-part-state.json`은 `closed=true`이며 17개 세션 전부 `restored=true`다. 이는 IP7 공통영역 UI의 부분 수용 증거이며, 전체 카탈로그·기존 원본 이행·최종 제품 UX 감사 완료가 아니다.

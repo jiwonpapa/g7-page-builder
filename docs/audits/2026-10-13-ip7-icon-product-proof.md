@@ -12,7 +12,18 @@ task `ip7-icon-product-proof-20261013`은 깨끗한 통합 `59116bfa685959d5eb56
 
 ## 현재 판정
 
-하네스 회귀 55개와 설치형 브라우저 21개 수집, 타입·계획 검사를 통과해 `d46c547c92754dca5cd0a9135a1b9a7939850b7f`로 공식 제출했다. 실제 브라우저 통합은 아래 두 실패를 확인했으며, 아직 아이콘 수용 완료로 판정하지 않는다.
+최종 소스 `11789652d494656f4a77c2816b192a70d1a6152e`와 제품 검사 `b3f534f97ab5bb1cca2c3a3f96b128acabb36a4e`를 `8025bbcec8c3e3d29ad3b4995b264e6326a5a105`로 통합했다. 설치형 21개·독립 264개가 실패·skipped·flaky 없이 통과했다. 공통 아이콘의 구현과 해당 경로 수용 결과이며 IP7 전체·IP8~IP10·전체 UX 최종 승인이나 배포 완료는 아니다. 아래 실패 기록은 보완 전 이력이다.
+
+## 최종 실행 결과
+
+Local `integration-ip7-20261012`의 runtime lease에서 Node 24·PHP 8.5·G7 7.0.11·검증용 `sirsoft-basic` 1.1.4를 사용했다. 공식 `make task-integrate-batch TASKS=ip7-common-icon-element-20261013,ip7-icon-product-proof-20261013 INTEGRATION_TASK=integration-ip7-20261012 FULL=1`을 실행했다. 공유 문서 계약과 공개 runtime 변경에 따른 FULL 검증이며 G7 7.1 호환성 증거로 확대하지 않는다.
+
+- 설치형 21개 결과: `output/playwright/gates/integration-ip7-20261012/e91c139c9518d3b23dadc32ff6a9c6ef35402d5f8829d20d2eedcd425a3740da/a05777c6c44443a3b5ee0c16f1487d05/results.json`. UI 저장·재열기·미리보기·명시 발행과 27개 폭별 측정에서 SVG 크기 최대 차이 0 CSS px, 공개/미리보기 PNG 54개, 생성한 문서 21개 모두 보관 처리 확인.
+- 독립 264개 결과: `output/playwright/gates/integration-ip7-20261012/f5e7281bc5039b013ee2ea3e9b112586390da027150ccfba925219f823d9e10e/978301e1b5d04350812620e9eabe1299/results.json`. 빈 카탈로그·같은 빌드의 미등록 구성·23종 공통 아이콘·공통 이력·세 폭의 PHP 비교를 포함한다.
+- 기존 구조/테마 6개, 공개 runtime 4개, 제품 흐름 49개, 셸/모바일 메뉴 45개가 통과했다. FULL 하네스 483개 및 프런트·PHP·커버리지·빌드 gate도 통과했다. 전체 제품 흐름 49개는 이번 실행에서 재시도 없이 통과했다.
+- FULL Site Part 보호 journal `output/playwright/gates/integration-ip7-20261012/d426803819a9c8bf3f2d43a768943b6059ccf4d7d44f1daabf3707d6ab93a94f/d400d9b8cc1f43f7adc35015665433b2/site-part-state.json`의 16개 세션이 모두 복원되고 `closed=true`다. 종료 trap 후 원래 `jwsoft-business01` 0.3.1 활성·`sirsoft-basic` 비활성을 확인했다.
+
+육안 검토는 이번 설치형 결과의 `icons-none-public-1280`, `icons-template-public-360`, `icons-builder-public-768` PNG에서 별·체크·표적의 표시와 크기·가로 넘침 부재를 확인한 범위다. 23종의 모든 화면을 육안 승인하거나 전체 작업면 UX 수용을 완료한 것으로 확대하지 않는다. 기존 사용자 문서 자동 전환·운영 서버 변경·배포는 수행하지 않았다.
 
 ## 통합 실패와 보완
 

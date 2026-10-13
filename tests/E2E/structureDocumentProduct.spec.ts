@@ -376,7 +376,7 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
     await visitors.close(); await preview.close();
     try {
       if (submissionId) {
-        const archived = await api.put('/api/modules/jiwonpapa-page_builder/admin/form-submissions/' + submissionId, { data: { status: 'archived' } });
+        const archived = await api.patch('/api/modules/jiwonpapa-page_builder/admin/form-submissions/' + submissionId, { data: { status: 'archived' } });
         expect(archived.ok(), await archived.text()).toBe(true);
       }
       if (ownedId) {

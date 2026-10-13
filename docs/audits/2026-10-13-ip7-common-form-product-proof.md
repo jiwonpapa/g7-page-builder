@@ -17,3 +17,5 @@
 ## 검증 경계
 
 Local의 `integration-ip7-20261012` runtime lease에서 계약·제품·시험 task를 함께 통합한 뒤 실행 결과와 실패/수정 이력, 실제 스크린샷 판독을 별도 통합 증거에 기록한다. 공통영역 문의 capability 부재, IP7 전체 카탈로그/이행, IP8~IP10은 이 시험의 완료 범위가 아니다. G7 코어 변경·운영 배포·기존 문서 자동 전환은 없다.
+
+첫 통합은 새 PHP 시험의 구형 저장 메서드 호출 오류로 브라우저 전에 원복됐다. 후속 정적 재검토에서 시험 소유 문의 archive의 API 메서드를 실제 등록된 PATCH로 바로잡았다. 원 시험 제출 `3ef01f3ed2d7010ed5e99083d573fb8dceffabe3`는 보존 replacement `ip7-common-form-proof-api-20261013`으로 대체하며 제품 소스와 합격 기준은 유지한다.

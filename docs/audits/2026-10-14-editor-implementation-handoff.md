@@ -38,6 +38,7 @@
 | DATA01 | 새 DataInspector JSX 닫기 괄호 오류로 기존 시험 수집 실패 | 괄호 한 곳 보완 | 해결 1/1, 해당 기존 unit 통과 |
 | DATA02 | DataBindings ID 인덱스의 by-ref 타입 계약과 PHPStan 추론 불일치 | 정확한 param-out 선언 한 번 보완 | **동일 인덱스 문제가 paramOut.type으로 재발: 실패 확정, 추가 수정/검사 금지** |
 | INT01 | 이전 batch의 270건 이후 후속 실행을 사용자 지시에 따라 중단, Git 후보 원복 영향 | 공식 transaction/EXIT 복구 | 의도된 중단, 이후 폼 오류·미실행을 제품 성공/실패로 확대하지 않음 |
+| LIMIT01 | 마지막 integration-verify에 FULL=1을 지정해 오래된 신뢰 기준부터 315개 변경/247개 gate로 비런타임 확인 범위를 확대함 | 범위 확대를 확인하고 coordinator PID 56791에 SIGINT | 확인 중단(exit 130), 동일 확인 재시도 금지; 사용자 범위 지시 위반을 기록 |
 
 DATA02 후보: **e0c34b2e81317284a2d455c350a1635879e73fad**, branch `codex/editor-dynamic-elements-20261013`, worktree `/Users/neojins/.codex/worktrees/editor-implementation-handoff/g7-page-builder`. 실패 상태 `failed-implementation`으로 보존했으며 **main에 통합하지 않았습니다**. 첫 실패 `DataBindings.php:63 parameterByRef.type`, 보완 뒤 `:65 paramOut.type`. 관련 v3 unit/TS/구조 검사는 성공했지만 task 제출은 PHPStan에서 실패했습니다. 테스트/타입 기준은 완화하지 않았습니다.
 
@@ -72,4 +73,6 @@ DATA02 후보: **e0c34b2e81317284a2d455c350a1635879e73fad**, branch `codex/edito
 
 선택된 기존 non-runtime unit/PHP/type/structure 및 관련 하네스 검사는 공식 task 제출/통합에서 확인하거나 같은 입력 성공을 재사용했습니다. 브라우저·runtime·full-product gate는 `deferred`, phase별 보고서는 `.git/g7pb-coordination-v1/python-checks/implementation-handoffs`에 있습니다. 실패 후보는 추가 빌드에 포함하지 않았습니다.
 
-공식 통합 확인은 `IMPLEMENTATION=1` 인계 모드로 종료하고 `NO_RELEASE=1`로 lease를 종료합니다. 이는 릴리스 검증 SHA 승격·운영 배포·최종 UX 합격을 의미하지 않습니다. UI/UX가 실제 의도대로 완성됐다는 결론은 이번에 내리지 않습니다.
+최종 `integration-verify FULL=1 IMPLEMENTATION=1`은 오래된 신뢰 기준 `2553987c1a08b544dff38a1f4cfe77599ea69254`부터 315개 변경/247개 gate를 선택했습니다. 일부 기존 하네스 확인이 실행된 뒤 이 범위 확대를 확인하고 정상 중단했습니다(exit 130). 사용자 검증 확대 금지 지시에 어긋난 실행 판단이며, 이를 성공이나 필요한 추가 감사로 정당화하지 않습니다. 같은 확인을 재시도하지 않습니다. 실제 제품 브라우저/runtime/full-product는 실행하지 않았고, 출력의 browser fixture 표시는 임시 저장소·mock을 사용하는 기존 하네스 시험입니다. 중단 후 main `aa54cf6b260b073a271163acd18918bcf9b90f56`과 clean 상태 및 자식 coordinator 종료를 확인했습니다.
+
+각 task의 공식 제출·통합과 최종 문서 정합성 기록은 보존합니다. 전체 최종 `VERIFIED` 기록은 만들지 않았습니다. `integration-finish NO_RELEASE=1`로 lease만 종료하며 이는 릴리스 검증 SHA 승격·운영 배포·최종 UX 합격을 의미하지 않습니다. UI/UX가 실제 의도대로 완성됐다는 결론은 이번에 내리지 않습니다.

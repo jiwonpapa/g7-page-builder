@@ -4,10 +4,15 @@ import type { SitePartSetResource } from '../../api/resources';
 import { reopenDraft, type DraftPort } from '../../editor-application/v3/session';
 import type { MediaPort } from '../../editor-application/v3/media';
 import type { CompositionLibraryPort } from '../../editor-application/v3/compositionLibrary';
+import type { PartRecoveryRevision } from '../../editor-application/v3/sitePartRecovery';
+import type { ElementSitePart } from '../../documents/v3/sitePart';
 
 export interface SitePartHostPorts {
   media?: MediaPort;
   library?: CompositionLibraryPort;
+  revisions?: (source: ElementPartResource) => Promise<PartRecoveryRevision[]>;
+  restore?: (source: ElementPartResource, document: ElementSitePart, expectedLock: number) => Promise<ElementPartResource>;
+  confirmRestore?: (kind: ElementSitePart['kind'], revision: number) => boolean;
   list: (locale: string) => Promise<SitePartSetResource[]>;
   create: (title: string, locale: string) => Promise<SitePartSetResource>;
   load: (set: SitePartSetResource) => Promise<ElementPartPair | { legacy: true }>;

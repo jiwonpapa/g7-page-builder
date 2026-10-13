@@ -1,5 +1,5 @@
 import { PageDocumentApiClient } from './pageBuilderApi';
-import { withSitePartContent } from '../documents/v3/sitePart';
+import { withSitePartContent, validateElementSitePart, type ElementSitePart } from '../documents/v3/sitePart';
 import { elementPair, parseElementPart, parsePartSet, partRecord,
   type ElementPartPair, type ElementPartResource, type PartKind } from './elementSitePartResource';
 import type { SitePartSetResource } from './resources';
@@ -7,6 +7,21 @@ import type { DocumentV3 } from '../documents/v3/types';
 
 /** Same authenticated endpoints, separate runtime validation; no legacy catalog dependency. */
 export class ElementSitePartApi extends PageDocumentApiClient {
+  async revisions(source: ElementPartResource): Promise<{ revision: number; createdAt: string; document: ElementSitePart | null }[]> {
+    const query = new URLSearchParams({ locale: source.document.content.locale, set_id: source.set_id, limit: '20' });
+    const data = partRecord(await this.request<unknown>('/site-parts/' + source.document.kind + '/revisions?' + query));
+    if (!Array.isArray(data.items)) throw new Error('공통영역 리비전 목록이 올바르지 않습니다.');
+    const items = data.items.map(raw => {
+      const item = partRecord(raw), wire = partRecord(item.document);
+      if (typeof item.revision !== 'number' || !Number.isSafeInteger(item.revision) || item.revision < 1 || typeof item.created_at !== 'string') throw new Error('리비전 정보가 올바르지 않습니다.');
+      const document = wire.schema_version === 'g7-page-builder/site-part/v1' ? null : validateElementSitePart(wire);
+      if (document && (document.kind !== source.document.kind || document.content.document_id !== source.document.content.document_id
+        || document.content.locale !== source.document.content.locale || document.content.slug !== source.document.content.slug)) throw new Error('리비전 대상이 일치하지 않습니다.');
+      return { revision: item.revision, createdAt: item.created_at, document };
+    });
+    if (new Set(items.map(item => item.revision)).size !== items.length) throw new Error('리비전 번호가 중복됩니다.');
+    return items;
+  }
   async list(locale: string): Promise<SitePartSetResource[]> {
     const data = partRecord(await this.request<unknown>('/site-part-sets?' + new URLSearchParams({ locale })));
     if (!Array.isArray(data.items)) throw new Error('공통영역 목록이 올바르지 않습니다.');

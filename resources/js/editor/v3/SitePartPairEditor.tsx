@@ -5,6 +5,7 @@ import { StructureEditor } from './StructureEditor';
 import { BehaviorPreview } from './BehaviorPreview';
 import { viewportAt } from '../../documents/v3/validate';
 import type { DocumentV3 } from '../../documents/v3/types';
+import { SitePartRecovery } from './SitePartRecovery';
 
 const kinds = ['header', 'footer'] as const;
 const labels = { header: 'Header', footer: 'Footer' };
@@ -31,6 +32,9 @@ export function SitePartPairEditor({ initial, ports, compositions, onUnsafe, onS
   const [preview, setPreview] = useState(false);
   const [width, setWidth] = useState(1280);
   const [documents, setDocuments] = useState({ header: initial.header.document.content, footer: initial.footer.document.content });
+  const [seeds, setSeeds] = useState({ header: initial.header.document.content, footer: initial.footer.document.content });
+  const [epochs, setEpochs] = useState({ header: 0, footer: 0 });
+  const recoveryContext = useRef({ active, preview, epochs }); recoveryContext.current = { active, preview, epochs };
   const live = useRef({ pair, dirty, pending, busy, alive: true });
   const disabledRef = useRef(disabled); disabledRef.current = disabled;
   const callbacks = useRef({ onUnsafe, onSet }); callbacks.current = { onUnsafe, onSet };
@@ -91,8 +95,22 @@ export function SitePartPairEditor({ initial, ports, compositions, onUnsafe, onS
     <p className="g7pb-structure-host__catalog">PB 소유 공통영역 · {pair.set.is_active ? '사이트에서 사용 중' : '사이트에 미적용'} ·
       Header {dirty.header ? '변경 있음' : pair.header.status === 'published' ? '발행됨' : '초안'} · Footer {dirty.footer ? '변경 있음' : pair.footer.status === 'published' ? '발행됨' : '초안'}</p>
     {error && <p className="g7pb-structure-host__error" role="alert">{error}</p>}
+    <SitePartRecovery key={active} ports={ports} source={pair[active]} blocked={disabled || busy || preview || kinds.some(kind => pending[kind])}
+      read={() => {
+        const part = live.current.pair[active], context = recoveryContext.current;
+        return { setId: part.set_id, kind: active, documentId: part.document.content.document_id,
+          slug: part.document.content.slug, locale: part.document.content.locale, session: context.epochs[active],
+          serverRevision: part.lock_version, activeRevision: part.active_revision,
+          readonly: disabledRef.current || context.preview || context.active !== active, dirty: live.current.dirty[active] };
+      }} busy={value => { live.current.busy = value; setBusy(value); report(); }} restored={part => {
+        updatePair(withPart(live.current.pair, active, part));
+        setSeeds(current => ({ ...current, [active]: part.document.content }));
+        setDocuments(current => ({ ...current, [active]: part.document.content }));
+        setEpochs(current => ({ ...current, [active]: current[active] + 1 }));
+        live.current.dirty = { ...live.current.dirty, [active]: false }; setDirty(live.current.dirty); report();
+      }} />
     {kinds.map(kind => <div key={kind} hidden={preview || active !== kind} className="g7pb-site-part-structure__editor" data-part={kind}>
-      <StructureEditor document={initial[kind].document.content} sessionId={initial[kind].document.content.document_id}
+      <StructureEditor document={seeds[kind]} sessionId={initial[kind].document.content.document_id + ':' + epochs[kind]}
         serverRevision={pair[kind].lock_version} readonly={disabled || busy || preview || active !== kind}
         drafts={drafts[kind]} media={ports.media} library={ports.library} compositions={compositions} nextId={ports.nextId}
         onChange={document => changed(kind, document)} onSaved={(_revision, status) => saved(kind, status)} />

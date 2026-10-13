@@ -56,6 +56,8 @@
     ],
     "media.icon": ["icon", "label", "decorative"],
     "media.embed": ["title", "source"],
+    "form.control": ["kind", "label", "placeholder"],
+    "form.label": ["label"],
     "media.image": [
       "asset_id",
       "alt"
@@ -76,6 +78,18 @@
     "layout_types": ["layout.section", "layout.container"],
     "layout_tags": ["section", "article", "aside", "div", "nav", "header", "footer", "li", "dd", "figure", "td", "th"],
     "trigger_types": ["action.button"]
+  },
+  "bindings": {
+    "host_types": ["layout.section", "layout.container"],
+    "host_tags": ["section", "article", "aside", "div", "nav", "header", "footer", "li", "dd", "figure", "td", "th"],
+    "fields": {
+      "name": {"kind": "text", "required": true, "max_length": 120, "autocomplete": "name"},
+      "email": {"kind": "email", "required": true, "max_length": 320, "autocomplete": "email"},
+      "phone": {"kind": "tel", "required": false, "max_length": 40, "autocomplete": "tel"},
+      "subject": {"kind": "text", "required": false, "max_length": 200, "autocomplete": "off"},
+      "message": {"kind": "textarea", "required": true, "max_length": 5000, "autocomplete": "off"},
+      "privacy": {"kind": "checkbox", "required": true}
+    }
   },
   "semantics": {
     "children": {

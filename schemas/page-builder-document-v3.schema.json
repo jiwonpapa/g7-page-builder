@@ -1466,6 +1466,27 @@
         }
       ]
     },
+    "service_binding": {
+      "type": "object",
+      "properties": {
+        "kind": { "const": "inquiry" },
+        "form_kind": { "enum": ["inquiry", "quote", "reservation", "application", "newsletter"] },
+        "success_message": { "type": "string", "minLength": 1, "maxLength": 1000, "pattern": "[^\\p{Z}\\p{C}]" },
+        "submit_id": { "$ref": "#/$defs/uuid" }, "status_id": { "$ref": "#/$defs/uuid" },
+        "fields": {
+          "type": "array", "minItems": 4, "maxItems": 6,
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "enum": ["name", "email", "phone", "subject", "message", "privacy"] },
+              "input_id": { "$ref": "#/$defs/uuid" }, "label_id": { "$ref": "#/$defs/uuid" }
+            },
+            "required": ["name", "input_id", "label_id"], "additionalProperties": false
+          }
+        }
+      },
+      "required": ["kind", "form_kind", "success_message", "fields", "submit_id", "status_id"], "additionalProperties": false
+    },
     "embed_source": {
       "anyOf": [
         { "type": "object", "properties": { "provider": { "const": "none" } }, "required": ["provider"], "additionalProperties": false },
@@ -1496,6 +1517,8 @@
             "media.image",
             "media.icon",
             "media.embed",
+            "form.control",
+            "form.label",
             "action.link",
             "action.button"
           ]
@@ -1511,8 +1534,16 @@
           "type": "boolean"
         },
         "behavior": { "$ref": "#/$defs/behavior" },
+        "binding": { "$ref": "#/$defs/service_binding" },
         "props": {
           "anyOf": [
+            {
+              "type": "object", "properties": {
+                "kind": { "enum": ["text", "email", "tel", "textarea", "checkbox"] },
+                "label": { "type": "string", "minLength": 1, "maxLength": 1000, "pattern": "[^\\p{Z}\\p{C}]" },
+                "placeholder": { "type": "string", "maxLength": 500 }
+              }, "required": ["kind", "label", "placeholder"], "additionalProperties": false
+            },
             {
               "type": "object", "properties": {
                 "title": { "type": "string", "minLength": 1, "maxLength": 300, "pattern": "[^\\p{Z}\\p{C}]" },

@@ -10,7 +10,8 @@ export type DesignCommand =
   | { kind: 'style'; id: string; set: Style; reset?: (keyof Style)[]; viewport?: Viewport }
   | { kind: 'styles'; updates: { id: string; set: Style; reset?: (keyof Style)[] }[]; viewport?: Viewport }
   | { kind: 'content'; id: string; props: unknown }
-  | { kind: 'behavior'; id: string; value: unknown };
+  | { kind: 'behavior'; id: string; value: unknown }
+  | { kind: 'binding'; id: string; value: unknown };
 export type AtomicCommand = TreeCommand | DesignCommand;
 export type DocumentCommand = AtomicCommand | { kind: 'transaction'; commands: AtomicCommand[] };
 
@@ -26,9 +27,9 @@ export function executeDocumentCommand(source: DocumentV3, command: DocumentComm
     const changed = JSON.stringify(source) !== JSON.stringify(result.document);
     return { ...result, changed, document: changed ? result.document : source };
   }
-  if (command.kind !== 'style' && command.kind !== 'styles' && command.kind !== 'content' && command.kind !== 'behavior') return executeTreeCommand(source, command, nextId);
+  if (command.kind !== 'style' && command.kind !== 'styles' && command.kind !== 'content' && command.kind !== 'behavior' && command.kind !== 'binding') return executeTreeCommand(source, command, nextId);
   validateDocumentV3(source);
-  const viewport = command.kind === 'content' || command.kind === 'behavior' ? 'base' : command.viewport ?? 'base';
+  const viewport = command.kind === 'content' || command.kind === 'behavior' || command.kind === 'binding' ? 'base' : command.viewport ?? 'base';
   if (!['base', 'tablet', 'mobile'].includes(viewport)) reject('viewport', '$');
   if (jsonBytes(command, designPolicyV3.limits.json_depth) > designPolicyV3.limits.utf8_bytes) reject('byte_limit', '$');
   const document = cloneDocument(source), tree = indexTree(document);
@@ -42,10 +43,10 @@ export function executeDocumentCommand(source: DocumentV3, command: DocumentComm
     if (command.kind === 'content') {
       // Every primitive uses the same schema/semantic validator; no per-composition allowlist.
       Object.assign(item.node, { props: JSON.parse(JSON.stringify(command.props)) });
-    } else if (command.kind === 'behavior') {
+    } else if (command.kind === 'behavior' || command.kind === 'binding') {
       assertEditable(item, true);
-      if (command.value === null) delete item.node.behavior;
-      else Object.assign(item.node, { behavior: JSON.parse(JSON.stringify(command.value)) });
+      if (command.value === null) delete item.node[command.kind];
+      else Object.assign(item.node, { [command.kind]: JSON.parse(JSON.stringify(command.value)) });
     } else if ('set' in update) {
       const layer = viewport === 'base' ? item.node.style : item.node.responsive[viewport] ?? {};
       const previousLayer = JSON.stringify(layer);

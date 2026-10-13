@@ -818,7 +818,9 @@
       "scope": [
         "resources/js/blocks",
         "resources/js/editor",
+        "resources/js/documents/v3",
         "resources/block-packs",
+        "src/Domain/Documents/V3",
         "src/Application/Compilation",
         "tests/E2E"
       ],

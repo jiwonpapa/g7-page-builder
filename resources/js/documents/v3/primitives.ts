@@ -4,6 +4,7 @@ import { reject } from './schema';
 export const primitiveLabels: Record<Node['type'], string> = {
   'layout.section': '섹션', 'layout.container': '컨테이너', 'content.heading': '제목',
   'content.text': '본문', 'media.image': '이미지', 'media.icon': '아이콘', 'media.embed': '영상·지도', 'action.link': '링크', 'action.button': '동작 버튼',
+  'form.label': '입력 라벨', 'form.control': '입력 요소',
 };
 /** UI insertion defaults, not schema defaults. The resulting command validates every value. */
 export function createPrimitive(type: Node['type'], id: string, document: DocumentV3): Node {
@@ -15,6 +16,8 @@ export function createPrimitive(type: Node['type'], id: string, document: Docume
     case 'content.text': return { ...base, type, props: { paragraphs: [[{ text: '새 본문' }]] } };
     case 'action.link': return { ...base, type, props: { label: '자세히 보기', link: { url: '#content', new_tab: false } } };
     case 'action.button': return { ...base, type, props: { label: '내용 보기' } };
+    case 'form.label': return { ...base, type, props: { label: '입력 항목' } };
+    case 'form.control': return { ...base, type, props: { kind: 'text', label: '입력 항목', placeholder: '' } };
     case 'media.icon': return { ...base, type, props: { icon: 'check', label: '', decorative: true } };
     case 'media.embed': return { ...base, type, props: { title: '영상·지도', source: { provider: 'none' } } };
     case 'media.image': {

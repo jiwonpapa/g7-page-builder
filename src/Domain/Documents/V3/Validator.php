@@ -38,6 +38,7 @@ final readonly class Validator
         $ids = [];
         $this->nodes($value->blocks, null, 1, $ids, $assets);
         Behaviors::validate($value, $this->policy['behaviors']);
+        Bindings::validate($value, $this->policy['bindings']);
 
         return $value;
     }
@@ -107,6 +108,12 @@ final readonly class Validator
     public function semanticDisplays(): array
     {
         return $this->policy['semantics']['display'];
+    }
+
+    /** @return array<string, array<string, mixed>> */
+    public function formFields(): array
+    {
+        return $this->policy['bindings']['fields'];
     }
 
     /** @param array<string, bool> $assets */

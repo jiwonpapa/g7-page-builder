@@ -67,6 +67,34 @@ describe('responsive content container gutters', () => {
     expect(editorCss).toContain('.g7pb-preview-block > * { min-width: 0; }');
   });
 
+  it('keeps the v3 document viewport independent of legacy PB shell gutters without changing host chrome', async () => {
+    const browser = await chromium.launch({ headless: true });
+    try {
+      const page = await browser.newPage();
+      for (const width of [360, 639, 640, 768, 1023, 1024, 1280, 1440, 2560]) {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.setContent(`<!doctype html><html><head><style>${themeCss}\n${publicCss}</style></head><body style="margin:0">
+          <header style="width:calc(100% - 64px);margin-inline:auto">Host header</header>
+          <main style="width:calc(100% - 64px);margin-inline:auto">
+            <div class="g7pb-template-body"><div class="g7pb-page g7pb-template-page">
+              <div data-g7pb-v3-public style="box-sizing:border-box;margin:0;padding:24px">
+                <section data-v3-node style="box-sizing:border-box;display:grid;padding:16px">Authored surface</section>
+              </div>
+            </div></div>
+          </main><footer style="width:calc(100% - 64px);margin-inline:auto">Host footer</footer></body></html>`);
+        const geometry = await page.evaluate(() => {
+          const box = (selector: string) => { const rect = document.querySelector(selector)!.getBoundingClientRect(); return { x: rect.x, width: rect.width }; };
+          return { surface: box('[data-g7pb-v3-public]'), node: box('[data-v3-node]'), header: box('header'), footer: box('footer'),
+            overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+        });
+        expect(geometry.surface, 'v3 viewport ' + width).toEqual({ x: 0, width });
+        expect(geometry.node, 'canonical surface padding ' + width).toEqual({ x: 24, width: width - 48 });
+        expect(geometry.header).toEqual({ x: 32, width: width - 64 });
+        expect(geometry.footer).toEqual(geometry.header); expect(geometry.overflow).toBe(0);
+      }
+    } finally { await browser.close(); }
+  }, 30000);
+
   it('keeps hero and article content inside capped hosts from mobile through ultrawide', async () => {
     const browser = await chromium.launch({ headless: true });
     try {

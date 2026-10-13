@@ -18,6 +18,7 @@ import { sitePartEditorUrl } from '../sitePartEditorRouting';
 import { createApiMediaPort } from './apiMediaPort';
 import { ElementCompositionApi } from '../../api/elementCompositionApi';
 import { createApiCompositionPort } from './apiCompositionPort';
+import { ElementRevisionApi } from '../../api/elementRevisionApi';
 
 export function mountStructureDocument(element: HTMLElement): () => void {
   return mount(element, false);
@@ -37,6 +38,8 @@ function mount(element: HTMLElement, siteParts: boolean): () => void {
   const library = createApiCompositionPort(new ElementCompositionApi());
   const ports: StructureHostPorts = {
     media, library,
+    recovery: new ElementRevisionApi(),
+    confirmRestore: revision => window.confirm('리비전 #' + revision + '을 새 초안으로 복원할까요? 현재 공개 페이지는 유지되며 다시 발행해야 반영됩니다.'),
     async load(id) {
       const resource = await api.getDocument(id);
       if (resource.document.document_id !== id) throw new Error('불러온 문서가 요청한 문서와 일치하지 않습니다.');

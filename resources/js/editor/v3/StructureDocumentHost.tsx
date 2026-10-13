@@ -5,6 +5,8 @@ import type { PublicationPort } from '../../editor-application/v3/publication';
 import { StructureEditor } from './StructureEditor';
 import type { MediaPort } from '../../editor-application/v3/media';
 import type { CompositionLibraryPort } from '../../editor-application/v3/compositionLibrary';
+import type { RecoveryPort } from '../../editor-application/v3/recovery';
+import { RevisionRecovery } from './RevisionRecovery';
 
 export interface StructureHostPorts {
   load: (documentId: string) => Promise<V3DocumentResource | { legacyUrl: string }>;
@@ -13,6 +15,8 @@ export interface StructureHostPorts {
   publication?: PublicationPort;
   media?: MediaPort;
   library?: CompositionLibraryPort;
+  recovery?: RecoveryPort<V3DocumentResource>;
+  confirmRestore?: (revision: number) => boolean;
   navigate: (url: string) => void;
   created: (documentId: string) => void;
   confirmLeave: () => boolean;
@@ -31,6 +35,8 @@ export function StructureDocumentHost({ documentId, locale = 'ko', ports, compos
   const [shell, setShell] = useState<'template' | 'builder' | 'none'>('template');
   const [dirty, setDirty] = useState(false);
   const dirtyRef = useRef(false);
+  const latestLock = useRef(0), editRevision = useRef(0);
+  const [recovering, setRecovering] = useState(false);
   const request = useRef({ generation: 0, active: false, creating: false });
   const markDirty = (value: boolean) => { dirtyRef.current = value; setDirty(value); };
 
@@ -38,11 +44,12 @@ export function StructureDocumentHost({ documentId, locale = 'ko', ports, compos
     const generation = ++request.current.generation;
     request.current.active = true; request.current.creating = false;
     setResource(null); setError(''); setBusy(Boolean(documentId)); markDirty(false);
+    latestLock.current = 0; editRevision.current = 0; setRecovering(false);
     const current = () => request.current.active && request.current.generation === generation;
     if (documentId) void ports.load(documentId).then(value => {
       if (!current()) return;
       if ('legacyUrl' in value) ports.navigate(value.legacyUrl);
-      else setResource(value);
+      else { latestLock.current = value.lock_version; setResource(value); }
     }).catch((cause: unknown) => {
       if (current()) setError(cause instanceof Error ? cause.message : '문서를 불러오지 못했습니다.');
     }).finally(() => { if (current()) setBusy(false); });
@@ -69,7 +76,7 @@ export function StructureDocumentHost({ documentId, locale = 'ko', ports, compos
     request.current.creating = true; setBusy(true); setError('');
     try {
       const created = await ports.create({ title: title.trim(), slug, locale, shell_mode: shell });
-      if (current()) { setResource(created); ports.created(created.document.document_id); }
+      if (current()) { latestLock.current = created.lock_version; setResource(created); ports.created(created.document.document_id); }
     } catch (cause) {
       if (current()) setError(cause instanceof Error ? cause.message : '페이지를 만들지 못했습니다.');
     } finally { if (current()) { request.current.creating = false; setBusy(false); } }
@@ -88,12 +95,17 @@ export function StructureDocumentHost({ documentId, locale = 'ko', ports, compos
     {catalogMessage && <p className="g7pb-structure-host__catalog" role="status">{catalogMessage}</p>}
     {error && <p className="g7pb-structure-host__error" role="alert">{error}</p>}
     {resource ? <div className="g7pb-structure-host__workspace">
+      <RevisionRecovery key={resource.document.document_id} port={ports.recovery} confirm={ports.confirmRestore} busy={setRecovering}
+        read={() => ({ documentId: resource.document.document_id, sessionId: resource.document.document_id + ':' + request.current.generation,
+          editRevision: editRevision.current, serverRevision: latestLock.current, publishedHash: resource.active_artifact_sha256,
+          dirty: dirtyRef.current, readonly: !request.current.active || resource.status === 'archived' })}
+        restored={value => { latestLock.current = value.lock_version; editRevision.current = 0; markDirty(false); setResource(value); }} />
       <StructureEditor document={resource.document} sessionId={`${resource.document.document_id}:${resource.lock_version}`}
         serverRevision={resource.lock_version} drafts={ports.drafts} compositions={compositions} nextId={ports.nextId}
         media={ports.media} library={ports.library} publication={ports.publication} onPublished={page => setResource(current => current ? { ...current,
           active_artifact_sha256: page.hash, public_url: page.url, published_at: page.publishedAt } : current)}
-        readonly={resource.status === 'archived'} onChange={() => markDirty(true)}
-        onSaved={(_revision, status) => markDirty(status !== 'saved')} />
+        readonly={resource.status === 'archived' || recovering} onChange={() => { editRevision.current++; markDirty(true); }}
+        onSaved={(revision, status) => { latestLock.current = revision; markDirty(status !== 'saved'); }} />
     </div> : !documentId && <form className="g7pb-structure-host__create" onSubmit={event => void create(event)}>
       <h2>기본 요소로 시작</h2><p>빈 캔버스에 텍스트·이미지·컨테이너를 넣어 구성합니다.</p>
       <label>페이지 제목<input required value={title} autoFocus onChange={event => setTitle(event.target.value)} /></label>

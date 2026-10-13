@@ -112,7 +112,7 @@ export function ManagerDocumentList({ controller, message, onMetadata, onRevisio
                     </>
                   ) : (
                     <>
-                      <a className="g7pb-button g7pb-button--primary" href={editorUrl(resource.document.document_id)}
+                      <a className="g7pb-button g7pb-button--primary" href={editorUrl(resource.document.document_id, resource.document.schema_version)}
                         data-testid="page-builder-manager-edit-link">
                         <Pencil size={15} aria-hidden="true" />
                         <span>편집</span>

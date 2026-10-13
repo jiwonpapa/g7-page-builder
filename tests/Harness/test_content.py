@@ -2,8 +2,10 @@
 import contextlib
 import io
 import json
+import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -450,6 +452,35 @@ export const bootPageEffects = () => value;
     def shell_fingerprints(self, command):
         result = subprocess.run([*command, "--fingerprints"], cwd=self.root, check=True, capture_output=True, text=True)
         return json.loads(result.stdout)
+
+    def test_large_mobile_css_keeps_lint_and_browser_failures_blocking(self):
+        command = self.shell_fingerprint_fixture()
+        self.write("resources/js/public/mobileNavigation.css", "/*" + "x" * 7000 + "*/.navigation {display:block}")
+        self.write("bin/npx", f"#!{sys.executable}\n" + """
+import json, os, sys
+from pathlib import Path
+log = Path('called.json')
+calls = json.loads(log.read_text()) if log.exists() else []
+calls.append(sys.argv[1:])
+log.write_text(json.dumps(calls))
+sys.exit(int(os.environ.get('FAKE_LINT_EXIT' if sys.argv[1] == 'stylelint' else 'FAKE_BROWSER_EXIT', '0')))
+""")
+        (self.root / "bin/npx").chmod(0o755)
+        environment = {**os.environ, "PATH": str(self.root / "bin") + os.pathsep + os.environ["PATH"]}
+        for lint_exit, browser_exit, expected in ((0, 0, 0), (7, 0, 7), (0, 9, 9)):
+            with self.subTest(lint_exit=lint_exit, browser_exit=browser_exit):
+                self.write("called.json", [])
+                result = subprocess.run([*command, "--ids", "mobile", "--run"], cwd=self.root,
+                                        env={**environment, "FAKE_LINT_EXIT": str(lint_exit), "FAKE_BROWSER_EXIT": str(browser_exit)},
+                                        capture_output=True, text=True)
+                self.assertEqual(result.returncode, expected, result.stderr)
+                self.assertIn("reported; no size ceiling", result.stdout)
+                self.assertIn("non-blocking", result.stderr)
+                calls = json.loads((self.root / "called.json").read_text())
+                self.assertEqual(calls[0], ["stylelint", "resources/js/public/mobileNavigation.css"])
+                self.assertEqual(len(calls), 1 if lint_exit else 2)
+                if not lint_exit:
+                    self.assertEqual(calls[1], ["playwright", "test", "tests/E2E/mobileNavigationQuality.spec.ts", "--retries=0"])
 
     def test_shell_scope_digest_ignores_release_number_and_unrelated_editor_input(self):
         command = [*self.shell_fingerprint_fixture(), "--ids", "mobile"]

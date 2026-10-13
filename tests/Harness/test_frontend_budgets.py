@@ -102,14 +102,16 @@ class FrontendBudgetTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertIn(f"{path}={sample['bytes']}/512000 gzip bytes", result.stdout)
 
-    def test_full_command_rejects_split_family_total_over_original_limit(self):
+    def test_full_command_reports_split_family_growth_without_a_ceiling(self):
         self.full_fixture()
         self.split(2)
         for owner in OWNERS[:2]:
             self.write(owner, "/*" + "x" * 91_000 + "*/")
         result = self.run_checker()
-        self.assertNotEqual(result.returncode, 0, result.stdout)
-        self.assertIn("Editor CSS family budget exceeded", result.stderr)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Editor CSS family=", result.stdout)
+        self.assertIn("CSS size advisory: Editor CSS family=", result.stdout)
+        self.assertIn("non-blocking", result.stdout)
 
     def test_full_command_rejects_manager_selector_hidden_in_extracted_owner(self):
         self.full_fixture()
@@ -148,15 +150,24 @@ class FrontendBudgetTests(unittest.TestCase):
                 self.assertIn("ENOENT", result.stderr)
                 self.assertIn(path, result.stderr)
 
-    def test_other_css_bundle_limits_are_not_removed_with_public_css(self):
-        self.full_fixture()
-        self.write("dist/css/page-builder-manager.css", self.payload("manager-css", 1000))
-        result = self.run_checker()
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("dist/css/page-builder-manager.css=", result.stderr)
-        self.assertIn("/8000 gzip bytes", result.stderr)
+    def test_all_css_sources_and_bundles_report_growth_without_blocking(self):
+        source = "/*" + self.payload("css-observation", 4000) + "*/"
+        paths = [f"resources/css/page-builder-{name}.css" for name in
+                 ("core", "manager", "editor", "editor-wysiwyg", "site-part", "site-shell")]
+        paths += [f"dist/css/page-builder-{name}.css" for name in ("manager", "editor", "structure", "site-part")]
+        for path in paths:
+            with self.subTest(path=path):
+                self.full_fixture()
+                self.write(ENTRY, ".g7pb-editor {display:block;}")
+                suffix = "@media (max-width: 720px) {.g7pb-store-card {display:block;}}" if path == "resources/css/page-builder-manager.css" else ""
+                self.write(path, source + suffix)
+                result = self.run_checker()
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn(f"{path}=", result.stdout)
+                self.assertIn(f"CSS size advisory: {path}", result.stdout)
+                self.assertIn("reported; no size ceiling", result.stdout)
 
-    def test_basic_element_shared_source_has_its_own_bounded_budget(self):
+    def test_basic_element_shared_source_is_measured_without_a_ceiling(self):
         path = "resources/css/page-builder-basic-elements.css"
         self.write(ENTRY, '@import "./page-builder-basic-elements.css";')
         self.write(path, "/*" + "x" * 1996 + "*/")
@@ -164,9 +175,12 @@ class FrontendBudgetTests(unittest.TestCase):
         self.assertEqual(passed.returncode, 0, passed.stderr)
         self.assertIn(path, json.loads(passed.stdout)["inputs"])
         self.write(path, "/*" + "x" * 1997 + "*/")
-        rejected = self.run_checker("--editor-source-only")
-        self.assertNotEqual(rejected.returncode, 0)
-        self.assertIn("2000-byte source budget", rejected.stderr)
+        grown = self.run_checker("--editor-source-only")
+        self.assertEqual(grown.returncode, 0, grown.stderr)
+        report = json.loads(grown.stdout)
+        self.assertIsNone(report["limit"])
+        self.assertIn({"path": path, "bytes": 2001, "warningThreshold": 2000}, report["measurements"])
+        self.assertTrue(any(path in warning and "non-blocking" in warning for warning in report["warnings"]))
 
     def test_source_mode_counts_unique_connected_owners_without_dist(self):
         self.split()
@@ -177,7 +191,9 @@ class FrontendBudgetTests(unittest.TestCase):
         report = json.loads(result.stdout)
         self.assertEqual(set(report["sources"]), {ENTRY, *OWNERS})
         self.assertEqual(report["bytes"], sum((self.root / path).stat().st_size for path in (ENTRY, *OWNERS)))
-        self.assertEqual(report["limit"], 180_100)
+        self.assertIsNone(report["limit"])
+        self.assertEqual(report["warningThreshold"], 180_100)
+        self.assertEqual(report["warnings"], [])
         self.assertFalse((self.root / "dist").exists())
 
     def test_shared_imports_are_inputs_but_not_added_to_editor_raw_budget(self):
@@ -245,8 +261,8 @@ class FrontendBudgetTests(unittest.TestCase):
         self.assertEqual(good.returncode, 0, good.stderr)
         self.write("resources/css/page-builder-core.css", "x" * 18_001)
         raw = self.run_checker()
-        self.assertNotEqual(raw.returncode, 0, raw.stdout)
-        self.assertIn("18001/18000 raw bytes", raw.stderr)
+        self.assertEqual(raw.returncode, 0, raw.stderr)
+        self.assertIn("resources/css/page-builder-core.css=18001 raw bytes (reported; no size ceiling)", raw.stdout)
         self.write("resources/css/page-builder-core.css", ".fixture {}")
         # A deterministic incompressible-like fixture exercises the existing JS
         # limit; source-only must never run that unrelated artifact gate.

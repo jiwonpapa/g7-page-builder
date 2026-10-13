@@ -3,9 +3,12 @@
 namespace Modules\Jiwonpapa\PageBuilder\Tests\UnitPhp;
 
 use InvalidArgumentException;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocumentCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\V3\DraftRenderer;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\V3\ElementMarkup;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\V3\HtmlCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\V3\Presentation;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\V3\ValidatedDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\V3\Validator;
 use PHPUnit\Framework\TestCase;
 use stdClass;
@@ -63,14 +66,18 @@ final class V3IconElementTest extends TestCase
             $validated = $validator->validateJson($source);
             $styles = Presentation::document($validated, 'base', $validator->semanticDisplays());
             self::assertSame('24px', $styles[$document->blocks[0]->instance_id]['width']);
-            foreach ([(new DraftRenderer($validator))->render($source), (new ElementMarkup(true))->render($validated, $styles, [])] as $html) {
+            $draft = (new DraftRenderer($validator))->render($source);
+            $publication = (new ElementMarkup(true))->render($validated, $styles, []);
+            foreach ([$draft, $publication] as $html) {
                 self::assertStringContainsString('role="img" aria-label="안내 &lt;문자&gt; &quot;설명&quot;"', $html);
                 self::assertStringContainsString('data-g7pb-icon-sizing="parent"', $html);
-                self::assertStringContainsString('width="100%" height="100%"', $html);
-                self::assertSame(1, substr_count($html, '<svg '));
-                self::assertMatchesRegularExpression('/<(path|circle|rect) /', $html);
+                self::assertStringContainsString('data-g7pb-icon-markup="&lt;', $html);
                 self::assertStringNotContainsString('<script', $html);
             }
+            self::assertStringContainsString('width="100%" height="100%"', $draft);
+            self::assertSame(1, substr_count($draft, '<svg '));
+            self::assertMatchesRegularExpression('/<(path|circle|rect) /', $draft);
+            self::assertStringNotContainsString('<svg', $publication);
             self::assertSame($source, json_encode($document, JSON_THROW_ON_ERROR));
         }
     }
@@ -90,5 +97,28 @@ final class V3IconElementTest extends TestCase
         self::assertStringNotContainsString('aria-label=', $base);
         self::assertStringContainsString('width:20px', $renderer->render($source, 'mobile'));
         self::assertSame($source, json_encode($document, JSON_THROW_ON_ERROR));
+    }
+
+    public function test_all_icon_publications_pass_the_unchanged_template_markup_policy_for_every_shell(): void
+    {
+        $schema = json_decode(file_get_contents(__DIR__.'/../../schemas/page-builder-document-v3.schema.json'), true, flags: JSON_THROW_ON_ERROR);
+        $rule = array_find($schema['$defs']['node']['properties']['props']['anyOf'], fn ($rule) => isset($rule['properties']['icon']));
+        $validator = $this->validator();
+        $compiler = new HtmlCompiler($validator);
+        foreach ($rule['properties']['icon']['enum'] as $icon) {
+            foreach (['none', 'template', 'builder'] as $shell) {
+                $document = $this->source((object) ['icon' => $icon, 'label' => '안내 '.$icon, 'decorative' => false]);
+                $document->shell_mode = $shell;
+                $source = ValidatedDocument::fromJson(json_encode($document, JSON_THROW_ON_ERROR), $validator);
+                $before = $source->toJson();
+                $result = $compiler->compile($source, 1, 'html', HtmlDocumentCompiler::TARGET_ENGINE_VERSION);
+                self::assertIsString($result->artifact);
+                self::assertStringNotContainsString('<svg', $result->artifact);
+                self::assertStringContainsString('data-g7pb-runtime-icon', $result->artifact);
+                self::assertStringContainsString('data-g7pb-icon-sizing="parent"', $result->artifact);
+                self::assertStringContainsString('role="img" aria-label="안내 '.$icon.'"', $result->artifact);
+                self::assertSame($before, $source->toJson());
+            }
+        }
     }
 }

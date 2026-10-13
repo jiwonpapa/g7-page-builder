@@ -88,7 +88,7 @@ final readonly class ElementMarkup
                 $attrs .= ' src="'.self::escape($asset->url).'" alt="'.self::escape($node->props->alt).'"';
             } elseif ($node->type === 'media.icon') {
                 $attrs .= $node->props->decorative ? ' aria-hidden="true"' : ' role="img" aria-label="'.self::escape($node->props->label).'"';
-                $body = $this->icons->catalogIconSvg($node->props->icon, '', true);
+                $body = $this->icons->catalogIconSvg($node->props->icon, '', true, ! $this->publication);
             } elseif ($node->type === 'content.heading') {
                 $body = $this->runs($node->props->runs, $document);
             } elseif ($node->type === 'content.text') {

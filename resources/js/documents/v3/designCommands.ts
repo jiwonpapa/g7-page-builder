@@ -5,6 +5,7 @@ import { jsonBytes, reject } from './schema';
 import { assertEditable, cloneDocument, indexTree, location, selectionRoots } from './tree';
 import { executeTreeCommand, type TreeCommand, type TreeResult } from './commands';
 import type { NewId } from './clipboard';
+import { replaceImage, type ImageCommand } from './media';
 
 export type DesignCommand =
   | { kind: 'style'; id: string; set: Style; reset?: (keyof Style)[]; viewport?: Viewport }
@@ -12,7 +13,7 @@ export type DesignCommand =
   | { kind: 'content'; id: string; props: unknown }
   | { kind: 'behavior'; id: string; value: unknown }
   | { kind: 'binding'; id: string; value: unknown };
-export type AtomicCommand = TreeCommand | DesignCommand;
+export type AtomicCommand = TreeCommand | DesignCommand | ImageCommand;
 export type DocumentCommand = AtomicCommand | { kind: 'transaction'; commands: AtomicCommand[] };
 
 /** One immutable command for panel and canvas; never a vendor/history payload. */
@@ -27,6 +28,7 @@ export function executeDocumentCommand(source: DocumentV3, command: DocumentComm
     const changed = JSON.stringify(source) !== JSON.stringify(result.document);
     return { ...result, changed, document: changed ? result.document : source };
   }
+  if (command.kind === 'image') return replaceImage(source, command);
   if (command.kind !== 'style' && command.kind !== 'styles' && command.kind !== 'content' && command.kind !== 'behavior' && command.kind !== 'binding') return executeTreeCommand(source, command, nextId);
   validateDocumentV3(source);
   const viewport = command.kind === 'content' || command.kind === 'behavior' || command.kind === 'binding' ? 'base' : command.viewport ?? 'base';

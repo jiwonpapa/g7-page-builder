@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import '@puckeditor/core/puck.css';
 import '../../../css/page-builder-core.css';
 import '../../../css/page-builder-structure.css';
-import { ADMIN_AUTH_TOKEN_KEY, buildAdminLoginUrl, PAGE_BUILDER_EDITOR_PATH, PAGE_BUILDER_MANAGER_PATH, PageDocumentApiClient } from '../../api/pageBuilderApi';
+import { ADMIN_AUTH_TOKEN_KEY, buildAdminLoginUrl, PAGE_BUILDER_EDITOR_PATH, PAGE_BUILDER_MANAGER_PATH, PageDocumentApiClient, PageBuilderApiClient } from '../../api/pageBuilderApi';
 import { createStructureDocument, parseV3DocumentResource } from '../../api/v3DocumentResource';
 import { createApiDraftPort } from './apiDraftPort';
 import { createApiPublicationPort } from './apiPublicationPort';
@@ -15,6 +15,7 @@ import { ElementSitePartApi } from '../../api/elementSitePartApi';
 import { StructureSitePartHost } from './StructureSitePartHost';
 import { sitePartDraftPort, type SitePartHostPorts } from './sitePartPorts';
 import { sitePartEditorUrl } from '../sitePartEditorRouting';
+import { createApiMediaPort } from './apiMediaPort';
 
 export function mountStructureDocument(element: HTMLElement): () => void {
   return mount(element, false);
@@ -30,7 +31,9 @@ function mount(element: HTMLElement, siteParts: boolean): () => void {
     return () => {};
   }
   const api = new PageDocumentApiClient();
+  const media = createApiMediaPort(new PageBuilderApiClient());
   const ports: StructureHostPorts = {
+    media,
     async load(id) {
       const resource = await api.getDocument(id);
       if (resource.document.document_id !== id) throw new Error('불러온 문서가 요청한 문서와 일치하지 않습니다.');
@@ -50,6 +53,7 @@ function mount(element: HTMLElement, siteParts: boolean): () => void {
   const locale = element.dataset.locale || 'ko';
   const initialSetId = new URLSearchParams(window.location.search).get('set_id') || undefined;
   const partPorts: SitePartHostPorts = {
+    media,
     list: locale => siteApi.list(locale), create: (title, locale) => siteApi.create(title, locale),
     load: set => siteApi.load(set), draft: (source, saved) => sitePartDraftPort(siteApi, source, saved),
     publish: pair => siteApi.publish(pair), activate: set => siteApi.activate(set),

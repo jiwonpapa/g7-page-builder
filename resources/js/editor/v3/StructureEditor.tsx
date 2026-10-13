@@ -29,6 +29,8 @@ import { compositionClipboard } from '../../editor-application/v3/compositions';
 import { formPresentation } from '../../documents/v3/formPresentation';
 import { PublicationControls } from './PublicationControls';
 import type { PublicationPort, PublishedPage } from '../../editor-application/v3/publication';
+import type { MediaPort } from '../../editor-application/v3/media';
+import { ImageInspector } from './ImageInspector';
 
 export interface StructureEditorProps {
   document: DocumentV3;
@@ -39,6 +41,7 @@ export interface StructureEditorProps {
   serverRevision: number;
   drafts: DraftPort;
   publication?: PublicationPort;
+  media?: MediaPort;
   onPublished?: (page: PublishedPage) => void;
   nextId: () => string;
   onChange?: (document: DocumentV3) => void;
@@ -279,7 +282,17 @@ function EditorSession(props: StructureEditorProps) {
                 {focus && effectiveStyle(focus.node, viewport).hidden ? '표시' : '숨김'}</CommandButton>
             </div>
             {focus && <Inspector key={viewport + ':' + focus.node.instance_id + ':' + JSON.stringify(focus.node)} node={focus.node} document={document} viewport={viewport}
-              disabled={Boolean(props.readonly || focus.node.locked || focus.ancestors.some(node => node.locked))} apply={value => { bridge.execute(value); }} />}
+              disabled={Boolean(preview || props.readonly || focus.node.locked || focus.ancestors.some(node => node.locked))} apply={value => { bridge.execute(value); }} />}
+            {focus?.node.type === 'media.image' && <ImageInspector key={'image:' + viewport + ':' + focus.node.instance_id + ':' + JSON.stringify(focus.node)}
+              node={focus.node} document={document} viewport={viewport} port={props.media}
+              disabled={Boolean(preview || props.readonly || focus.node.locked || focus.ancestors.some(node => node.locked))}
+              read={() => {
+                const ids = bridge.selection();
+                const item = ids.length === 1 ? indexTree(bridge.read()).get(ids[0]) : undefined;
+                const context = bridge.context();
+                return { context: { ...context, readonly: Boolean(context.readonly || preview || item?.node.locked || item?.ancestors.some(node => node.locked)) },
+                  nodeId: item?.node.type === 'media.image' ? item.node.instance_id : null };
+              }} apply={(value, expected) => { bridge.execute(value, expected); }} />}
             {focus && <BehaviorInspector key={'behavior:' + focus.node.instance_id + ':' + JSON.stringify(focus.node)} node={focus.node} document={document}
               disabled={Boolean(preview || props.readonly || focus.node.locked || focus.ancestors.some(node => node.locked))} apply={value => { bridge.execute(value); }} />}
             {focus && <BindingInspector key={'binding:' + focus.node.instance_id + ':' + JSON.stringify(focus.node)} node={focus.node} document={document}

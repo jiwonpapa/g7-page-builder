@@ -2,8 +2,10 @@ import type { ElementSitePartApi } from '../../api/elementSitePartApi';
 import type { ElementPartPair, ElementPartResource } from '../../api/elementSitePartResource';
 import type { SitePartSetResource } from '../../api/resources';
 import { reopenDraft, type DraftPort } from '../../editor-application/v3/session';
+import type { MediaPort } from '../../editor-application/v3/media';
 
 export interface SitePartHostPorts {
+  media?: MediaPort;
   list: (locale: string) => Promise<SitePartSetResource[]>;
   create: (title: string, locale: string) => Promise<SitePartSetResource>;
   load: (set: SitePartSetResource) => Promise<ElementPartPair | { legacy: true }>;

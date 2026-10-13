@@ -185,13 +185,23 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
     const publicLink = page.getByRole('link', { name: '공개 페이지 열기', exact: true }); await expect(publicLink).toBeVisible();
     const publicUrl = (await publicLink.getAttribute('href'))!;
     for (const [label, width] of [['PC · 공통값', 1280], ['태블릿', 768], ['모바일', 360]] as const) {
-      await click(label); await click('화면 맞춤');
+      await click(label); await page.getByLabel('작업면 확대', { exact: true }).selectOption('1');
       const canvas = page.frameLocator('iframe').locator('[data-v3-surface]');
       await expect(canvas.locator('svg')).toHaveCount(3);
       const expected = await sample(canvas);
       expect(expected[0].size).toEqual(width === 360 ? [20, 20, 20, 20] : [48, 32, 48, 32]);
-      expect(expected[1]).toMatchObject({ role: null, label: null, hidden: 'true', size: [24, 24, 24, 24] });
+      expect(expected[0]).toMatchObject({ role: 'img', label: '안내 <문자> star', hidden: null });
+      expect(expected[1]).toMatchObject({ role: 'button', label: '아이콘', hidden: null, size: [24, 24, 24, 24] });
       expect(expected[2]).toMatchObject({ role: 'img', label: '안내 <문자> target', hidden: null });
+      await click('구조 미리보기');
+      const authoredSurface = page.getByTestId('v3-preview'); await expect(authoredSurface.locator('svg')).toHaveCount(3);
+      const authored = await sample(authoredSurface);
+      expect(authored.map(({ size: _size, ...node }) => node)).toEqual(expected.map(({ size: _size, ...node }, index) =>
+        index === 1 ? { ...node, role: null, label: null, hidden: 'true' } : node));
+      for (const [index, node] of authored.entries()) for (let axis = 0; axis < 4; axis++) {
+        expect(Math.abs(node.size[axis] - expected[index].size[axis]), `canvas/preview/${shell}/${width}/${index}/${axis}`).toBeLessThanOrEqual(1);
+      }
+      await click('구조 미리보기');
       const captures = [];
       for (const [name, target, url] of [['preview', preview, previewUrl], ['public', viewer, publicUrl]] as const) {
         await target.setViewportSize({ width, height: 1000 }); expect((await target.goto(url))?.ok()).toBe(true);
@@ -199,14 +209,14 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
         await expect(surface.locator('[data-g7pb-runtime-icon]')).toHaveCount(0);
         await expect(surface.locator('script,iframe')).toHaveCount(0);
         const actual = await sample(surface);
-        expect(actual.map(({ size: _size, ...node }) => node)).toEqual(expected.map(({ size: _size, ...node }) => node));
+        expect(actual.map(({ size: _size, ...node }) => node)).toEqual(authored.map(({ size: _size, ...node }) => node));
         for (const [index, node] of actual.entries()) for (let axis = 0; axis < 4; axis++) {
           expect(Math.abs(node.size[axis] - expected[index].size[axis]), `${shell}/${width}/${index}/${axis}`).toBeLessThanOrEqual(1);
         }
         captures.push({ name, actual });
         await info.attach(`icons-${shell}-${name}-${width}`, { body: await target.screenshot(), contentType: 'image/png' });
       }
-      await info.attach(`icons-${shell}-measurements-${width}`, { body: JSON.stringify({ expected, captures }), contentType: 'application/json' });
+      await info.attach(`icons-${shell}-measurements-${width}`, { body: JSON.stringify({ canvas: expected, authored, captures }), contentType: 'application/json' });
     }
     const current = (await (await api.get(`${documents}/${ownedId}`)).json()).data;
     expect(current.document).toEqual(before.document); expect(current.active_artifact_sha256).toMatch(/^[a-f0-9]{64}$/);

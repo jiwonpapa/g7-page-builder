@@ -16,6 +16,10 @@
 
 ## 검증 경계
 
+다음 설치형 실행은 기존 30개 통과·새 폼 9개 실패였다(`output/playwright/gates/integration-ip7-20261012/d2be4ce28c397b84d94c7a66741e08247a050783e740cb7c9d1192d120c558e5/06582ce555ec4ab7a3847072bb00a818/results.json`). none/builder의 실제 제출 419와 template의 40px 폭 차이가 남았다. 같은 시기 다른 채팅에서 공유 G7을 7.1.0으로 갱신하고 활성 테마를 바꿨으므로 이 실행을 안정된 테마 호환 증거로 사용하지 않는다. 코어/테마 갱신은 이 PB task가 실행한 변경이 아니다.
+
+G7 없는 별도 호스트의 폼 시험은 Puck의 drag root가 pointer-events를 auto로 소유하는 것을 확인했다. CSS 선언값 대신 실제 클릭 선택·문서 무변경을 검사하도록 보완했고, 체크박스 클릭 시 체크되는 native 기본 동작을 재현했다. readonly만으로 checkbox 동작이 막히지 않으므로 제품의 편집 입력 소유권을 보완한 뒤 재검증한다. 공개 문의는 공식 세션 갱신 204를 검사하고, 후속 거부 요청도 갱신된 cookie를 사용한다. 1px·CSRF·저장 수용 기준은 유지한다.
+
 Local의 `integration-ip7-20261012` runtime lease에서 계약·제품·시험 task를 함께 통합한 뒤 실행 결과와 실패/수정 이력, 실제 스크린샷 판독을 별도 통합 증거에 기록한다. 공통영역 문의 capability 부재, IP7 전체 카탈로그/이행, IP8~IP10은 이 시험의 완료 범위가 아니다. G7 코어 변경·운영 배포·기존 문서 자동 전환은 없다.
 
 첫 통합은 새 PHP 시험의 구형 저장 메서드 호출 오류로 브라우저 전에 원복됐다. 후속 정적 재검토에서 시험 소유 문의 archive의 API 메서드를 실제 등록된 PATCH로 바로잡았다. 원 시험 제출 `3ef01f3ed2d7010ed5e99083d573fb8dceffabe3`는 보존 replacement `ip7-common-form-proof-api-20261013`으로 대체하며 제품 소스와 합격 기준은 유지한다.

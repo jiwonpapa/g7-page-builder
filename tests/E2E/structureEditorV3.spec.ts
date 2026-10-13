@@ -219,7 +219,17 @@ test.describe(() => {
       await open(page, saved, false, []); await canvasWidth(page, width);
       const control = page.frameLocator('iframe').locator('[data-v3-node="' + email.input_id + '"]');
       await expect(control).toHaveAttribute('readonly', ''); await expect(control).toHaveAttribute('tabindex', '-1');
-      await expect(control).toHaveCSS('pointer-events', 'none');
+      // Puck owns pointer selection on the drag root. Verify the user boundary,
+      // not a renderer declaration that the vendor legitimately overrides.
+      await control.click();
+      await expect(page.getByLabel('입력 종류', { exact: true })).toHaveValue('email');
+      await expect(control).toHaveValue('');
+      const privacy = binding.fields.find(field => field.name === 'privacy')!;
+      const checkbox = page.frameLocator('iframe').locator('[data-v3-node="' + privacy.input_id + '"]');
+      await checkbox.click();
+      await expect(page.getByLabel('입력 종류', { exact: true })).toHaveValue('checkbox');
+      await expect(checkbox).not.toBeChecked();
+      expect(await read(page)).toEqual(saved);
       const canvas = await page.frameLocator('iframe').locator('[data-v3-surface]').evaluate(measure);
       await click(page, '구조 미리보기');
       await expect(page.getByTestId('v3-preview').getByLabel('이메일 <안내>', { exact: true })).toHaveAttribute('type', 'email');

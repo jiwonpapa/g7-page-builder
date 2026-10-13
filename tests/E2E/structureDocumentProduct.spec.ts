@@ -341,7 +341,9 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
     await form.getByLabel('privacy', { exact: true }).check();
     await expect.poll(() => form.locator('input[name="started_at"]').evaluate(input => Math.floor(Date.now() / 1000) - Number((input as HTMLInputElement).value))).toBeGreaterThanOrEqual(2);
     const posted = viewer.waitForResponse(result => result.request().method() === 'POST' && result.url().endsWith('/inquiries'));
+    const session = viewer.waitForResponse(result => result.url().endsWith('/sanctum/csrf-cookie'));
     await form.locator('button[type="submit"]').click(); const receipt = await posted;
+    expect((await session).status()).toBe(204);
     expect(receipt.status(), await receipt.text()).toBe(201); submissionId = (await receipt.json()).data.submission_id;
     expect(receipt.request().headers()['x-xsrf-token'] || receipt.request().headers()['x-csrf-token']).toBeTruthy();
     await expect(form.locator('[data-g7pb-form-status]')).toHaveText('공통 요소 문의가 접수되었습니다.');
@@ -354,9 +356,9 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
       // Reuse the browser's real session protection, never bypass middleware.
       const rejected = await viewer.evaluate(async ({ action, blockId }) => {
         const csrf = document.cookie.split(';').map(value => value.trim()).find(value => value.startsWith('XSRF-TOKEN='));
-        const token = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content;
+        if (!csrf) throw new Error('Missing refreshed inquiry session cookie');
         const headers: Record<string, string> = { Accept: 'application/json', 'Content-Type': 'application/json',
-          ...(token ? { 'X-CSRF-TOKEN': token } : csrf ? { 'X-XSRF-TOKEN': decodeURIComponent(csrf.slice('XSRF-TOKEN='.length)) } : {}) };
+          'X-XSRF-TOKEN': decodeURIComponent(csrf.slice('XSRF-TOKEN='.length)) };
         const data = { block_instance_id: blockId, form_kind: 'quote', name: '검증', email: 'proof@example.invalid', message: '거부 검증', privacy: '1', started_at: Math.floor(Date.now() / 1000) - 5 };
         const outcomes: number[] = [];
         for (const change of [{ block_instance_id: crypto.randomUUID() }, { form_kind: 'inquiry' }, { privacy: '0' }, { website: 'bot' }, { started_at: Math.floor(Date.now() / 1000) }]) {

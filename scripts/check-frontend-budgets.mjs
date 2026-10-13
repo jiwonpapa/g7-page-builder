@@ -8,19 +8,6 @@ import { readCssGraph } from './lib/editorCssSources.mjs';
 
 const defaultRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const budgets = [
-  { path: 'resources/css/page-builder-core.css', raw: 18_000 },
-  { path: 'resources/css/page-builder-manager.css', raw: 20_000 },
-  { path: 'resources/css/page-builder-editor.css', raw: 180_100 },
-  { path: 'resources/css/page-builder-editor-wysiwyg.css', raw: 2_000 },
-  { path: 'resources/css/page-builder-site-part.css', raw: 1_000 },
-  { path: 'resources/css/page-builder-site-shell.css', raw: 9_000 },
-  { path: 'dist/css/page-builder-manager.css', gzip: 8_000 },
-  // UI5 adds the shared single Card shell; source caps remain unchanged.
-  { path: 'dist/css/page-builder-editor.css', gzip: 45_200 },
-  // Alternative versioned entry, never loaded alongside the legacy kernel.
-  // Apply the existing editor budgets without increasing either ceiling.
-  { path: 'dist/css/page-builder-structure.css', gzip: 45_200 },
-  { path: 'dist/css/page-builder-site-part.css', gzip: 32_000 },
   { path: 'dist/js/page-builder-manager.iife.js', gzip: 90_000 },
   // User-approved 2026-10-13: 512,000 gzip bytes for either editor entry.
   // Runtime performance and every unrelated asset budget remain unchanged.
@@ -31,9 +18,20 @@ const budgets = [
   { path: 'dist/js/page-sliders.iife.js', gzip: 12_000 },
 ];
 
-// User-approved 2026-10-13: public CSS size is observable, not a release ceiling.
-// Keep both files required and leave every other asset budget unchanged.
-const PUBLIC_CSS_MEASUREMENTS = [
+// User-approved 2026-10-13: CSS bytes never block development or release.
+// Historical thresholds remain observable warnings; required files, ownership,
+// syntax, visual/runtime checks and all JavaScript ceilings remain enforced.
+const CSS_MEASUREMENTS = [
+  { path: 'resources/css/page-builder-core.css', unit: 'raw', warning: 18_000 },
+  { path: 'resources/css/page-builder-manager.css', unit: 'raw', warning: 20_000 },
+  { path: 'resources/css/page-builder-editor.css', unit: 'raw', warning: 180_100 },
+  { path: 'resources/css/page-builder-editor-wysiwyg.css', unit: 'raw', warning: 2_000 },
+  { path: 'resources/css/page-builder-site-part.css', unit: 'raw', warning: 1_000 },
+  { path: 'resources/css/page-builder-site-shell.css', unit: 'raw', warning: 9_000 },
+  { path: 'dist/css/page-builder-manager.css', unit: 'gzip', warning: 8_000 },
+  { path: 'dist/css/page-builder-editor.css', unit: 'gzip', warning: 45_200 },
+  { path: 'dist/css/page-builder-structure.css', unit: 'gzip', warning: 45_200 },
+  { path: 'dist/css/page-builder-site-part.css', unit: 'gzip', warning: 32_000 },
   { path: 'resources/css/page-builder-public.css', unit: 'raw' },
   { path: 'dist/css/page-builder-public.css', unit: 'gzip' },
 ];
@@ -54,17 +52,13 @@ const EDITOR_SHARED = new Set([
   'resources/css/page-builder-editor-wysiwyg.css', 'resources/css/page-builder-site-shell.css',
   'resources/js/public/mobileNavigation.css', 'resources/css/page-builder-basic-elements.css',
 ]);
-const EDITOR_LIMIT = budgets.find(budget => budget.path === EDITOR_ENTRY).raw;
+const EDITOR_WARNING_THRESHOLD = 180_100;
 
 export async function editorStyleSources(root) {
   const graph = await readCssGraph(root, [EDITOR_ENTRY]);
   const family = new Set(EDITOR_FAMILY);
   for (const file of graph.files) {
     if (!family.has(file) && !EDITOR_SHARED.has(file)) throw new Error(`Unclassified editor CSS import: ${file}`);
-  }
-  const basicElements = 'resources/css/page-builder-basic-elements.css';
-  if (graph.files.includes(basicElements) && readFileSync(join(root, basicElements)).byteLength > 2_000) {
-    throw new Error('Shared basic element CSS exceeds its 2000-byte source budget.');
   }
   for (const file of EDITOR_FAMILY) {
     if ((file === EDITOR_ENTRY || existsSync(join(root, file))) && !graph.files.includes(file)) {
@@ -91,8 +85,14 @@ export async function checkEditorStyleSources(root) {
       })).processSync(rule.selector);
     });
   }
-  if (bytes > EDITOR_LIMIT) throw new Error(`Editor CSS family budget exceeded: ${bytes}/${EDITOR_LIMIT} raw bytes`);
-  return { ...inventory, bytes, limit: EDITOR_LIMIT };
+  const measurements = [{ path: 'Editor CSS family', bytes, warningThreshold: EDITOR_WARNING_THRESHOLD }];
+  const basicElements = 'resources/css/page-builder-basic-elements.css';
+  if (inventory.inputs.includes(basicElements)) {
+    measurements.push({ path: basicElements, bytes: readFileSync(join(root, basicElements)).byteLength, warningThreshold: 2_000 });
+  }
+  const warnings = measurements.filter(item => item.bytes > item.warningThreshold)
+    .map(item => `CSS size advisory: ${item.path}=${item.bytes} raw bytes; historical threshold ${item.warningThreshold}; non-blocking`);
+  return { ...inventory, bytes, limit: null, warningThreshold: EDITOR_WARNING_THRESHOLD, measurements, warnings };
 }
 
 async function main(args) {
@@ -121,10 +121,13 @@ async function main(args) {
     report.push(`${budget.path}=${actual}/${limit} ${unit} bytes`);
     if (actual > limit) throw new Error(`Frontend budget exceeded: ${report.at(-1)}`);
   }
-  for (const { path, unit } of PUBLIC_CSS_MEASUREMENTS) {
+  for (const { path, unit, warning } of CSS_MEASUREMENTS) {
     const bytes = readFileSync(join(root, path));
     const actual = unit === 'gzip' ? gzipSync(bytes).byteLength : bytes.byteLength;
     report.push(`${path}=${actual} ${unit} bytes (reported; no size ceiling)`);
+    if (warning !== undefined && actual > warning) {
+      report.push(`CSS size advisory: ${path} exceeds historical ${warning} ${unit} bytes; non-blocking`);
+    }
   }
 
   const publicRuntimeBytes = PUBLIC_RUNTIME_BUNDLES.map(path =>
@@ -147,7 +150,8 @@ async function main(args) {
   }
 
   const family = await checkEditorStyleSources(root);
-  report.push(`Editor CSS family=${family.bytes}/${family.limit} raw bytes (${family.sources.length} files)`);
+  report.push(`Editor CSS family=${family.bytes} raw bytes (${family.sources.length} files; reported; no size ceiling)`);
+  report.push(...family.warnings);
   console.log(`Frontend budgets: OK\n${report.join('\n')}`);
 }
 

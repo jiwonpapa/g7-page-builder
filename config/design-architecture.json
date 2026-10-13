@@ -33,6 +33,7 @@
     "php": 800,
     "css": 1000
   },
+  "cssSourceSizeMode": "advisory",
   "maxTypeScriptNodes": 10000,
   "typescriptLayers": [
     {

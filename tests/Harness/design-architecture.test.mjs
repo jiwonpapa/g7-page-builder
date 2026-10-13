@@ -293,6 +293,38 @@ test('source size debt is a ceiling, never an unlimited large file exception', (
   assert.deepEqual(sizeFinding('resources/js/documents/small.ts', '\n'.repeat(2000) + 'const x = 1;', policy), []);
 });
 
+test('CSS line counts are non-blocking advisories without exempting other rules or languages', (t) => {
+  const { root, write } = fixture(t);
+  const path = 'resources/css/large.css';
+  const large = '.g7pb-example { display: block; }\n'.repeat(2000);
+  write(path, large);
+  const report = auditArchitecture(root, [path]);
+  assert.equal(report.errors.length, 0);
+  assert.equal(report.warnings.length, 1);
+  assert.equal(report.warnings[0].value, 2000);
+  assert.match(report.warnings[0].detail, /non-blocking/);
+  assert.equal(report.acknowledged.length, 0);
+  const cli = execFileSync(process.execPath, ['scripts/check-design-architecture.mjs', '--root', root, '--files', path],
+    { cwd: repository, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  assert.match(cli, /Design architecture: OK/);
+  assert.match(cli, /1 size advisories/);
+  write(path, large + '.g7pb-bad { color: #123456 !important; }');
+  const invalid = auditArchitecture(root, [path]);
+  assert.equal(invalid.warnings.length, 1);
+  assert.ok(invalid.errors.some(item => item.rule === 'CSS-COLOR'));
+  assert.ok(invalid.errors.some(item => item.rule === 'CSS-IMPORTANT'));
+  assert.throws(() => execFileSync(process.execPath, ['scripts/check-design-architecture.mjs', '--root', root, '--files', path],
+    { cwd: repository, stdio: 'pipe' }));
+  write(path, large + '.broken {');
+  assert.ok(auditArchitecture(root, [path]).errors.some(item => item.detail.includes('Cannot analyze invalid CSS')));
+  for (const extension of ['ts', 'tsx', 'js', 'php']) {
+    const item = sizeFinding(`src/large.${extension}`, 'x\n'.repeat(2000), policy)[0];
+    const result = applyDebt([item], baseDebt(), policy);
+    assert.equal(result.errors.length, 1, extension);
+    assert.equal(result.warnings.length, 0, extension);
+  }
+});
+
 test('a compressed TypeScript file cannot bypass the structural size rule', () => {
   const source = Array.from({ length: 2500 }, (_, index) => `const value${index} = ${index};`).join('');
   const result = inspectTypeScript(repository, 'resources/js/editor/compressed.ts', source, policy);
@@ -405,7 +437,7 @@ test('rules missing from the constitution fail instead of quietly dropping enfor
 
 test('a rule or protected source area cannot be disabled by empty configuration', (t) => {
   const { root, write } = fixture(t);
-  for (const change of [{ rules: [] }, { typescriptLayers: [] }, { sourceRoots: ['resources/css'] }, { sourceSize: {} }]) {
+  for (const change of [{ rules: [] }, { typescriptLayers: [] }, { sourceRoots: ['resources/css'] }, { sourceSize: {} }, { cssSourceSizeMode: 'disabled' }]) {
     write('config/design-architecture.json', JSON.stringify({ ...policy, ...change }));
     assert.throws(() => readPolicy(root));
   }

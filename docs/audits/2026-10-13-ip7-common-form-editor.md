@@ -31,3 +31,11 @@ PHP 8.5.3에서 `V3FormMarkupTest.php` 3개/119 assertions가 세 출력 방식�
 첫 공식 batch 통합에서 기존 G7 통합 26개는 통과했으나 새 `PublicationPersistenceTest`가 구형 `saveDraft`를 호출해 v3를 구형 계약에 넣는 시험 오류가 발생했다(31개 중 오류 1개, 316 assertions). 실제 제품의 `saveDraftJson` 경로로 시험을 수정하는 보존 replacement `ip7-common-form-editor-storage-20261013`을 만들었다. 제품 소스·판정 기준은 바꾸지 않았고 원 제출 SHA를 보존했다. 실패 통합은 기준 `601d18d9b6e1ebd44dc93da22cd99f3586c7a2e6`으로 원복됐고 원래 `jwsoft-business01` 테마도 복구됐다. 브라우저 실행 전 실패이므로 새 브라우저 통과 증거는 없다.
 
 두 번째 통합에서 같은 신규 시험의 fixture 연관 배열 디코딩이 빈 `slots` 객체를 JSON 배열로 바꾸는 오류가 드러났다. 실제 v3 저장 경로의 객체/배열 구분을 유지하도록 fixture를 객체로 읽는다. `ip7-common-form-editor-json-20261013`은 앞선 제출 `10823a878f31d1993776d77380ca300c855cd158`과 worktree를 보존하는 교체다. 서버 validator를 완화하지 않으며 이 실행도 브라우저 전에 원복하고 테마를 복구했다.
+
+## 제출 시간 경계의 결정적 검사
+
+2026-10-13 후속 통합은 `PublicationPersistenceTest` 31개 중 신규 폼 시험의 422 기대에서 201을 받아 중단됐다(348 assertions). 거부 case 배열의 `started_at=time()`을 미리 평가하고 나머지 거부 case를 처리하는 동안 초 단위 경계가 지나면 설정된 1초 제한을 실제로 충족하게 되는 비결정성이 있었다. 자동 재시도로 통과시키지 않는다.
+
+보존 교체 task `ip7-inquiry-clock-proof-20261013`은 기존 제출 `cd96fd692c72afd6009edc80a88d3248176aba9f`의 18개 소유 파일 범위를 상속한다. 실제 변경은 controller의 시간 읽기, 해당 시험, 이 기록 3개다. controller는 기존 DB 기록에도 사용하는 Laravel 시계의 Unix timestamp를 읽고, 시험은 그 시계만 고정·해제한다. 최소 작성 시간 설정·부등호·CSRF·rate limit·요청 검증은 변경하지 않는다. 0초와 미래 시각 거부, 정확한 설정 경계 1초의 수락 및 저장 개수를 검사하고 실패 assertion에 case를 명시한다. 실제 시간 대기·넉넉한 임의 시간으로 검사를 느슨하게 만들지 않는다.
+
+Pint를 적용했다. PHP 실행 결과와 브라우저 검증은 Local runtime lease의 공식 통합에서 확인할 항목이며 아직 통과로 기록하지 않는다. 실패 batch와 로컬 테마는 원복됐다.

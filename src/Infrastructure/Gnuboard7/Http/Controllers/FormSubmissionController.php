@@ -33,7 +33,7 @@ final class FormSubmissionController
         if ($validator->fails()) {
             return response()->json(['success' => false, 'message' => '입력 내용을 확인해 주세요.', 'data' => ['errors' => $validator->errors()]], 422);
         }
-        if (time() - (int) $request->input('started_at') < max(1, (int) config('g7-page-builder.forms.minimum_fill_seconds', 2))) {
+        if (now()->getTimestamp() - (int) $request->input('started_at') < max(1, (int) config('g7-page-builder.forms.minimum_fill_seconds', 2))) {
             return response()->json(['success' => false, 'message' => '잠시 후 다시 제출해 주세요.', 'data' => []], 422);
         }
 

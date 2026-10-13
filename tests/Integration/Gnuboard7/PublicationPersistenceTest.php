@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\RouteCollection;
 use Illuminate\Routing\UrlGenerator;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Fluent;
 use Illuminate\Translation\ArrayLoader;
@@ -126,6 +127,7 @@ final class PublicationPersistenceTest extends TestCase
 
     protected function tearDown(): void
     {
+        Date::setTestNow();
         Facade::clearResolvedInstances();
         Facade::setFacadeApplication(null);
         Container::setInstance(null);
@@ -1281,6 +1283,8 @@ final class PublicationPersistenceTest extends TestCase
 
     public function test_element_form_publication_uses_existing_persistence_and_fixed_inquiry_validation(): void
     {
+        Date::setTestNow('2026-10-13 12:00:00 UTC');
+        $now = now()->getTimestamp();
         $root = dirname(__DIR__, 3);
         $policy = json_decode(file_get_contents($root.'/schemas/design-policy-v3.json'), true, flags: JSON_THROW_ON_ERROR);
         $validator = new StructureValidator(json_decode(file_get_contents($root.'/schemas/page-builder-document-v3.schema.json'), true, flags: JSON_THROW_ON_ERROR), $policy);
@@ -1300,7 +1304,7 @@ final class PublicationPersistenceTest extends TestCase
             $controller = new FormSubmissionController($service);
             $payload = ['block_instance_id' => $blocks[0]->instance_id, 'form_kind' => 'inquiry', 'name' => '홍길동',
                 'email' => 'forms@example.com', 'phone' => '', 'subject' => '문의', 'message' => '공통 요소에서 제출합니다.',
-                'privacy' => '1', 'website' => '', 'started_at' => time() - 3];
+                'privacy' => '1', 'website' => '', 'started_at' => $now - 3];
             $response = $controller->store(Request::create('/pages/'.$slug.'/inquiries', 'POST', $payload), $slug);
             self::assertSame(201, $response->getStatusCode());
             $record = FormSubmissionRecord::query()->findOrFail($response->getData(true)['data']['submission_id']);
@@ -1308,11 +1312,14 @@ final class PublicationPersistenceTest extends TestCase
             self::assertSame($blocks[0]->instance_id, $record->block_instance_id);
             self::assertSame($payload['message'], $record->payload_json['message']);
             self::assertSame('failed', $record->mail_status); // No delivery configured; submission remains stored.
-            foreach ([['privacy' => '0'], ['email' => 'invalid'], ['website' => 'bot'], ['started_at' => time()]] as $invalid) {
+            foreach ([['privacy' => '0'], ['email' => 'invalid'], ['website' => 'bot'], ['started_at' => $now], ['started_at' => $now + 10]] as $invalid) {
                 $rejected = $controller->store(Request::create('/pages/'.$slug.'/inquiries', 'POST', array_replace($payload, $invalid)), $slug);
-                self::assertSame(422, $rejected->getStatusCode());
+                self::assertSame(422, $rejected->getStatusCode(), json_encode($invalid, JSON_THROW_ON_ERROR));
             }
             self::assertSame(1, FormSubmissionRecord::query()->where('page_slug', $slug)->count());
+            $atBoundary = $controller->store(Request::create('/pages/'.$slug.'/inquiries', 'POST', array_replace($payload, ['started_at' => $now - 1])), $slug);
+            self::assertSame(201, $atBoundary->getStatusCode());
+            self::assertSame(2, FormSubmissionRecord::query()->where('page_slug', $slug)->count());
         }
     }
 

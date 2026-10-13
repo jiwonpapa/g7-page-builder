@@ -3,20 +3,28 @@
 namespace Modules\Jiwonpapa\PageBuilder\Application;
 
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\SitePartHtmlCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Documents\EmptyElementSitePart;
+use Modules\Jiwonpapa\PageBuilder\Application\Documents\SitePartStorageCodec;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\SitePartNotFoundException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\PublishedSitePartSet;
+use Modules\Jiwonpapa\PageBuilder\Domain\Site\ElementSitePartDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSetSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSnapshot;
+use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSource;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SiteShell;
 
 final class SitePartService
 {
+    /** @param array<string, array{kind: string, value: string}> $tokens */
     public function __construct(
         private readonly SitePartRepository $repository,
         private readonly SitePartHtmlCompiler $compiler,
+        private readonly SitePartStorageCodec $documents = new SitePartStorageCodec,
+        private readonly ?EmptyElementSitePart $emptyElements = null,
+        private readonly array $tokens = [],
     ) {}
 
     public function get(string $kind, string $locale, ?string $setId = null): SitePartSnapshot
@@ -53,11 +61,25 @@ final class SitePartService
         return $this->repository->listSets($locale);
     }
 
-    public function createSet(string $title, string $locale, SiteShell $shell, ?int $actorId): SitePartSetSnapshot
+    public function createSet(string $title, string $locale, SiteShell $shell, ?int $actorId, string $schemaVersion = 'g7-page-builder/site-part/v1'): SitePartSetSnapshot
     {
         $title = trim($title);
         if ($title === '') {
             throw new \InvalidArgumentException('헤더·푸터 세트 이름을 입력해 주세요.');
+        }
+        if ($schemaVersion === 'g7-page-builder/site-part/v2') {
+            $factory = $this->emptyElements ?? throw new \InvalidArgumentException('Element Site Part creation is unavailable.');
+
+            return $this->repository->createSet(
+                $title,
+                $factory->create($this->uuidV4(), 'header', $locale, $this->tokens),
+                $factory->create($this->uuidV4(), 'footer', $locale, $this->tokens),
+                $actorId,
+                activateIfFirst: false,
+            );
+        }
+        if ($schemaVersion !== 'g7-page-builder/site-part/v1') {
+            throw new \InvalidArgumentException('Site Part schema version is not supported.');
         }
 
         return $this->repository->createSet(
@@ -74,36 +96,32 @@ final class SitePartService
     }
 
     /**
-     * @param  array<string, mixed>  $headerPayload
-     * @param  array<string, mixed>  $footerPayload
+     * @param  array<string, mixed>|string  $headerPayload
+     * @param  array<string, mixed>|string  $footerPayload
      */
     public function saveSetDraft(
         string $setId,
         string $locale,
         string $headerTitle,
-        array $headerPayload,
+        array|string $headerPayload,
         int $headerExpectedLockVersion,
         string $footerTitle,
-        array $footerPayload,
+        array|string $footerPayload,
         int $footerExpectedLockVersion,
         ?int $actorId,
     ): SitePartSetSnapshot {
         $currentHeader = $this->get('header', $locale, $setId);
         $currentFooter = $this->get('footer', $locale, $setId);
-        $headerPayload['site_part_id'] = $currentHeader->document->sitePartId;
-        $headerPayload['kind'] = 'header';
-        $headerPayload['locale'] = $locale;
-        $footerPayload['site_part_id'] = $currentFooter->document->sitePartId;
-        $footerPayload['kind'] = 'footer';
-        $footerPayload['locale'] = $locale;
+        $header = $this->draftDocument($headerPayload, $currentHeader->document, legacySet: true);
+        $footer = $this->draftDocument($footerPayload, $currentFooter->document, legacySet: true);
 
         return $this->repository->saveSetDraft(
             $setId,
             $this->requiredTitle($headerTitle),
-            SitePartDocument::fromArray($headerPayload),
+            $header,
             $headerExpectedLockVersion,
             $this->requiredTitle($footerTitle),
-            SitePartDocument::fromArray($footerPayload),
+            $footer,
             $footerExpectedLockVersion,
             $actorId,
         );
@@ -131,12 +149,12 @@ final class SitePartService
         );
     }
 
-    /** @param array<string, mixed> $payload */
+    /** @param array<string, mixed>|string $payload */
     public function saveDraft(
         string $kind,
         string $locale,
         string $title,
-        array $payload,
+        array|string $payload,
         int $expectedLockVersion,
         ?int $actorId,
         ?string $setId = null,
@@ -147,12 +165,7 @@ final class SitePartService
             throw new \InvalidArgumentException('Site Part title must not be empty.');
         }
 
-        $document = SitePartDocument::fromArray($payload);
-        if ($document->sitePartId !== $current->document->sitePartId
-            || $document->kind !== $current->document->kind
-            || $document->locale !== $current->document->locale) {
-            throw new \InvalidArgumentException('Site Part document identity does not match the requested target.');
-        }
+        $document = $this->draftDocument($payload, $current->document);
 
         return $this->repository->saveDraft(
             $title,
@@ -170,6 +183,9 @@ final class SitePartService
         ?string $setId = null,
     ): SitePartSnapshot {
         $current = $this->get($kind, $locale, $setId);
+        if ($current->document instanceof ElementSitePartDocument) {
+            throw new \InvalidArgumentException('Element Site Parts must be published as a complete Header/Footer set.');
+        }
         $artifact = $this->compiler->compile($current->document, $current->revision);
 
         return $this->repository->publish(
@@ -189,6 +205,22 @@ final class SitePartService
             $current->document->sitePartId,
             min(50, max(1, $limit)),
         );
+    }
+
+    /** @param array<string, mixed>|string $payload */
+    private function draftDocument(array|string $payload, SitePartSource $current, bool $legacySet = false): SitePartSource
+    {
+        // Preserve legacy set-template identity binding only for the old format.
+        // Element documents always carry and validate their own identity.
+        if ($legacySet && is_array($payload) && $current instanceof SitePartDocument
+            && ($payload['schema_version'] ?? null) === $current->schemaVersion) {
+            $payload['site_part_id'] = $current->sitePartId;
+            $payload['kind'] = $current->kind;
+            $payload['locale'] = $current->locale;
+        }
+        $json = is_string($payload) ? $payload : json_encode($payload, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION);
+
+        return $this->documents->decodeDraft($json, $current);
     }
 
     private function defaultDocument(string $kind, string $locale, SiteShell $shell): SitePartDocument

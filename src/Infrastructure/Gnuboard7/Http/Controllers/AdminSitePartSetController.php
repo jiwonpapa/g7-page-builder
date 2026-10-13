@@ -13,6 +13,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\SitePartNotFoundException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSetSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSnapshot;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\SitePartDocumentInput;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Routing\G7TemplateRouteBridge;
 
 final class AdminSitePartSetController
@@ -44,6 +45,7 @@ final class AdminSitePartSetController
         $validator = Validator::make($request->all(), [
             'locale' => ['required', 'string', 'min:2', 'max:16'],
             'title' => ['required', 'string', 'max:255'],
+            'schema_version' => ['sometimes', 'in:g7-page-builder/site-part/v1,g7-page-builder/site-part/v2'],
         ]);
         if ($validator->fails()) {
             return $this->invalid($request, $validator->errors()->toArray());
@@ -56,6 +58,7 @@ final class AdminSitePartSetController
                 $locale,
                 $this->siteShell->get($locale)->shell,
                 $this->actorId($request),
+                (string) $request->input('schema_version', 'g7-page-builder/site-part/v1'),
             );
 
             return $this->success('새 헤더·푸터 세트를 만들었습니다.', $this->data($set), 201);
@@ -107,10 +110,10 @@ final class AdminSitePartSetController
                 $set,
                 (string) $request->input('locale'),
                 (string) $request->input('header.title'),
-                (array) $request->input('header.document'),
+                SitePartDocumentInput::read($request, 'header'),
                 (int) $request->input('header.expected_lock_version'),
                 (string) $request->input('footer.title'),
-                (array) $request->input('footer.document'),
+                SitePartDocumentInput::read($request, 'footer'),
                 (int) $request->input('footer.expected_lock_version'),
                 $this->actorId($request),
             );

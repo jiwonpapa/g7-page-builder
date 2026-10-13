@@ -2,16 +2,34 @@
 
 namespace Modules\Jiwonpapa\PageBuilder\Application\Compilation;
 
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\V3\HtmlCompiler as ElementHtmlCompiler;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\SitePartArtifact;
+use Modules\Jiwonpapa\PageBuilder\Domain\Site\ElementSitePartDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSource;
 
 final class SitePartHtmlCompiler
 {
     public const COMPILER_VERSION = '0.7.0';
 
-    public function compile(SitePartDocument $document, int $sourceRevision): SitePartArtifact
+    public function __construct(private readonly ?ElementHtmlCompiler $elements = null) {}
+
+    public function compile(SitePartSource $document, int $sourceRevision): SitePartArtifact
     {
+        if ($document instanceof ElementSitePartDocument) {
+            $compiler = $this->elements ?? throw new DocumentCompileException('Element Site Part compilation is unavailable.');
+            $result = $compiler->compile($document->content, $sourceRevision, 'html', HtmlDocumentCompiler::TARGET_ENGINE_VERSION);
+            if (! is_string($result->artifact)) {
+                throw new DocumentCompileException('Element Site Part compilation must produce HTML.');
+            }
+            $html = '<'.$document->kind.' data-g7pb-element-site-part="'.$document->kind.'">'.$result->artifact.'</'.$document->kind.'>';
+
+            return new SitePartArtifact($document->kind, $html, hash('sha256', $result->compilerVersion."\n".$html), $result->compilerVersion, $sourceRevision);
+        }
+        if (! $document instanceof SitePartDocument) {
+            throw new DocumentCompileException('Site Part source is not supported.');
+        }
         try {
             $document->assertWritable();
         } catch (\InvalidArgumentException $exception) {

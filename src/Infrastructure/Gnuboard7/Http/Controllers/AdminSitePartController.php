@@ -13,6 +13,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\SitePartNotFoundException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSnapshot;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\SitePartDocumentInput;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Routing\G7TemplateRouteBridge;
 
 final class AdminSitePartController
@@ -85,7 +86,7 @@ final class AdminSitePartController
                 $kind,
                 (string) $request->input('locale'),
                 (string) $request->input('title'),
-                (array) $request->input('document'),
+                SitePartDocumentInput::read($request),
                 (int) $request->input('expected_lock_version'),
                 $this->actorId($request),
                 $this->optionalSetId($request),

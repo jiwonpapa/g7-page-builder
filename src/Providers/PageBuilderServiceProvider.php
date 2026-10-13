@@ -19,9 +19,12 @@ use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocumentCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\SitePartHtmlCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\V3\HtmlCompiler as StructureHtmlCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Documents\DocumentStorageCodec;
+use Modules\Jiwonpapa\PageBuilder\Application\Documents\EmptyElementSitePart;
 use Modules\Jiwonpapa\PageBuilder\Application\Documents\EmptyStructureDocument;
+use Modules\Jiwonpapa\PageBuilder\Application\Documents\SitePartStorageCodec;
 use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
 use Modules\Jiwonpapa\PageBuilder\Application\Patterns\SectionPatternService;
+use Modules\Jiwonpapa\PageBuilder\Application\SitePartService;
 use Modules\Jiwonpapa\PageBuilder\Application\Store\OfficialStoreService;
 use Modules\Jiwonpapa\PageBuilder\Application\Store\SiteKitService;
 use Modules\Jiwonpapa\PageBuilder\Contracts\BlockFavoritePort;
@@ -46,6 +49,7 @@ use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartArtifactPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SiteShellPort;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\V3\Validator as StructureValidator;
+use Modules\Jiwonpapa\PageBuilder\Domain\Site\ElementSitePartValidator;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\BlockPacks\BuiltInBlockPackLoader;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\BlockPacks\Ed25519BlockPackSignatureVerifier;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\BlockPacks\GitHubReleaseSourceAdapter;
@@ -96,6 +100,22 @@ final class PageBuilderServiceProvider extends ServiceProvider
         /** @var array<string, mixed> $structurePolicy */
         $structurePolicy = json_decode($structurePolicySource, true, flags: JSON_THROW_ON_ERROR);
         $this->app->singleton(StructureValidator::class, fn (): StructureValidator => new StructureValidator($structureSchema, $structurePolicy));
+        $sitePartSchemaSource = file_get_contents(dirname(__DIR__, 2).'/schemas/site-part-v2.schema.json');
+        if ($sitePartSchemaSource === false) {
+            throw new \RuntimeException('The element Site Part contract is unavailable.');
+        }
+        /** @var array<string, mixed> $sitePartSchema */
+        $sitePartSchema = json_decode($sitePartSchemaSource, true, flags: JSON_THROW_ON_ERROR);
+        $this->app->singleton(ElementSitePartValidator::class, fn (): ElementSitePartValidator => new ElementSitePartValidator($sitePartSchema, $structureSchema, $structurePolicy));
+        $this->app->bind(SitePartStorageCodec::class, fn (): SitePartStorageCodec => new SitePartStorageCodec($this->app->make(ElementSitePartValidator::class)));
+        $this->app->bind(SitePartHtmlCompiler::class, fn (): SitePartHtmlCompiler => new SitePartHtmlCompiler($this->app->make(StructureHtmlCompiler::class)));
+        $this->app->bind(SitePartService::class, fn (): SitePartService => new SitePartService(
+            $this->app->make(SitePartRepository::class),
+            $this->app->make(SitePartHtmlCompiler::class),
+            $this->app->make(SitePartStorageCodec::class),
+            $this->app->make(EmptyElementSitePart::class),
+            $structurePolicy['default_tokens'],
+        ));
         $this->app->bind(PageBuilderRepository::class, fn (): EloquentPageBuilderRepository => new EloquentPageBuilderRepository($this->app->make(DocumentStorageCodec::class)));
         $this->app->bind(PageBuilderService::class, fn (): PageBuilderService => new PageBuilderService(
             $this->app->make(PageBuilderRepository::class),
@@ -231,8 +251,10 @@ final class PageBuilderServiceProvider extends ServiceProvider
             $this->app->make(DocumentCompilerPort::class), $this->app->make(SitePartHtmlCompiler::class),
             $this->app->make(MediaPort::class), $this->moduleVersion(), $this->g7Version(),
         ));
-        $this->app->bind(SitePartRepository::class, EloquentSitePartRepository::class);
-        $this->app->bind(SitePartArtifactPort::class, EloquentSitePartArtifactStore::class);
+        $this->app->bind(SitePartRepository::class, fn (): EloquentSitePartRepository => new EloquentSitePartRepository(
+            $this->app->make(SitePartArtifactPort::class), $this->app->make(SitePartStorageCodec::class),
+        ));
+        $this->app->bind(SitePartArtifactPort::class, fn (): EloquentSitePartArtifactStore => new EloquentSitePartArtifactStore($this->app->make(SitePartStorageCodec::class)));
         $this->app->bind(SiteShellPort::class, EloquentSiteShellAdapter::class);
     }
 

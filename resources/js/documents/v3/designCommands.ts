@@ -13,7 +13,8 @@ export type DesignCommand =
   | { kind: 'content'; id: string; props: unknown }
   | { kind: 'behavior'; id: string; value: unknown }
   | { kind: 'binding'; id: string; value: unknown }
-  | { kind: 'system'; id: string; value: unknown };
+  | { kind: 'system'; id: string; value: unknown }
+  | { kind: 'data'; id: string; value: unknown };
 export type AtomicCommand = TreeCommand | DesignCommand | ImageCommand | ImageInsertCommand;
 export type DocumentCommand = AtomicCommand | { kind: 'transaction'; commands: AtomicCommand[] };
 
@@ -31,9 +32,9 @@ export function executeDocumentCommand(source: DocumentV3, command: DocumentComm
   }
   if (command.kind === 'image') return replaceImage(source, command);
   if (command.kind === 'image-insert') return insertImage(source, command, nextId);
-  if (command.kind !== 'style' && command.kind !== 'styles' && command.kind !== 'content' && command.kind !== 'behavior' && command.kind !== 'binding' && command.kind !== 'system') return executeTreeCommand(source, command, nextId);
+  if (command.kind !== 'style' && command.kind !== 'styles' && command.kind !== 'content' && command.kind !== 'behavior' && command.kind !== 'binding' && command.kind !== 'system' && command.kind !== 'data') return executeTreeCommand(source, command, nextId);
   validateDocumentV3(source);
-  const viewport = command.kind === 'content' || command.kind === 'behavior' || command.kind === 'binding' || command.kind === 'system' ? 'base' : command.viewport ?? 'base';
+  const viewport = command.kind === 'content' || command.kind === 'behavior' || command.kind === 'binding' || command.kind === 'system' || command.kind === 'data' ? 'base' : command.viewport ?? 'base';
   if (!['base', 'tablet', 'mobile'].includes(viewport)) reject('viewport', '$');
   if (jsonBytes(command, designPolicyV3.limits.json_depth) > designPolicyV3.limits.utf8_bytes) reject('byte_limit', '$');
   const document = cloneDocument(source), tree = indexTree(document);
@@ -47,7 +48,7 @@ export function executeDocumentCommand(source: DocumentV3, command: DocumentComm
     if (command.kind === 'content') {
       // Every primitive uses the same schema/semantic validator; no per-composition allowlist.
       Object.assign(item.node, { props: JSON.parse(JSON.stringify(command.props)) });
-    } else if (command.kind === 'behavior' || command.kind === 'binding' || command.kind === 'system') {
+    } else if (command.kind === 'behavior' || command.kind === 'binding' || command.kind === 'system' || command.kind === 'data') {
       assertEditable(item, true);
       if (command.value === null) delete item.node[command.kind];
       else Object.assign(item.node, { [command.kind]: JSON.parse(JSON.stringify(command.value)) });

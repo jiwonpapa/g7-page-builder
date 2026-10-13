@@ -80,6 +80,12 @@
     "trigger_types": ["action.button"]
   },
   "systems": { "host_types": ["layout.container"], "host_tags": ["div", "nav"] },
+  "data": {
+    "host_types": ["layout.container"], "host_tags": ["div"],
+    "properties": { "text": ["content.heading", "content.text", "action.link"], "image": ["media.image"], "link": ["action.link"] },
+    "fields": { "text": ["title", "description", "meta", "price"], "image": ["image"], "link": ["link"] },
+    "feeds": { "posts": ["recent", "popular", "board"], "post-archive": ["recent", "popular"], "post-detail": ["recent"], "products": ["latest", "new", "popular"], "product-showcase": ["latest", "new", "popular"], "product-detail": ["latest"] }
+  },
   "bindings": {
     "host_types": ["layout.section", "layout.container"],
     "host_tags": ["section", "article", "aside", "div", "nav", "header", "footer", "li", "dd", "figure", "td", "th"],

@@ -2,6 +2,7 @@ import { archiveControlNodes, installArchiveFilters, installPagination } from '.
 import { payloadItems, payloadRecord, renderPost, renderPostDetail, renderProduct, renderProductDetail } from './publicDataRendering';
 import { asRecord } from './publicValues';
 import { shellAuthHeaders } from './siteShellControls';
+import { renderDataTemplate } from './publicDataTemplates';
 
 type Audience = 'guest' | 'member';
 interface VisibilityState {
@@ -33,7 +34,7 @@ const runtimes = new WeakMap<Document, DataRuntime>();
 const inputAttributes = ['data-g7pb-data-source', 'data-g7pb-endpoint', 'data-g7pb-audience',
   'data-g7pb-visibility-audience', 'data-g7pb-product-base', 'data-g7pb-empty-message',
   'data-g7pb-show-content', 'data-g7pb-show-description', 'data-g7pb-detail-url', 'data-g7pb-detail-label',
-  'data-g7pb-data-limit', 'data-g7pb-page-size', 'data-g7pb-motion', 'data-g7pb-motion-stagger'];
+  'data-g7pb-data-limit', 'data-g7pb-page-size', 'data-g7pb-motion', 'data-g7pb-motion-stagger', 'data-g7pb-v3-data'];
 
 function dataInputs(block: HTMLElement): string {
   return JSON.stringify(inputAttributes.map((attribute) => block.getAttribute(attribute)));
@@ -224,7 +225,14 @@ async function loadBlock(runtime: DataRuntime, block: HTMLElement, state: DataSt
     if (!dataCurrent(runtime, block, state)) return;
     if (!response.ok || !payload || payload.success === false) throw new Error('dynamic data request failed');
     const source = block.dataset.g7pbDataSource;
-    if (source === 'post-detail' || source === 'product-detail') {
+    if (block.hasAttribute('data-g7pb-v3-data')) {
+      const nodes = renderDataTemplate(runtime.root, block, payload), target = detail ?? list;
+      if (!target) throw new Error('Missing data template target.');
+      target.replaceChildren(...nodes);
+      target.setAttribute('aria-busy', 'false');
+      if (status) { status.textContent = nodes.length ? '' : block.dataset.g7pbEmptyMessage ?? '표시할 콘텐츠가 없습니다.'; status.hidden = nodes.length > 0; }
+      if (list) { state.rows = nodes; connectArchive(block, state); }
+    } else if (source === 'post-detail' || source === 'product-detail') {
       const item = payloadRecord(payload);
       const rendered = item
         ? source === 'post-detail' ? renderPostDetail(runtime.root, block, item) : renderProductDetail(runtime.root, block, item) : null;
@@ -261,7 +269,7 @@ async function loadBlock(runtime: DataRuntime, block: HTMLElement, state: DataSt
     detail?.replaceChildren();
     list?.setAttribute('aria-busy', 'false');
     detail?.setAttribute('aria-busy', 'false');
-    if (status) status.textContent = failureMessage;
+    if (status) { status.textContent = failureMessage; status.hidden = false; }
   }
   block.dataset.g7pbDataReady = 'true';
 }

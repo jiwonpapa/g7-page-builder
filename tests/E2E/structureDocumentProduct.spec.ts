@@ -266,6 +266,31 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
   const click = (name: string) => page.getByRole('button', { name, exact: true }).click();
   const visitors = await browser.newContext({ ...devices['Desktop Chrome'], ignoreHTTPSErrors: true, locale: 'ko-KR' });
   const viewer = await visitors.newPage(), preview = await context.newPage();
+  await visitors.tracing.start({ screenshots: true, snapshots: true });
+  const lifetime: unknown[] = [];
+  viewer.on('console', message => {
+    if (message.type() === 'debug' && message.text().startsWith('g7pb-form-lifetime ')) lifetime.push(message.text().slice(19));
+  });
+  await viewer.addInitScript(() => {
+    const forms = new WeakMap<Element, number>(); let sequence = 0;
+    const record = (event: string) => {
+      const state = [...document.querySelectorAll<HTMLFormElement>('form[data-g7pb-inquiry-form]')].map(form => {
+        if (!forms.has(form)) forms.set(form, ++sequence);
+        return { mount: forms.get(form), ready: form.dataset.g7pbFormReady, fields: [...form.elements]
+          .filter((field): field is HTMLInputElement | HTMLTextAreaElement => field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)
+          .filter(field => field.type !== 'hidden')
+          .map(field => ({ name: field.name, length: field.value.length, checked: field instanceof HTMLInputElement && field.checked })) };
+      });
+      console.debug('g7pb-form-lifetime ' + JSON.stringify({ event, time: performance.now(), state }));
+    };
+    for (const type of ['input', 'change', 'reset', 'invalid', 'submit']) document.addEventListener(type, event => {
+      if (event.target instanceof Element && event.target.closest('[data-g7pb-inquiry-form]')) record(type);
+    }, true);
+    new MutationObserver(records => {
+      if (records.some(record => [...record.addedNodes, ...record.removedNodes].some(node => node instanceof Element
+        && (node.matches('[data-g7pb-inquiry-form]') || node.querySelector('[data-g7pb-inquiry-form]'))))) record('form-tree');
+    }).observe(document, { childList: true, subtree: true });
+  });
   const errors: string[] = []; for (const target of [page, viewer, preview]) target.on('pageerror', error => errors.push(error.message));
   try {
     await page.setViewportSize({ width: 1440, height: 1000 }); await page.goto(`${editor}?editor=structure`);
@@ -340,6 +365,13 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
     await form.getByLabel('message', { exact: true }).fill('실제 고객 요청이 아닌 로컬 기능 검증입니다.');
     await form.getByLabel('privacy', { exact: true }).check();
     await expect.poll(() => form.locator('input[name="started_at"]').evaluate(input => Math.floor(Date.now() / 1000) - Number((input as HTMLInputElement).value))).toBeGreaterThanOrEqual(2);
+    // A form which becomes ready before a later host render must not silently
+    // lose the visitor's input. Re-filling or retrying would hide that defect.
+    await expect(form.getByLabel('name', { exact: true })).toHaveValue('로컬 검증');
+    await expect(form.getByLabel('이메일 <안내>', { exact: true })).toHaveValue('common-form@example.invalid');
+    await expect(form.getByLabel('subject', { exact: true })).toHaveValue(subject);
+    await expect(form.getByLabel('message', { exact: true })).toHaveValue('실제 고객 요청이 아닌 로컬 기능 검증입니다.');
+    await expect(form.getByLabel('privacy', { exact: true })).toBeChecked();
     const posted = viewer.waitForResponse(result => result.request().method() === 'POST' && result.url().endsWith('/inquiries'));
     const session = viewer.waitForResponse(result => result.url().endsWith('/sanctum/csrf-cookie'));
     await form.locator('button[type="submit"]').click(); const receipt = await posted;
@@ -377,6 +409,10 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
     expect(current.document).toEqual(saved.document); expect(current.active_artifact_sha256).toMatch(/^[a-f0-9]{64}$/);
     expect(errors).toEqual([]);
   } finally {
+    await info.attach('common-form-lifetime', { body: JSON.stringify(lifetime), contentType: 'application/json' });
+    const tracePath = info.outputPath('common-form-visitor-trace.zip');
+    await visitors.tracing.stop({ path: tracePath });
+    await info.attach('common-form-visitor-trace', { path: tracePath, contentType: 'application/zip' });
     await visitors.close(); await preview.close();
     try {
       if (submissionId) {

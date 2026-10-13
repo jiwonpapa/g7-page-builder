@@ -9,18 +9,21 @@ import { readCssGraph } from './lib/editorCssSources.mjs';
 const defaultRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const budgets = [
   { path: 'dist/js/page-builder-manager.iife.js', gzip: 90_000 },
-  // User-approved 2026-10-13: 512,000 gzip bytes for either editor entry.
-  // Runtime performance and every unrelated asset budget remain unchanged.
-  { path: 'dist/js/page-builder-editor.iife.js', gzip: 512_000 },
-  { path: 'dist/js/page-builder-structure.iife.js', gzip: 512_000 },
-  { path: 'dist/js/page-builder-site-part.iife.js', gzip: 410_000 },
   { path: 'dist/js/page-effects.iife.js', gzip: 24_000 },
   { path: 'dist/js/page-sliders.iife.js', gzip: 12_000 },
 ];
 
+// User-approved 2026-10-13: editor JS bytes are measurements, not ceilings.
+// Missing/empty artifacts and actual loading/interaction regressions still fail.
+const EDITOR_JS_MEASUREMENTS = [
+  { path: 'dist/js/page-builder-editor.iife.js', warning: 512_000 },
+  { path: 'dist/js/page-builder-structure.iife.js', warning: 512_000 },
+  { path: 'dist/js/page-builder-site-part.iife.js', warning: 410_000 },
+];
+
 // User-approved 2026-10-13: CSS bytes never block development or release.
 // Historical thresholds remain observable warnings; required files, ownership,
-// syntax, visual/runtime checks and all JavaScript ceilings remain enforced.
+// syntax, visual/runtime checks and unrelated JavaScript ceilings remain enforced.
 const CSS_MEASUREMENTS = [
   { path: 'resources/css/page-builder-core.css', unit: 'raw', warning: 18_000 },
   { path: 'resources/css/page-builder-manager.css', unit: 'raw', warning: 20_000 },
@@ -120,6 +123,15 @@ async function main(args) {
     const unit = budget.gzip === undefined ? 'raw' : 'gzip';
     report.push(`${budget.path}=${actual}/${limit} ${unit} bytes`);
     if (actual > limit) throw new Error(`Frontend budget exceeded: ${report.at(-1)}`);
+  }
+  for (const { path, warning } of EDITOR_JS_MEASUREMENTS) {
+    const bytes = readFileSync(join(root, path));
+    if (bytes.toString('utf8').trim() === '') throw new Error(`Empty editor JavaScript artifact: ${path}`);
+    const gzip = gzipSync(bytes).byteLength;
+    report.push(`${path}=${bytes.byteLength} raw / ${gzip} gzip bytes (reported; no size ceiling)`);
+    if (gzip > warning) {
+      report.push(`Editor JS size advisory: ${path} exceeds historical ${warning} gzip bytes; non-blocking`);
+    }
   }
   for (const { path, unit, warning } of CSS_MEASUREMENTS) {
     const bytes = readFileSync(join(root, path));

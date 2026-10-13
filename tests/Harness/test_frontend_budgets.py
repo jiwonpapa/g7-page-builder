@@ -1,4 +1,4 @@
-"""Synthetic CSS source/CLI fixtures; no build, browser, catalog or runtime."""
+"""Synthetic asset measurement/CLI fixtures; no build, browser or runtime."""
 import json
 import os
 import hashlib
@@ -64,43 +64,49 @@ class FrontendBudgetTests(unittest.TestCase):
     def payload(label, count):
         return "".join(hashlib.sha256(f"{label}-{index}".encode()).hexdigest() for index in range(count))
 
-    def test_both_editor_entries_enforce_the_approved_gzip_ceiling(self):
-        for entry in ("editor", "structure"):
+    def test_all_editor_entries_report_growth_without_a_gzip_ceiling(self):
+        for entry, warning in (("editor", 512000), ("structure", 512000), ("site-part", 410000)):
             with self.subTest(entry=entry):
                 self.full_fixture()
                 path = f"dist/js/page-builder-{entry}.iife.js"
-                self.write(path, self.payload(entry, 16000))
-                result = self.run_checker()
-                self.assertNotEqual(result.returncode, 0, result.stdout)
-                self.assertIn(path, result.stderr)
-                self.assertIn("/512000 gzip bytes", result.stderr)
-
-    def test_editor_growth_above_old_ceiling_passes_only_within_approved_ceiling(self):
-        script = """
-          const {gzipSync} = require('node:zlib');
-          const data = require('node:fs').readFileSync(0);
-          let low = 0, high = data.length;
-          while (low < high) {
-            const mid = Math.ceil((low + high) / 2);
-            if (gzipSync(data.subarray(0, mid)).length <= 510000) low = mid;
-            else high = mid - 1;
-          }
-          const source = data.subarray(0, low);
-          process.stdout.write(JSON.stringify({source: source.toString(), bytes: gzipSync(source).length}));
-        """
-        measured = subprocess.run(["node", "-e", script], input=self.payload("editor-budget", 16000),
-                                  capture_output=True, text=True, check=True, timeout=30)
-        sample = json.loads(measured.stdout)
-        self.assertGreater(sample["bytes"], 508_500)
-        self.assertLessEqual(sample["bytes"], 512_000)
-        for entry in ("editor", "structure"):
-            with self.subTest(entry=entry):
-                self.full_fixture()
-                path = f"dist/js/page-builder-{entry}.iife.js"
-                self.write(path, sample["source"])
+                source = self.payload(entry, 16000)
+                self.write(path, source)
                 result = self.run_checker()
                 self.assertEqual(result.returncode, 0, result.stderr)
-                self.assertIn(f"{path}={sample['bytes']}/512000 gzip bytes", result.stdout)
+                self.assertIn(f"{path}={len(source.encode())} raw / ", result.stdout)
+                self.assertIn("gzip bytes (reported; no size ceiling)", result.stdout)
+                self.assertIn(f"Editor JS size advisory: {path} exceeds historical {warning} gzip bytes; non-blocking", result.stdout)
+
+    def test_small_editor_entries_are_measured_without_advisories(self):
+        self.full_fixture()
+        result = self.run_checker()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("Editor JS size advisory:", result.stdout)
+        for entry in ("editor", "structure", "site-part"):
+            self.assertIn(f"dist/js/page-builder-{entry}.iife.js=7 raw / ", result.stdout)
+
+    def test_editor_artifacts_remain_required_and_nonempty(self):
+        for entry in ("editor", "structure", "site-part"):
+            with self.subTest(entry=entry):
+                self.full_fixture()
+                path = f"dist/js/page-builder-{entry}.iife.js"
+                (self.root / path).unlink()
+                missing = self.run_checker()
+                self.assertNotEqual(missing.returncode, 0)
+                self.assertIn("ENOENT", missing.stderr)
+                self.assertIn(path, missing.stderr)
+                self.write(path, " \n")
+                result = self.run_checker()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(f"Empty editor JavaScript artifact: {path}", result.stderr)
+
+    def test_manager_budget_is_not_weakened_by_editor_policy(self):
+        self.full_fixture()
+        self.write("dist/js/page-builder-manager.iife.js", self.payload("manager-over", 4000))
+        result = self.run_checker()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("dist/js/page-builder-manager.iife.js=", result.stderr)
+        self.assertIn("/90000 gzip bytes", result.stderr)
 
     def test_full_command_reports_split_family_growth_without_a_ceiling(self):
         self.full_fixture()

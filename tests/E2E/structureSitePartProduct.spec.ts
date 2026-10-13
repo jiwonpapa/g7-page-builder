@@ -1,8 +1,11 @@
-import { expect, test, type APIRequestContext, type Page, type Locator } from '@playwright/test';
+import { devices, expect, test, type APIRequestContext, type Page, type Locator } from '@playwright/test';
 import { authenticateEditorInteractionAdmin, editorInteractionApi } from './support/editorInteractionFixture';
 import { SitePartSetFixture } from './support/sitePartSetFixture';
 import type { ElementPartResource, PartKind } from '../../resources/js/api/elementSitePartResource';
 import type { SitePartSetResource } from '../../resources/js/api/resources';
+
+// SPEC-09 edits every canvas width on a desktop host, without a mobile-UA/OS keymap mix.
+test.use({ isMobile: false, hasTouch: false, userAgent: devices['Desktop Chrome'].userAgent });
 
 const API = '/api/modules/jiwonpapa-page_builder/admin';
 const EDITOR = '/modules/jiwonpapa-page_builder/admin/site-parts';

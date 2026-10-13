@@ -294,8 +294,10 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
     await page.getByLabel('높이 값', { exact: true }).fill('56'); await click('디자인 적용');
     await page.getByTestId('layer-' + host.instance_id).click(); await page.getByLabel('문의 분류', { exact: true }).selectOption('quote');
     await page.getByLabel('접수 완료 문구', { exact: true }).fill('공통 요소 문의가 접수되었습니다.'); await click('제출 연결 적용');
-    await click('실행 취소'); await expect(page.getByLabel('문의 분류', { exact: true })).toHaveValue('inquiry');
-    await click('다시 실행'); await expect(page.getByLabel('문의 분류', { exact: true })).toHaveValue('quote');
+    await click('실행 취소'); await page.getByTestId('layer-' + host.instance_id).click();
+    await expect(page.getByLabel('문의 분류', { exact: true })).toHaveValue('inquiry');
+    await click('다시 실행'); await page.getByTestId('layer-' + host.instance_id).click();
+    await expect(page.getByLabel('문의 분류', { exact: true })).toHaveValue('quote');
     await click('저장'); await expect(page.getByTestId('structure-document-status')).toHaveText('초안 저장됨');
     const saved = (await (await api.get(`${documents}/${ownedId}`)).json()).data;
     expect(saved.document.blocks[0].binding.form_kind).toBe('quote'); await page.reload();

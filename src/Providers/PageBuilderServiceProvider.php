@@ -284,7 +284,7 @@ final class PageBuilderServiceProvider extends ServiceProvider
             ->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*')
             ->name('web.page-builder.public');
 
-        Route::middleware(['web', 'throttle:10,1'])
+        Route::middleware(['web', 'throttle:10,1,g7pb_inquiry'])
             ->post('pages/{slug}/inquiries', [FormSubmissionController::class, 'store'])
             ->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*')
             ->name('web.page-builder.inquiries.store');

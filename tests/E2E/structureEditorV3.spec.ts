@@ -143,7 +143,9 @@ test.describe(() => {
     const selector = '[data-v3-node="' + id + '"]';
     await layer(page, id).click();
     await expect(page.frameLocator('iframe').locator(selector)).toHaveCSS('width', '24px');
-    await expect(page.frameLocator('iframe').locator(selector)).toHaveAttribute('aria-hidden', 'true');
+    await expect(page.frameLocator('iframe').locator(selector)).toHaveAttribute('role', 'button');
+    await expect(page.frameLocator('iframe').locator(selector)).toHaveAccessibleName('아이콘');
+    await expect(page.frameLocator('iframe').locator(selector)).not.toHaveAttribute('aria-hidden', 'true');
     await expect(page.getByLabel('아이콘 설명', { exact: true })).toBeDisabled();
     await page.getByLabel('장식용 아이콘', { exact: true }).uncheck();
     await click(page, '아이콘 적용');
@@ -206,10 +208,18 @@ test.describe(() => {
       await output.setContent('<!doctype html><html lang="ko"><body style="margin:0">' + phpDraft(gallery, expectedViewport(width)) + '</body></html>');
       const php = await output.locator('[data-v3-surface]').evaluate(measure);
       expect(canvas).toHaveLength(23);
+      for (const [index, node] of canvas.entries()) {
+        expect(node.hidden).toBeNull();
+        expect(node.role).toBe(index % 2 === 0 ? 'button' : 'img');
+        expect(node.label).toBe(index % 2 === 0 ? original.name : original.props.label);
+      }
       for (const other of [preview, php]) for (const [index, node] of other.entries()) {
         const { width: w, height, svgWidth, svgHeight, shapes, ...meaning } = node;
         const { width: cw, height: ch, svgWidth: sw, svgHeight: sh, shapes: cs, ...canvasMeaning } = canvas[index];
-        expect(meaning).toEqual(canvasMeaning);
+        // Editing controls belong to Puck. Authored semantics remain identical
+        // between the non-interactive React preview and PHP output.
+        expect(meaning).toEqual({ ...canvasMeaning, role: index % 2 === 0 ? null : 'img',
+          label: index % 2 === 0 ? null : original.props.label, hidden: index % 2 === 0 ? 'true' : null });
         for (const delta of [w - cw, height - ch, svgWidth - sw, svgHeight - sh]) expect(Math.abs(delta)).toBeLessThanOrEqual(1);
         expect(shapes).toHaveLength(cs.length);
         for (const [n, shape] of shapes.entries()) {

@@ -9,7 +9,7 @@ import { validateDocumentV3 } from '../../resources/js/documents/v3/validate';
 import { createPrimitive } from '../../resources/js/documents/v3/primitives';
 import { executeDocumentCommand } from '../../resources/js/documents/v3/designCommands';
 import { documentPresentation } from '../../resources/js/documents/v3/presentation';
-import { StructurePreview } from '../../resources/js/editor/v3/NodeRenderer';
+import { NodeRenderer, StructurePreview } from '../../resources/js/editor/v3/NodeRenderer';
 import { IconInspector } from '../../resources/js/editor/v3/IconInspector';
 import { catalogIconNames, isCatalogIconName } from '../../resources/js/editor/catalogIcon';
 
@@ -48,6 +48,14 @@ it('covers every contract icon without a block registration and preserves canoni
   const element = document.querySelector('[data-v3-node]')!;
   expect(element.getAttribute('role')).toBeNull(); expect(element.getAttribute('aria-label')).toBeNull();
   expect(element.getAttribute('aria-hidden')).toBe('true');
+  // The editing affordance remains named and exposed; it is not public content.
+  const before = JSON.stringify(value);
+  document.body.innerHTML = renderToStaticMarkup(<NodeRenderer node={node} document={value} editing styles={documentPresentation(value)} />);
+  const control = document.querySelector('[data-v3-node]')!;
+  expect(control.hasAttribute('aria-hidden')).toBe(false);
+  expect(control.getAttribute('aria-label')).toBe(node.name);
+  expect(control.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+  expect(JSON.stringify(value)).toBe(before);
 });
 it('uses common commands and responsive style without changing the original or accepting a child', () => {
   const { document: original, node } = source(), before = JSON.stringify(original);

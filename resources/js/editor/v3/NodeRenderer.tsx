@@ -37,7 +37,8 @@ export function NodeRenderer({ node, document, styles, attributes, children, bod
       <p key={index} style={reactStyle(PARAGRAPH_STYLE)}><Runs runs={runs} document={document} editing={editing} /></p>)}</div>;
     case 'media.image': return <img {...identity} src={document.assets.find(asset => asset.asset_id === node.props.asset_id)?.url} alt={node.props.alt} />;
     case 'media.icon': return <span {...identity} role={node.props.decorative ? undefined : 'img'}
-      aria-hidden={node.props.decorative ? true : undefined} aria-label={node.props.decorative ? undefined : node.props.label}>
+      aria-hidden={node.props.decorative && !editing ? true : undefined}
+      aria-label={node.props.decorative ? editing ? node.name : undefined : node.props.label}>
       <CatalogIcon name={node.props.icon} fillParent />
     </span>;
     case 'action.link': return <a {...identity} href={node.props.link.url} onClick={editing ? event => event.preventDefault() : undefined}

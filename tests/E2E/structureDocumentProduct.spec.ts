@@ -1,4 +1,4 @@
-import { devices, expect, test, type Locator } from '@playwright/test';
+import { devices, expect, test, type Frame, type Locator } from '@playwright/test';
 import type { DocumentV3 } from '../../resources/js/documents/v3/types';
 import { authenticateEditorInteractionAdmin, editorInteractionApi } from './support/editorInteractionFixture';
 
@@ -261,6 +261,19 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
   const click = (name: string) => page.getByRole('button', { name, exact: true }).click();
   const viewer = await context.newPage(), preview = await context.newPage();
   // Verify our actual iframe/hydration/CSP/geometry, not a remote service's availability.
+  const frameIds = new Map<Frame, number>();
+  const lifecycle: { page: string; event: string; frame: number; at: number; path: string }[] = [];
+  for (const [name, target] of [['preview', preview], ['public', viewer]] as const) {
+    const record = (event: string, frame: Frame) => {
+      if (!frame.parentFrame()) return;
+      if (!frameIds.has(frame)) frameIds.set(frame, frameIds.size + 1);
+      const url = new URL(frame.url() || 'about:blank');
+      lifecycle.push({ page: name, event, frame: frameIds.get(frame)!, at: Date.now(), path: url.origin + url.pathname });
+    };
+    target.on('frameattached', frame => record('attached', frame));
+    target.on('framenavigated', frame => record('navigated', frame));
+    target.on('framedetached', frame => record('detached', frame));
+  }
   await context.route(/^https:\/\/(www\.youtube-nocookie\.com|player\.vimeo\.com|www\.openstreetmap\.org|www\.google\.com)\//,
     route => route.fulfill({ contentType: 'text/html; charset=utf-8', body: '<!doctype html><html lang="ko"><meta charset="utf-8"><body style="margin:0;background:#e2e8f0;font:16px sans-serif">외부 제공자 검증 대역</body></html>' }));
   const length = async (label: string, value: number) => {
@@ -328,38 +341,48 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
       await click('구조 미리보기'); const authored = await sample(page.getByTestId('v3-preview')); expect(authored).toEqual(expected);
       await click('구조 미리보기'); const captures = [];
       for (const [name, target, url] of [['preview', preview, previewUrl], ['public', viewer, publicUrl]] as const) {
+        const lifecycleStart = lifecycle.length;
         await target.setViewportSize({ width, height: 1000 }); expect((await target.goto(url))?.ok()).toBe(true);
         const surface = target.locator('[data-g7pb-v3-public]'); await expect(surface.locator('iframe')).toHaveCount(4);
         await expect(surface.locator('[data-g7pb-embed]')).toHaveCount(0);
-        const frames = [];
-        for (const id of identities) {
-          const selector = '[data-g7pb-v3-public] [data-v3-node="' + id + '"] iframe';
-          await expect(target.locator(selector)).toBeVisible();
-          const body = target.frameLocator(selector).locator('body');
-          await expect(body).toHaveText('외부 제공자 검증 대역');
-          await expect(body).toBeVisible();
-          // Parent geometry and parsed frame text do not establish child-frame
-          // font/paint readiness. Observe both browsing contexts before capture.
-          const ready = await body.evaluate(async element => {
-            const document = element.ownerDocument, view = document.defaultView!;
+        const frames: { id: string; state: string; fontStatus: string; visibility: string; background: string; text: string | null }[] = [];
+        // G7 may replace the first template render during initial hydration.
+        // Retry only read-only readiness observations, never the user workflow.
+        await expect(async () => {
+          frames.length = 0;
+          const generation = () => target.frames().filter(frame => frame.parentFrame()
+            && /^https:\/\/(www\.youtube-nocookie\.com|player\.vimeo\.com|www\.openstreetmap\.org|www\.google\.com)\//.test(frame.url()))
+            .map(frame => frameIds.get(frame));
+          const beforeFrames = generation(); expect(beforeFrames).toHaveLength(4);
+          for (const id of identities) {
+            const selector = '[data-g7pb-v3-public] [data-v3-node="' + id + '"] iframe';
+            await expect(target.locator(selector)).toBeVisible();
+            const body = target.frameLocator(selector).locator('body');
+            await expect(body).toHaveText('외부 제공자 검증 대역');
+            await expect(body).toBeVisible();
+            // Parent geometry and parsed text do not establish child readiness.
+            const ready = await body.evaluate(async element => {
+              const document = element.ownerDocument, view = document.defaultView!;
+              await document.fonts.ready;
+              await new Promise<void>(resolve => view.requestAnimationFrame(() => view.requestAnimationFrame(() => resolve())));
+              const style = view.getComputedStyle(element);
+              return { state: document.readyState, fontStatus: document.fonts.status,
+                visibility: style.visibility, background: style.backgroundColor, text: element.textContent };
+            });
+            expect(ready).toEqual({ state: 'complete', fontStatus: 'loaded', visibility: 'visible',
+              background: 'rgb(226, 232, 240)', text: '외부 제공자 검증 대역' });
+            frames.push({ id, ...ready });
+          }
+          await target.evaluate(async () => {
             await document.fonts.ready;
-            await new Promise<void>(resolve => view.requestAnimationFrame(() => view.requestAnimationFrame(() => resolve())));
-            const style = view.getComputedStyle(element);
-            return { state: document.readyState, fontStatus: document.fonts.status,
-              visibility: style.visibility, background: style.backgroundColor, text: element.textContent };
+            await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
           });
-          expect(ready).toEqual({ state: 'complete', fontStatus: 'loaded', visibility: 'visible',
-            background: 'rgb(226, 232, 240)', text: '외부 제공자 검증 대역' });
-          frames.push({ id, ...ready });
-        }
-        await target.evaluate(async () => {
-          await document.fonts.ready;
-          await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-        });
+          expect(generation()).toEqual(beforeFrames);
+        }).toPass({ timeout: 10_000 });
         const actual = await sample(surface);
         expect(actual.map(({ size: _size, ...node }) => node)).toEqual(expected.map(({ size: _size, ...node }) => node));
         for (const [index, node] of actual.entries()) for (let axis = 0; axis < 4; axis++) expect(Math.abs(node.size[axis] - expected[index].size[axis])).toBeLessThanOrEqual(1);
-        captures.push({ name, actual, frames });
+        captures.push({ name, actual, frames, lifecycle: lifecycle.slice(lifecycleStart).filter(event => event.page === name) });
         await info.attach(`embeds-${shell}-${name}-${width}`, { body: await target.screenshot(), contentType: 'image/png' });
       }
       await info.attach(`embeds-${shell}-measurements-${width}`, { body: JSON.stringify({ canvas: expected, authored, captures, externalProvider: 'test double, not live playback' }), contentType: 'application/json' });
@@ -368,6 +391,7 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
     expect(current.document).toEqual(before.document); expect(current.active_artifact_sha256).toMatch(/^[a-f0-9]{64}$/);
     await info.attach('published-common-embeds-source', { body: JSON.stringify(current), contentType: 'application/json' });
   } finally {
+    await info.attach('embed-frame-lifecycle', { body: JSON.stringify(lifecycle), contentType: 'application/json' });
     await viewer.close(); await preview.close();
     try {
       if (ownedId) {

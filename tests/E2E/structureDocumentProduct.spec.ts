@@ -1,10 +1,13 @@
 import { devices, expect, test, type Frame, type Locator } from '@playwright/test';
-import type { DocumentV3 } from '../../resources/js/documents/v3/types';
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import type { DocumentV3, Node } from '../../resources/js/documents/v3/types';
 import { authenticateEditorInteractionAdmin, editorInteractionApi } from './support/editorInteractionFixture';
 
 test.use({ isMobile: false, hasTouch: false, userAgent: devices['Desktop Chrome'].userAgent });
 const documents = '/api/modules/jiwonpapa-page_builder/admin/documents';
 const editor = '/modules/jiwonpapa-page_builder/admin/editor';
+const commonFormCases = JSON.parse(readFileSync(new URL('../Fixtures/document-v3-cases.json', import.meta.url), 'utf8')) as { form_binding: { blocks: Node[] } };
 
 async function publicNodes(surface: Locator) {
   // Template hydration may replace the SSR surface after the locator resolves.
@@ -249,6 +252,138 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
         const result = await api.post(`${documents}/${ownedId}/archive`, { data: { expected_lock_version: current.lock_version } });
         expect(result.ok(), await result.text()).toBe(true);
         await info.attach('owned-document-archived', { body: await result.body(), contentType: 'application/json' });
+      }
+    } finally { await api.dispose(); }
+  }
+});
+
+for (const shell of ['none', 'template', 'builder'] as const) test(`publishes common form elements with persisted edits preview isolation and real inquiry storage ${shell}`, async ({ page, context, browser }, info) => {
+  // This is a local persistence proof, not authorization to deliver email.
+  execFileSync('php', ['-r', 'require "/var/www/g7/vendor/autoload.php"; $app=require "/var/www/g7/bootstrap/app.php"; $app->make(Illuminate\\Contracts\\Console\\Kernel::class)->bootstrap(); $recipient=config("g7-page-builder.forms.recipient"); if (is_string($recipient) && filter_var($recipient,FILTER_VALIDATE_EMAIL)!==false) { throw new RuntimeException("Inquiry test requires no configured mail recipient"); }'], { timeout: 30000, stdio: 'pipe' });
+  const token = await authenticateEditorInteractionAdmin(context), api = await editorInteractionApi(token);
+  const slug = `g7pb-form-${shell}-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+  let ownedId: string | undefined, submissionId: string | undefined;
+  const click = (name: string) => page.getByRole('button', { name, exact: true }).click();
+  const visitors = await browser.newContext({ ...devices['Desktop Chrome'], ignoreHTTPSErrors: true, locale: 'ko-KR' });
+  const viewer = await visitors.newPage(), preview = await context.newPage();
+  const errors: string[] = []; for (const target of [page, viewer, preview]) target.on('pageerror', error => errors.push(error.message));
+  try {
+    await page.setViewportSize({ width: 1440, height: 1000 }); await page.goto(`${editor}?editor=structure`);
+    await page.getByLabel('페이지 제목', { exact: true }).fill('공통 폼 공개 검증 ' + shell);
+    await page.getByLabel('기본 주소 이름', { exact: true }).fill(slug);
+    await page.getByRole('combobox', { name: '페이지 출력 방식', exact: true }).selectOption(shell);
+    const creating = page.waitForResponse(response => response.url().endsWith(documents) && response.request().method() === 'POST');
+    await click('빈 페이지 만들기'); const response = await creating;
+    expect(response.ok(), await response.text()).toBe(true); const created = (await response.json()).data; ownedId = created.document.document_id;
+    // Initialize ordinary elements through the real authenticated draft API.
+    // UI insertion/binding-from-empty is covered by the isolated editor proof.
+    const source: DocumentV3 = { ...created.document, blocks: structuredClone(commonFormCases.form_binding.blocks) };
+    const host = source.blocks[0], binding = host.binding!, email = binding.fields.find(field => field.name === 'email')!;
+    host.style = { display: 'grid', row_gap: { value: 8, unit: 'px' }, padding_top: { value: 16, unit: 'px' },
+      padding_bottom: { value: 16, unit: 'px' }, padding_left: { value: 16, unit: 'px' }, padding_right: { value: 16, unit: 'px' } };
+    const seeded = await api.put(`${documents}/${ownedId}/draft`, { data: { document: source, expected_lock_version: created.lock_version } });
+    expect(seeded.ok(), await seeded.text()).toBe(true); await page.reload();
+    await page.getByTestId('layer-' + email.label_id).click();
+    await page.getByLabel('입력 라벨 문구', { exact: true }).fill('이메일 <안내>'); await click('입력 설정 적용');
+    await page.getByTestId('layer-' + email.input_id).click();
+    await page.getByLabel('입력 안내', { exact: true }).fill('name@example.invalid'); await click('입력 설정 적용');
+    await click('모바일');
+    const height = page.getByLabel('높이 지정', { exact: true }), group = height.locator('xpath=ancestor::details');
+    if (await group.getAttribute('open') === null) await group.locator('summary').click();
+    await height.check(); await page.getByLabel('높이 형식', { exact: true }).selectOption({ label: 'px' });
+    await page.getByLabel('높이 값', { exact: true }).fill('56'); await click('디자인 적용');
+    await page.getByTestId('layer-' + host.instance_id).click(); await page.getByLabel('문의 분류', { exact: true }).selectOption('quote');
+    await page.getByLabel('접수 완료 문구', { exact: true }).fill('공통 요소 문의가 접수되었습니다.'); await click('제출 연결 적용');
+    await click('실행 취소'); await expect(page.getByLabel('문의 분류', { exact: true })).toHaveValue('inquiry');
+    await click('다시 실행'); await expect(page.getByLabel('문의 분류', { exact: true })).toHaveValue('quote');
+    await click('저장'); await expect(page.getByTestId('structure-document-status')).toHaveText('초안 저장됨');
+    const saved = (await (await api.get(`${documents}/${ownedId}`)).json()).data;
+    expect(saved.document.blocks[0].binding.form_kind).toBe('quote'); await page.reload();
+    await page.getByTestId('layer-' + email.input_id).click(); await expect(page.getByLabel('입력 안내', { exact: true })).toHaveValue('name@example.invalid');
+    await click('공개 미리보기 준비'); const previewLink = page.getByRole('link', { name: '공개 미리보기 열기', exact: true });
+    await expect(previewLink).toBeVisible(); const previewUrl = (await previewLink.getAttribute('href'))!;
+    await click('발행 준비'); await expect(page.getByRole('dialog', { name: '이 버전을 공개할까요?' })).toBeVisible(); await click('이 버전 발행');
+    const publicLink = page.getByRole('link', { name: '공개 페이지 열기', exact: true }); await expect(publicLink).toBeVisible();
+    const publicUrl = new URL((await publicLink.getAttribute('href'))!, process.env.G7PB_BASE_URL ?? 'https://g7pb.test').href;
+    let previewPosts = 0; preview.on('request', request => { if (request.method() === 'POST' && request.url().endsWith('/inquiries')) previewPosts++; });
+    for (const [label, width] of [['PC · 공통값', 1280], ['태블릿', 768], ['모바일', 360]] as const) {
+      await click(label); await page.getByLabel('작업면 확대', { exact: true }).selectOption('1');
+      const canvas = await publicNodes(page.frameLocator('iframe').locator('[data-v3-surface]'));
+      const captures = [];
+      for (const [name, target, url] of [['preview', preview, previewUrl], ['public', viewer, publicUrl]] as const) {
+        await target.setViewportSize({ width, height: 1000 }); expect((await target.goto(url))?.ok()).toBe(true);
+        const surface = target.locator('[data-g7pb-v3-public]');
+        await expect(surface.locator('input[data-v3-node],textarea[data-v3-node]')).toHaveCount(6);
+        await expect(surface.getByLabel('이메일 <안내>', { exact: true })).toHaveAttribute('type', 'email');
+        await expect(surface.getByLabel('이메일 <안내>', { exact: true })).toHaveAttribute('placeholder', 'name@example.invalid');
+        if (name === 'preview') {
+          await expect(surface.locator('form')).toHaveCount(0);
+          await expect(surface.locator('[data-g7pb-form-submit]')).toBeDisabled();
+        } else await expect(surface.locator('form')).toHaveAttribute('data-g7pb-form-ready', 'true');
+        const actual = await publicNodes(surface);
+        expect(actual.map(({ box: _box, ...node }) => node)).toEqual(canvas.map(({ box: _box, ...node }) => node));
+        for (const [index, node] of actual.entries()) for (let axis = 0; axis < 4; axis++) {
+          expect(Math.abs(node.box[axis] - canvas[index].box[axis]), name + ':' + width + ':' + node.id + ':' + axis).toBeLessThanOrEqual(1);
+        }
+        captures.push({ name, actual });
+        await info.attach(`common-form-${shell}-${name}-${width}`, { body: await target.screenshot({ fullPage: true }), contentType: 'image/png' });
+      }
+      await info.attach(`common-form-${shell}-parity-${width}`, { body: JSON.stringify({ canvas, captures }), contentType: 'application/json' });
+    }
+    expect(previewPosts).toBe(0);
+    const form = viewer.locator('form[data-g7pb-inquiry-form]'), subject = '공통 폼 검증 ' + slug;
+    await form.getByLabel('name', { exact: true }).fill('로컬 검증');
+    await form.getByLabel('이메일 <안내>', { exact: true }).fill('common-form@example.invalid');
+    await form.getByLabel('subject', { exact: true }).fill(subject);
+    await form.getByLabel('message', { exact: true }).fill('실제 고객 요청이 아닌 로컬 기능 검증입니다.');
+    await form.getByLabel('privacy', { exact: true }).check();
+    await expect.poll(() => form.locator('input[name="started_at"]').evaluate(input => Math.floor(Date.now() / 1000) - Number((input as HTMLInputElement).value))).toBeGreaterThanOrEqual(2);
+    const posted = viewer.waitForResponse(result => result.request().method() === 'POST' && result.url().endsWith('/inquiries'));
+    await form.locator('button[type="submit"]').click(); const receipt = await posted;
+    expect(receipt.status(), await receipt.text()).toBe(201); submissionId = (await receipt.json()).data.submission_id;
+    expect(receipt.request().headers()['x-xsrf-token'] || receipt.request().headers()['x-csrf-token']).toBeTruthy();
+    await expect(form.locator('[data-g7pb-form-status]')).toHaveText('공통 요소 문의가 접수되었습니다.');
+    await expect(form.getByLabel('이메일 <안내>', { exact: true })).toHaveValue('');
+    const inbox = (await (await api.get('/api/modules/jiwonpapa-page_builder/admin/form-submissions?status=all')).json()).data;
+    const record = inbox.items.find((item: { id: string }) => item.id === submissionId);
+    expect(record).toMatchObject({ page_slug: slug, block_instance_id: host.instance_id, form_kind: 'quote', subject, status: 'unread', mail_status: 'failed' });
+    await info.attach('owned-common-form-inquiry', { body: JSON.stringify({ id: submissionId, page_slug: slug, status: record.status, mail_status: record.mail_status }), contentType: 'application/json' });
+    if (shell === 'none') {
+      // Reuse the browser's real session protection, never bypass middleware.
+      const rejected = await viewer.evaluate(async ({ action, blockId }) => {
+        const csrf = document.cookie.split(';').map(value => value.trim()).find(value => value.startsWith('XSRF-TOKEN='));
+        const token = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content;
+        const headers: Record<string, string> = { Accept: 'application/json', 'Content-Type': 'application/json',
+          ...(token ? { 'X-CSRF-TOKEN': token } : csrf ? { 'X-XSRF-TOKEN': decodeURIComponent(csrf.slice('XSRF-TOKEN='.length)) } : {}) };
+        const data = { block_instance_id: blockId, form_kind: 'quote', name: '검증', email: 'proof@example.invalid', message: '거부 검증', privacy: '1', started_at: Math.floor(Date.now() / 1000) - 5 };
+        const outcomes: number[] = [];
+        for (const change of [{ block_instance_id: crypto.randomUUID() }, { form_kind: 'inquiry' }, { privacy: '0' }, { website: 'bot' }, { started_at: Math.floor(Date.now() / 1000) }]) {
+          outcomes.push((await fetch(action, { method: 'POST', credentials: 'same-origin', headers, body: JSON.stringify({ ...data, ...change }) })).status);
+        }
+        outcomes.push((await fetch(action, { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify(data) })).status);
+        return outcomes;
+      }, { action: new URL('/pages/' + slug + '/inquiries', publicUrl).href, blockId: host.instance_id });
+      expect(rejected).toEqual([404, 404, 422, 422, 422, 419]);
+      await info.attach('common-form-request-rejections', { body: JSON.stringify(rejected), contentType: 'application/json' });
+    }
+    await page.goto('/modules/jiwonpapa-page_builder/admin'); await click('문의함');
+    await expect(page.getByText(subject, { exact: true }).first()).toBeVisible();
+    await info.attach('common-form-inbox', { body: await page.screenshot({ fullPage: true }), contentType: 'image/png' });
+    const current = (await (await api.get(`${documents}/${ownedId}`)).json()).data;
+    expect(current.document).toEqual(saved.document); expect(current.active_artifact_sha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(errors).toEqual([]);
+  } finally {
+    await visitors.close(); await preview.close();
+    try {
+      if (submissionId) {
+        const archived = await api.put('/api/modules/jiwonpapa-page_builder/admin/form-submissions/' + submissionId, { data: { status: 'archived' } });
+        expect(archived.ok(), await archived.text()).toBe(true);
+      }
+      if (ownedId) {
+        const current = (await (await api.get(`${documents}/${ownedId}`)).json()).data; expect(current.document.slug).toBe(slug);
+        const archived = await api.post(`${documents}/${ownedId}/archive`, { data: { expected_lock_version: current.lock_version } });
+        expect(archived.ok(), await archived.text()).toBe(true);
+        await info.attach('owned-common-form-document-archived', { body: await archived.body(), contentType: 'application/json' });
       }
     } finally { await api.dispose(); }
   }

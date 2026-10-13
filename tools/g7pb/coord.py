@@ -6,6 +6,8 @@ only task/lease transitions, not a second gate or dependency policy.
 from __future__ import annotations
 
 import argparse
+import json
+from hashlib import sha256
 from contextlib import nullcontext
 import os
 from pathlib import Path, PurePosixPath
@@ -20,7 +22,7 @@ PROFILES = {"scoped", "frontend", "php", "mixed", "g7", "docs", "full"}
 AREAS = {"integration", "runtime", "migration", "shared-contract", "version"}
 COMMANDS = ("claim status check submit resubmit restack restack-squash replace-active replace-submitted "
             "replace-submitted-expanded integrate integrate-scoped integrate-batch verify "
-            "finish release runtime-guard release-guard").split()
+            "finish release runtime-guard release-guard preserve-failed defer-submitted").split()
 
 
 class Interrupted(CoordError):
@@ -511,6 +513,49 @@ class Coordinator:
         self.archive(meta, "cancelled")
         note(f"RELEASED task={args.task}")
 
+    def preserve_failed(self, args) -> None:
+        """Snapshot an explicitly failed implementation, not a successful submission."""
+        self.store.lock(args.task)
+        meta = self.store.load(args.task)
+        self.owner(meta, "active")
+        require(meta["profile"] == "scoped" and not {"integration", "runtime"} & set(csv(meta["areas"])), "scoped 구현 task만 실패 보존할 수 있습니다.")
+        require(args.failure_report and args.reason, "실패 보고서와 동결 이유가 필요합니다.")
+        directory = self.git.common / "g7pb-coordination-v1/python-checks/implementation-handoffs" / args.task
+        report = Path(args.failure_report).resolve()
+        require(report.parent == directory.resolve() and report.is_file() and not report.is_symlink(), "해당 task의 실제 실패 보고서가 필요합니다.")
+        raw = report.read_bytes()
+        try:
+            value = json.loads(raw)
+        except ValueError as error:
+            raise CoordError("실패 보고서 JSON이 올바르지 않습니다.") from error
+        require(isinstance(value, dict) and value.get("task") == args.task and value.get("phase") == "submission"
+                and value.get("mode") == "implementation-handoff" and value.get("acceptance") is False
+                and type(value.get("returncode")) is int and value["returncode"] != 0, "성공 또는 다른 task 보고서는 실패로 보존할 수 없습니다.")
+        owned_paths(self.git, meta)
+        require(set(value.get("paths", [])) == set(self.git.paths(meta["base_sha"])), "실패 당시와 현재 변경 파일 범위가 다릅니다.")
+        before = self.git.head()
+        require(self.git.ancestor(meta["base_sha"], before), "실패 후보 ancestry가 올바르지 않습니다.")
+        if not self.git.clean():
+            self.git.run("add", "-A", "--", ".")
+            self.git.run("commit", "-m", f"failed({args.task}): preserve excluded implementation for reaudit")
+        head = self.git.head()
+        require(self.git.clean() and head != meta["base_sha"], "보존할 실패 변경이 없습니다.")
+        self.archive(meta, "failed-implementation", submitted_sha=head, submitted_at=timestamp(),
+                     failure_report=str(report), failure_report_sha256=sha256(raw).hexdigest(), failure_reason=args.reason)
+        note(f"FAILED_PRESERVED task={args.task} sha={head}; excluded from integration and acceptance")
+
+    def defer_submitted(self, args) -> None:
+        """Preserve an out-of-current-scope submission for a separately requested process."""
+        self.store.lock(args.task)
+        self.integration_owner(args.integration_task)
+        meta = self.store.load(args.task)
+        require(meta["status"] == "submitted" and args.reason, "submitted task와 명시적인 분리 이유가 필요합니다.")
+        require(meta["profile"] == "scoped" and not meta["areas"], "독립 scoped task만 분리 보존할 수 있습니다.")
+        self.git.submitted(meta)
+        self.archive(meta, "deferred-submitted", deferred_by=args.integration_task, deferred_reason=args.reason,
+                     deferred_at=timestamp())
+        note(f"DEFERRED_PRESERVED task={args.task} sha={meta['submitted_sha']}; worktree and branch retained, not integrated")
+
     def archive(self, meta: dict[str, str], status: str, **updates: str) -> None:
         with self.store.mutex(), defer_interrupts(), MetadataTransaction() as transaction:
             self.store.unchanged(meta)
@@ -530,7 +575,7 @@ class Coordinator:
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(prog="coord-harness")
     result.add_argument("command", choices=COMMANDS)
-    for name in ("task", "tasks", "paths", "areas", "profile", "message", "integration-task", "new-base-ref", "supersedes"):
+    for name in ("task", "tasks", "paths", "areas", "profile", "message", "integration-task", "new-base-ref", "supersedes", "failure-report", "reason"):
         result.add_argument("--" + name, default="")
     result.add_argument("--base-ref", default="HEAD")
     result.add_argument("--history", action="store_true")

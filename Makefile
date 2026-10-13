@@ -39,6 +39,15 @@ coord-release:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
 	@$(COORD_HARNESS) release --task "$(TASK)"
 
+.PHONY: task-preserve-failed task-defer-submitted
+task-preserve-failed:
+	@test -n "$(TASK)" -a -n "$(FAILURE_REPORT)" -a -n "$(REASON)" || { echo 'TASK, FAILURE_REPORT and REASON are required.' >&2; exit 2; }
+	@$(COORD_HARNESS) preserve-failed --task "$(TASK)" --failure-report "$(FAILURE_REPORT)" --reason "$(REASON)"
+
+task-defer-submitted:
+	@test -n "$(TASK)" -a -n "$(INTEGRATION_TASK)" -a -n "$(REASON)" || { echo 'TASK, INTEGRATION_TASK and REASON are required.' >&2; exit 2; }
+	@$(COORD_HARNESS) defer-submitted --task "$(TASK)" --integration-task "$(INTEGRATION_TASK)" --reason "$(REASON)"
+
 task-submit:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
 	@$(COORD_HARNESS) submit --task "$(TASK)" $(if $(filter 1,$(FULL)),--full,) $(if $(filter 1,$(IMPLEMENTATION)),--implementation,)

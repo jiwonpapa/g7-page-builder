@@ -11,8 +11,18 @@ import { createApiPublicationPort } from './apiPublicationPort';
 import { StructureDocumentHost, type StructureHostPorts } from './StructureDocumentHost';
 import compositionUrl from '../../../compositions/builtin-v3.json?url&no-inline';
 import { compositionChoices } from '../../editor-application/v3/compositions';
+import { ElementSitePartApi } from '../../api/elementSitePartApi';
+import { StructureSitePartHost } from './StructureSitePartHost';
+import { sitePartDraftPort, type SitePartHostPorts } from './sitePartPorts';
+import { sitePartEditorUrl } from '../sitePartEditorRouting';
 
 export function mountStructureDocument(element: HTMLElement): () => void {
+  return mount(element, false);
+}
+export function mountStructureSiteParts(element: HTMLElement): () => void {
+  return mount(element, true);
+}
+function mount(element: HTMLElement, siteParts: boolean): () => void {
   let token: string | null = null;
   try { token = window.localStorage.getItem(ADMIN_AUTH_TOKEN_KEY); } catch { /* Login owns unavailable storage. */ }
   if (!token) {
@@ -36,11 +46,29 @@ export function mountStructureDocument(element: HTMLElement): () => void {
     nextId: () => crypto.randomUUID(),
   };
   const root = createRoot(element);
+  const siteApi = new ElementSitePartApi();
+  const locale = element.dataset.locale || 'ko';
+  const initialSetId = new URLSearchParams(window.location.search).get('set_id') || undefined;
+  const partPorts: SitePartHostPorts = {
+    list: locale => siteApi.list(locale), create: (title, locale) => siteApi.create(title, locale),
+    load: set => siteApi.load(set), draft: (source, saved) => sitePartDraftPort(siteApi, source, saved),
+    publish: pair => siteApi.publish(pair), activate: set => siteApi.activate(set),
+    navigate: ports.navigate, nextId: ports.nextId,
+    selected: id => window.history.replaceState(null, '', sitePartEditorUrl(id, locale, true)),
+    confirmLeave: () => window.confirm('저장하지 않은 변경 또는 처리 중인 요청이 있습니다. 이동할까요?'),
+    confirmPublish: active => window.confirm(active
+      ? 'Header와 Footer를 함께 발행합니다. 사용 중인 사이트의 공통영역이 변경됩니다. 계속할까요?'
+      : 'Header와 Footer의 저장된 초안을 함께 발행할까요? 사이트 적용은 별도입니다.'),
+    confirmActivate: () => window.confirm('이 세트의 마지막 발행본을 사이트 공통영역에 적용할까요?'),
+  };
   const controller = new AbortController();
   let active = true;
   const render = (compositions: readonly unknown[], catalogMessage = '') => {
-    if (active) root.render(<StructureDocumentHost documentId={element.dataset.documentId || undefined} locale={element.dataset.locale || 'ko'}
-      ports={ports} compositions={compositions} catalogMessage={catalogMessage} libraryUrl={PAGE_BUILDER_MANAGER_PATH} />);
+    if (active) root.render(siteParts
+      ? <StructureSitePartHost setId={initialSetId} locale={locale}
+          ports={partPorts} compositions={compositions} catalogMessage={catalogMessage} libraryUrl={PAGE_BUILDER_MANAGER_PATH} />
+      : <StructureDocumentHost documentId={element.dataset.documentId || undefined} locale={locale}
+          ports={ports} compositions={compositions} catalogMessage={catalogMessage} libraryUrl={PAGE_BUILDER_MANAGER_PATH} />);
   };
   render([], '구성 목록을 불러오는 중입니다. 기본 요소로 편집할 수 있습니다.');
   void fetch(compositionUrl, { credentials: 'same-origin', signal: controller.signal }).then(async response => {
@@ -55,4 +83,6 @@ export function mountStructureDocument(element: HTMLElement): () => void {
 if (typeof document !== 'undefined') {
   const element = document.querySelector<HTMLElement>('[data-g7pb-structure-editor]');
   if (element) mountStructureDocument(element);
+  const siteParts = document.querySelector<HTMLElement>('[data-g7pb-structure-site-parts]');
+  if (siteParts) mountStructureSiteParts(siteParts);
 }

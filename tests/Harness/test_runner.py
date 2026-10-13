@@ -129,6 +129,19 @@ class RunnerTests(unittest.TestCase):
         journal = self.root / records[0]["evidence"]["directory"] / "site-part-state.json"
         self.assertEqual(json.loads(journal.read_text())["spec"], spec)
 
+    def test_generic_site_part_product_requires_owned_fixture_and_restores_after_failure(self):
+        spec = "tests/E2E/structureSitePartProduct.spec.ts"
+        self.assertIn(spec, SITE_PART_SPECS)
+        for browser_code in (0, 3):
+            with self.subTest(browser_code=browser_code):
+                code, records = self.run_fixture(spec=spec, browser_code=browser_code)
+                self.assertEqual(code, browser_code)
+                self.assertEqual(records[0]["fixture_restore_returncode"], 0)
+                journal = json.loads((self.root / records[0]["fixture_journal"]).read_text())
+                self.assertEqual(journal["spec"], spec)
+                self.assertTrue(journal["closed"])
+                self.assertTrue(all(item["restored"] for item in journal["sessions"].values()))
+
     def test_executor_exception_still_restores_and_records_failure(self):
         code, records = self.run_fixture(error=RuntimeError("transport failed"))
         self.assertEqual(code, 1)

@@ -68,7 +68,7 @@ class SitePartFixtureTests(unittest.TestCase):
         self.assertEqual(json.loads(result.stdout), list(SITE_PART_SPECS))
         self.assertEqual(set(SITE_PART_SPECS), {"tests/E2E/globalSiteShellRoutes.spec.ts",
             "tests/E2E/sitePartLifecycle.spec.ts", "tests/E2E/pageBuilderLifecycle.spec.ts",
-            "tests/E2E/siteShellProductQuality.spec.ts"})
+            "tests/E2E/siteShellProductQuality.spec.ts", "tests/E2E/structureSitePartProduct.spec.ts"})
         full = subprocess.run(["php", "-r", "require $argv[1]; echo G7PB_SITE_PART_FIXTURE_FULL_GATE;", str(PHP_HELPER)], capture_output=True, text=True)
         self.assertEqual(full.returncode, 0, full.stderr)
         self.assertEqual(full.stdout, SITE_PART_FULL_GATE)

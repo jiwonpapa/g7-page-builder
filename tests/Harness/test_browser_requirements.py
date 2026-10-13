@@ -8,7 +8,7 @@ import subprocess
 from tools.g7pb.planner import build_plan
 from tools.g7pb.model import Plan
 from tools.g7pb.runner import digest_gate, execute
-from tools.g7pb.browser_requirements import V3_STRUCTURE, V3_PRODUCT
+from tools.g7pb.browser_requirements import V3_STRUCTURE, V3_PRODUCT, V3_SITE_PART
 
 
 TEXT_AND_CONTROLS = replace(TEXT, titles=tuple(sorted(TEXT.titles + CONTROLS.titles)))
@@ -124,11 +124,24 @@ class BrowserRequirementsTests(unittest.TestCase):
                           V3_PRODUCT.titles)
 
     def test_installed_structure_entry_requires_real_authenticated_product_flow(self):
-        for path in ("resources/js/editor/v3/entry.tsx", "resources/js/editor/v3/StructureDocumentHost.tsx",
-                     "resources/css/page-builder-structure.css", "vite.structure.config.ts"):
+        for path in ("resources/js/editor/v3/StructureDocumentHost.tsx", "vite.structure.config.ts"):
             self.assertEqual(scenarios_for([path]), (V3_PRODUCT,))
-        self.assertEqual(set(scenarios_for(["resources/js/editor/v3/StructureEditor.tsx"])), {V3_PRODUCT, V3_STRUCTURE})
+        for path in ("resources/js/editor/v3/entry.tsx", "resources/css/page-builder-structure.css"):
+            self.assertEqual(set(scenarios_for([path])), {V3_PRODUCT, V3_SITE_PART})
+        self.assertEqual(set(scenarios_for(["resources/js/editor/v3/StructureEditor.tsx"])), {V3_PRODUCT, V3_STRUCTURE, V3_SITE_PART})
         self.assertEqual(set(scenarios_for(["resources/views/editor.blade.php"])), {V3_PRODUCT, PAGE, DOCUMENT_BOUNDARY})
+
+    def test_element_site_parts_require_generic_editing_and_preserve_legacy_regression(self):
+        for path in ("resources/js/editor/v3/StructureSitePartHost.tsx", "resources/js/editor/v3/SitePartPairEditor.tsx",
+                     "resources/js/editor/v3/sitePartPorts.ts", "resources/js/api/elementSitePartApi.ts",
+                     "resources/js/api/elementSitePartResource.ts"):
+            self.assertEqual(scenarios_for([path]), (V3_SITE_PART,))
+        for path in ("resources/js/editor/SitePartEditor.tsx", "resources/js/editor/SitePartSetEditor.tsx",
+                     "resources/js/editor/sitePartEditorRouting.ts", "resources/views/site-part-editor.blade.php"):
+            self.assertEqual(set(scenarios_for([path])), {SITE_PART, V3_SITE_PART})
+        self.assertEqual(set(scenarios_for(["resources/js/editor/SitePartWorkspace.tsx"])), {SITE_PART, SITE_KIT, V3_SITE_PART})
+        self.assertEqual(V3_SITE_PART.projects, ("desktop",))
+        self.assertEqual(len(V3_SITE_PART.titles), 2)
 
     def test_independent_v3_owners_require_their_actual_port_and_puck_scenarios(self):
         for path in ("resources/js/documents/v3/commands.ts", "resources/js/editor/v3/PuckBridge.tsx",
@@ -264,7 +277,7 @@ class BrowserRequirementsTests(unittest.TestCase):
         for source in ("resources/site-kits/professional-services.json", "resources/js/manager/ManagerSiteKitDialog.tsx", "resources/js/api/siteKit.ts",
                        "src/Application/Store/SiteKitService.php"):
             self.assertEqual(set(scenarios_for([source])), {SITE_KIT})
-        self.assertEqual(set(scenarios_for(["resources/js/editor/SitePartWorkspace.tsx"])), {SITE_PART, SITE_KIT})
+        self.assertEqual(set(scenarios_for(["resources/js/editor/SitePartWorkspace.tsx"])), {SITE_PART, SITE_KIT, V3_SITE_PART})
 
     def test_compiler_facade_and_extracted_owners_keep_only_synthetic_output_scenarios(self):
         expected = {replace(PAGE, titles=tuple(sorted(PAGE.titles + NESTED.titles))), STRUCTURE_THEME}

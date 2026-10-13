@@ -61,7 +61,8 @@ def browser_evidence(root, gate, task, key):
 
 
 SITE_PART_SPECS = ("tests/E2E/globalSiteShellRoutes.spec.ts", "tests/E2E/sitePartLifecycle.spec.ts",
-                   "tests/E2E/pageBuilderLifecycle.spec.ts", "tests/E2E/siteShellProductQuality.spec.ts")
+                   "tests/E2E/pageBuilderLifecycle.spec.ts", "tests/E2E/siteShellProductQuality.spec.ts",
+                   "tests/E2E/structureSitePartProduct.spec.ts")
 SITE_PART_HELPERS = ("tests/E2E/support/sitePartSetFixture.ts", "tests/E2E/support/sitePartState.php")
 SITE_PART_FULL_GATE = "full-product"
 

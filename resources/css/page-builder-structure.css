@@ -27,6 +27,13 @@
 .g7pb-structure-host__create label { display: grid; gap: 6px; }
 .g7pb-structure-host__create :is(input, select) { width: 100%; min-height: 40px; }
 
+.g7pb-site-part-structure { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.g7pb-site-part-structure__editor { flex: 1; min-height: 0; }
+.g7pb-site-part-structure__editor > .g7pb-root { height: 100%; min-height: 0; }
+.g7pb-site-part-structure__preview { flex: 1; overflow: auto; padding: 16px; }
+.g7pb-site-part-structure__preview label { display: flex; gap: 12px; margin-bottom: 16px; }
+.g7pb-site-part-structure__body { padding: 64px 24px; border-block: 1px dashed var(--g7pb-border); color: var(--g7pb-muted); text-align: center; }
+
 @media (max-width: 900px) {
   .g7pb-structure-host__bar { flex-wrap: wrap; gap: 8px; }
   .g7pb-structure-host__publication { flex-basis: 100%; }

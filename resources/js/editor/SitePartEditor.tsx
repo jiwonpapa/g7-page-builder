@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { elementSitePartUrl } from './sitePartEditorRouting';
 import { installShellDisclosures, mountMobileShell, paintShellProduct, shellControlsMarkup, shellIcon, shellRecord, shellSafeUrl, type ShellOptions } from '../public/siteShellControls';
 import { installMobileNavigation } from '../public/mobileNavigation';
 import { canvasNavigationGuard } from './canvasNavigationGuard';
@@ -631,6 +632,8 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
   const changeRevision = useRef(0);
 
   const apply = useCallback((next: SitePartResource): void => {
+    const url = elementSitePartUrl(next.document, next.set_id, locale);
+    if (url) { window.location.replace(url); return; }
     requireSitePartIdentity(next, { kind, locale, setId });
     const nextData = sitePartCanonicalToPuck(next.document);
     resourceRef.current = next;

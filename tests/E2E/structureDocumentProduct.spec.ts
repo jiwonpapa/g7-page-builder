@@ -331,11 +331,35 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
         await target.setViewportSize({ width, height: 1000 }); expect((await target.goto(url))?.ok()).toBe(true);
         const surface = target.locator('[data-g7pb-v3-public]'); await expect(surface.locator('iframe')).toHaveCount(4);
         await expect(surface.locator('[data-g7pb-embed]')).toHaveCount(0);
-        for (const id of identities) await expect(target.frameLocator('[data-g7pb-v3-public] [data-v3-node="' + id + '"] iframe').locator('body')).toHaveText('외부 제공자 검증 대역');
+        const frames = [];
+        for (const id of identities) {
+          const selector = '[data-g7pb-v3-public] [data-v3-node="' + id + '"] iframe';
+          await expect(target.locator(selector)).toBeVisible();
+          const body = target.frameLocator(selector).locator('body');
+          await expect(body).toHaveText('외부 제공자 검증 대역');
+          await expect(body).toBeVisible();
+          // Parent geometry and parsed frame text do not establish child-frame
+          // font/paint readiness. Observe both browsing contexts before capture.
+          const ready = await body.evaluate(async element => {
+            const document = element.ownerDocument, view = document.defaultView!;
+            await document.fonts.ready;
+            await new Promise<void>(resolve => view.requestAnimationFrame(() => view.requestAnimationFrame(() => resolve())));
+            const style = view.getComputedStyle(element);
+            return { state: document.readyState, fontStatus: document.fonts.status,
+              visibility: style.visibility, background: style.backgroundColor, text: element.textContent };
+          });
+          expect(ready).toEqual({ state: 'complete', fontStatus: 'loaded', visibility: 'visible',
+            background: 'rgb(226, 232, 240)', text: '외부 제공자 검증 대역' });
+          frames.push({ id, ...ready });
+        }
+        await target.evaluate(async () => {
+          await document.fonts.ready;
+          await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+        });
         const actual = await sample(surface);
         expect(actual.map(({ size: _size, ...node }) => node)).toEqual(expected.map(({ size: _size, ...node }) => node));
         for (const [index, node] of actual.entries()) for (let axis = 0; axis < 4; axis++) expect(Math.abs(node.size[axis] - expected[index].size[axis])).toBeLessThanOrEqual(1);
-        captures.push({ name, actual });
+        captures.push({ name, actual, frames });
         await info.attach(`embeds-${shell}-${name}-${width}`, { body: await target.screenshot(), contentType: 'image/png' });
       }
       await info.attach(`embeds-${shell}-measurements-${width}`, { body: JSON.stringify({ canvas: expected, authored, captures, externalProvider: 'test double, not live playback' }), contentType: 'application/json' });

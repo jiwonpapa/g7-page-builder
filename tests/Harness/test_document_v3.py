@@ -1,10 +1,51 @@
 from pathlib import Path
+import json
 import tempfile
 import unittest
 from tools.g7pb.planner import CONTRACT_FIXTURE_CONSUMERS, build_plan, contract_fixture_inputs
 
 
 class DocumentV3ScopeTests(unittest.TestCase):
+    def test_full_scope_keeps_source_mapped_v3_workflows_missing_from_the_full_suite(self):
+        source = "resources/js/editor/v3/StructureEditor.tsx"
+        structure = "tests/E2E/structureEditorV3.spec.ts"
+        product = "tests/E2E/structureDocumentProduct.spec.ts"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for path, content in {
+                source: "export const editor = true;",
+                "tests/Unit/editor.test.ts": "import '../../" + source + "';",
+                structure: "import {test} from '@playwright/test';",
+                product: "import {test} from '@playwright/test';",
+            }.items():
+                target = root / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(content)
+            for command, expected in (
+                ("playwright test tests/E2E/pageBuilderLifecycle.spec.ts", {structure, product}),
+                ("playwright test " + product, {structure}),
+                ("playwright test " + product + " --grep limited", {structure, product}),
+            ):
+                (root / "package.json").write_text(json.dumps({"scripts": {"test:e2e:product": command}}))
+                for phase in ("submission", "integration", "verification", "ci"):
+                    with self.subTest(command=command, phase=phase):
+                        plan = build_plan(root, [source], phase=phase, full=True)
+                        self.assertFalse(plan.unresolved, plan.unresolved)
+                        gates = {gate.name: gate for gate in plan.gates}
+                        selected = {name.removeprefix("browser:") for name in gates if name.startswith("browser:")}
+                        self.assertEqual(selected, expected)
+                        self.assertEqual(gates["full-product"].argv, ("make", "quality-gate"))
+                        for spec in expected:
+                            gate = gates["browser:" + spec]
+                            self.assertIn(source, gate.inputs)
+                            self.assertTrue(gate.browser_expectations)
+                            self.assertTrue(gate.runtime)
+                            self.assertEqual(gate.deferred, phase == "submission")
+                            self.assertIn(gate.name, gates["full-product"].depends_on)
+            (root / structure).unlink()
+            missing = build_plan(root, [source], full=True)
+            self.assertIn("Missing required browser scenario: " + structure, missing.unresolved)
+
     def test_element_site_part_fixture_has_both_consumers_without_relaxing_schema_scope(self):
         fixture = "tests/Contract/site-part-v2.fixture.json"
         consumers = ("tests/Unit/sitePartV2.test.ts", "tests/UnitPhp/ElementSitePartDocumentTest.php")

@@ -7,6 +7,7 @@ import { effectiveStyle, type Viewport } from '../../documents/v3/validate';
 import { viewportLabel } from './ResponsiveControls';
 import { IconInspector } from './IconInspector';
 import { EmbedInspector } from './EmbedInspector';
+import { FormInspector } from './FormInspector';
 
 export function Inspector({ node, document, disabled, apply, viewport = 'base' }: {
   node: Node; document: DocumentV3; disabled: boolean; apply: (command: DesignCommand) => void; viewport?: Viewport;
@@ -76,5 +77,6 @@ export function Inspector({ node, document, disabled, apply, viewport = 'base' }
     </fieldset></form>}
     {node.type === 'media.icon' && <IconInspector node={node} disabled={disabled} apply={apply} />}
     {node.type === 'media.embed' && <EmbedInspector node={node} disabled={disabled} apply={apply} />}
+    {(node.type === 'form.control' || node.type === 'form.label') && <FormInspector node={node} disabled={disabled} apply={apply} />}
   </section>;
 }

@@ -30,7 +30,7 @@ final readonly class HtmlCompiler implements DocumentCompilerPort
         }
         $source = $this->validator->validateJson($document->toJson());
         $presentation = ResponsiveStyles::document($source, $this->validator);
-        $artifact = (new ElementMarkup(publication: true))->render($source, $presentation['styles'], $presentation['attributes']);
+        $artifact = (new ElementMarkup(publication: true, formFields: $this->validator->formFields()))->render($source, $presentation['styles'], $presentation['attributes']);
         (new TemplateMarkupPolicy)->assertTemplateCompatibleMarkup($artifact, 'Compiled v3 document');
 
         return new CompileResult(

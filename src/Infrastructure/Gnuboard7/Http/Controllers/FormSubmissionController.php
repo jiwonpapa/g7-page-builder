@@ -40,8 +40,10 @@ final class FormSubmissionController
         $page = $this->pages->findPublished($slug);
         $blockId = (string) $request->input('block_instance_id');
         $encodedBlockId = preg_quote(htmlspecialchars($blockId, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), '/');
+        $encodedKind = preg_quote((string) $request->input('form_kind'), '/');
         if ($page === null
-            || preg_match('/<section\s+data-block-id="'.$encodedBlockId.'"[^>]*data-block-type="inquiry-form"/', $page->artifact) !== 1) {
+            || (preg_match('/<section\s+data-block-id="'.$encodedBlockId.'"[^>]*data-block-type="inquiry-form"/', $page->artifact) !== 1
+                && preg_match('/<div\s[^>]*data-g7pb-v3-inquiry=""\s+data-block-id="'.$encodedBlockId.'"\s+data-g7pb-form-kind="'.$encodedKind.'"/', $page->artifact) !== 1)) {
             abort(404);
         }
 

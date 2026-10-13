@@ -18,6 +18,6 @@ final readonly class DraftRenderer
         $styles = Presentation::document($document, $viewport, $this->validator->semanticDisplays());
         $behavior = BehaviorPresentation::apply($document, $styles, $viewport);
 
-        return (new ElementMarkup)->render($document, $behavior['styles'], $behavior['attributes']);
+        return (new ElementMarkup(formFields: $this->validator->formFields()))->render($document, $behavior['styles'], $behavior['attributes']);
     }
 }

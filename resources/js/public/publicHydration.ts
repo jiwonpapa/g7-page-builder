@@ -59,6 +59,15 @@ function hydrateEmbeds(root: Document): void {
 
 function hydrateInquiryHosts(root: Document): void {
   root.querySelectorAll<HTMLElement>('[data-g7pb-inquiry-host]').forEach((host) => {
+    if (host.hasAttribute('data-g7pb-v3-inquiry')) {
+      const preview = Boolean(host.closest('[data-testid="page-builder-preview-root"]'))
+        || Boolean(root.defaultView?.location.pathname.includes('/modules/jiwonpapa-page_builder/preview/'));
+      if (preview || host.closest('[data-g7pb-element-site-part]')) {
+        host.dataset.g7pbInquiryDisabled = preview ? '미리보기에서는 전송하지 않습니다.' : '공통영역의 문의 전송 서비스가 연결되지 않았습니다.';
+        delete host.dataset.g7pbInquiryHost; delete host.dataset.g7pbInquiryForm;
+        return;
+      }
+    }
     const form = replaceElement(root, host, 'form') as HTMLFormElement;
     form.method = 'post';
     form.action = host.dataset.g7pbFormAction ?? '';
@@ -75,6 +84,17 @@ function hydrateTypedControls(root: Document): void {
     for (const name of attributes) {
       const value = marker.getAttribute(`data-g7pb-control-${name}`);
       if (value !== null) control.setAttribute(name, value);
+    }
+    if (marker.hasAttribute('data-v3-node')) {
+      for (const name of ['id', 'style', 'data-v3-node', 'data-g7pb-v3-style', 'data-g7pb-form-submit', 'aria-label', 'aria-labelledby']) {
+        const value = marker.getAttribute(name);
+        if (value !== null) control.setAttribute(name, value);
+      }
+    }
+    const unavailable = marker.closest<HTMLElement>('[data-g7pb-inquiry-disabled]');
+    if (tag === 'button' && unavailable) {
+      control.setAttribute('type', 'button'); control.setAttribute('disabled', '');
+      control.setAttribute('title', unavailable.dataset.g7pbInquiryDisabled ?? '');
     }
     const controlMarker = marker.dataset.g7pbControlMarker;
     if (controlMarker === 'archive-search') control.dataset.g7pbArchiveSearch = '';

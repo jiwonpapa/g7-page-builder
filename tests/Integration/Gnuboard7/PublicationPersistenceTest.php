@@ -18,6 +18,9 @@ use Illuminate\Translation\ArrayLoader;
 use Illuminate\Translation\Translator;
 use Illuminate\Validation\Factory as ValidationFactory;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\SitePartHtmlCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\V3\HtmlCompiler as StructureHtmlCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Documents\DocumentStorageCodec;
+use Modules\Jiwonpapa\PageBuilder\Application\Documents\EmptyStructureDocument;
 use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
 use Modules\Jiwonpapa\PageBuilder\Application\SitePartService;
 use Modules\Jiwonpapa\PageBuilder\Application\SiteShellService;
@@ -28,6 +31,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\V3\Validator as StructureValidator;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\PublicationCommitException;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminDocumentController;
@@ -1273,6 +1277,43 @@ final class PublicationPersistenceTest extends TestCase
         $retried = $controller->retry($submissionId);
         self::assertSame(2, $retried->getData(true)['data']['mail_attempts']);
         self::assertStringContainsString('보존', $retried->getData(true)['message']);
+    }
+
+    public function test_element_form_publication_uses_existing_persistence_and_fixed_inquiry_validation(): void
+    {
+        $root = dirname(__DIR__, 3);
+        $policy = json_decode(file_get_contents($root.'/schemas/design-policy-v3.json'), true, flags: JSON_THROW_ON_ERROR);
+        $validator = new StructureValidator(json_decode(file_get_contents($root.'/schemas/page-builder-document-v3.schema.json'), true, flags: JSON_THROW_ON_ERROR), $policy);
+        $codec = new DocumentStorageCodec($validator);
+        $service = new PageBuilderService(new EloquentPageBuilderRepository($codec), new StructureHtmlCompiler($validator),
+            $codec, new EmptyStructureDocument($validator), $policy['default_tokens']);
+        $blocks = json_decode(file_get_contents($root.'/tests/Fixtures/document-v3-cases.json'), true, flags: JSON_THROW_ON_ERROR)['form_binding']['blocks'];
+        foreach (['template', 'builder', 'none'] as $shell) {
+            $slug = 'element-inquiry-'.$shell;
+            $created = $service->create('공통 문의 요소', $slug, 'ko', null, $shell, 'g7-page-builder/v3');
+            $source = $created->document->toArray();
+            $source['blocks'] = $blocks;
+            $draft = $service->saveDraft($created->document->documentId, $source, $created->lockVersion, null);
+            $ticket = $service->preparePublication($draft->document->documentId, $draft->lockVersion, null);
+            $service->commitPublication($ticket->token);
+            self::assertStringContainsString('data-g7pb-v3-inquiry', $service->findPublished($slug)->artifact);
+            $controller = new FormSubmissionController($service);
+            $payload = ['block_instance_id' => $blocks[0]['instance_id'], 'form_kind' => 'inquiry', 'name' => '홍길동',
+                'email' => 'forms@example.com', 'phone' => '', 'subject' => '문의', 'message' => '공통 요소에서 제출합니다.',
+                'privacy' => '1', 'website' => '', 'started_at' => time() - 3];
+            $response = $controller->store(Request::create('/pages/'.$slug.'/inquiries', 'POST', $payload), $slug);
+            self::assertSame(201, $response->getStatusCode());
+            $record = FormSubmissionRecord::query()->findOrFail($response->getData(true)['data']['submission_id']);
+            self::assertSame($slug, $record->page_slug);
+            self::assertSame($blocks[0]['instance_id'], $record->block_instance_id);
+            self::assertSame($payload['message'], $record->payload_json['message']);
+            self::assertSame('failed', $record->mail_status); // No delivery configured; submission remains stored.
+            foreach ([['privacy' => '0'], ['email' => 'invalid'], ['website' => 'bot'], ['started_at' => time()]] as $invalid) {
+                $rejected = $controller->store(Request::create('/pages/'.$slug.'/inquiries', 'POST', array_replace($payload, $invalid)), $slug);
+                self::assertSame(422, $rejected->getStatusCode());
+            }
+            self::assertSame(1, FormSubmissionRecord::query()->where('page_slug', $slug)->count());
+        }
     }
 
     /**

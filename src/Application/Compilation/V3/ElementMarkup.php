@@ -11,7 +11,8 @@ use stdClass;
  */
 final readonly class ElementMarkup
 {
-    public function __construct(private bool $publication = false, private BlockIconCompiler $icons = new BlockIconCompiler(new HtmlEscaper)) {}
+    /** @param array<string, array<string, mixed>> $formFields */
+    public function __construct(private bool $publication = false, private BlockIconCompiler $icons = new BlockIconCompiler(new HtmlEscaper), private array $formFields = []) {}
 
     /** @param array<string, array<string, string>> $styles
      * @param  array<string, array<string, string>>  $attributes
@@ -20,6 +21,8 @@ final readonly class ElementMarkup
     {
         $marker = $this->publication ? ' data-g7pb-v3-public=""' : '';
         $surface = $this->publication ? ['color' => 'initial', ...Presentation::SURFACE] : Presentation::SURFACE;
+
+        $attributes = (new FormMarkup($this->formFields))->attributes($document->blocks, $attributes);
 
         return '<div data-v3-surface="true"'.$marker.' style="'.self::css($surface).'">'.$this->nodes($document->blocks, $document, $styles, $attributes).'</div>';
     }
@@ -65,7 +68,7 @@ final readonly class ElementMarkup
     {
         $html = '';
         foreach ($nodes as $node) {
-            $style = $styles[$node->instance_id];
+            $style = FormMarkup::styles($node, $styles[$node->instance_id]);
             if (! $this->publication && $style['display'] === 'none') {
                 continue;
             }
@@ -76,14 +79,31 @@ final readonly class ElementMarkup
                 'media.icon' => 'span',
                 'action.link' => 'a',
                 'action.button' => $this->publication ? 'span' : 'button',
+                'form.label' => 'label',
+                'form.control' => $this->publication ? 'span' : ($node->props->kind === 'textarea' ? 'textarea' : 'input'),
                 default => 'div',
             };
             $attrs = ' id="node-'.$node->instance_id.'" data-v3-node="'.$node->instance_id.'" style="'.self::css($style).'"';
+            $formControl = $node->type === 'form.control' || isset($attributes[$node->instance_id]['data-g7pb-form-submit']);
             foreach ($attributes[$node->instance_id] ?? [] as $key => $value) {
-                $attrs .= ' '.$key.'="'.self::escape($value).'"';
+                $name = $this->publication && $formControl && in_array($key, ['name', 'required', 'maxlength', 'autocomplete', 'value'], true) ? 'data-g7pb-control-'.$key : $key;
+                $attrs .= ' '.$name.'="'.self::escape($value).'"';
             }
             $body = '';
-            if ($node->type === 'media.image') {
+            if ($node->type === 'form.label') {
+                $body = self::escape($node->props->label);
+            } elseif ($node->type === 'form.control') {
+                $prefix = $this->publication ? 'data-g7pb-control-' : '';
+                $controlTag = $node->props->kind === 'textarea' ? 'textarea' : 'input';
+                if ($this->publication) {
+                    $attrs .= ' data-g7pb-form-control="'.$controlTag.'"';
+                }
+                $attrs .= $controlTag === 'input' ? ' '.$prefix.'type="'.$node->props->kind.'"' : ' '.$prefix.'rows="6"';
+                $attrs .= ' '.$prefix.'placeholder="'.self::escape($node->props->placeholder).'"';
+                if (! isset($attributes[$node->instance_id]['aria-labelledby'])) {
+                    $attrs .= ' aria-label="'.self::escape($node->props->label).'"';
+                }
+            } elseif ($node->type === 'media.image') {
                 $asset = array_find($document->assets, fn (stdClass $asset): bool => $asset->asset_id === $node->props->asset_id);
                 $attrs .= ' src="'.self::escape($asset->url).'" alt="'.self::escape($node->props->alt).'"';
             } elseif ($node->type === 'media.icon') {
@@ -102,12 +122,12 @@ final readonly class ElementMarkup
                 $attrs .= ' href="'.self::escape($link->url).'"'.($link->new_tab ? ' target="_blank" rel="noopener noreferrer"' : '');
                 $body = self::escape($node->props->label);
             } elseif ($node->type === 'action.button') {
-                $attrs .= $this->publication ? ' data-g7pb-runtime-button=""' : ' type="button"';
+                $attrs .= $this->publication ? ($formControl ? ' data-g7pb-form-control="button" data-g7pb-control-type="submit"' : ' data-g7pb-runtime-button=""') : ' type="button"';
                 $body = self::escape($node->props->label);
             } else {
-                $body = $this->nodes($node->slots->content ?? [], $document, $styles, $attributes);
+                $body = FormMarkup::wrap($node, $document, $this->nodes($node->slots->content ?? [], $document, $styles, $attributes), $this->publication);
             }
-            $html .= '<'.$tag.$attrs.'>'.($tag === 'img' ? '' : $body.'</'.$tag.'>');
+            $html .= '<'.$tag.$attrs.'>'.(in_array($tag, ['img', 'input'], true) ? '' : $body.'</'.$tag.'>');
         }
 
         return $html;

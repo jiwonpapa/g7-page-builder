@@ -6,7 +6,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Documents\V3\Schema;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\V3\ValidatedDocument;
 
 /** Site Part ownership around the same canonical element document, never block-specific data. */
-final readonly class ElementSitePartDocument
+final readonly class ElementSitePartDocument implements SitePartSource
 {
     public string $sitePartId;
 

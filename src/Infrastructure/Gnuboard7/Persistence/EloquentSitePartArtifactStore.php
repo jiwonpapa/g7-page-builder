@@ -5,16 +5,18 @@ namespace Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Facades\DB;
+use Modules\Jiwonpapa\PageBuilder\Application\Documents\SitePartStorageCodec;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartArtifactPort;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\PublishedSitePartSet;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\SitePartArtifact;
-use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\SitePartRecord;
 
 final class EloquentSitePartArtifactStore implements SitePartArtifactPort
 {
+    public function __construct(private readonly SitePartStorageCodec $documents = new SitePartStorageCodec) {}
+
     public function store(string $sitePartId, SitePartArtifact $artifact): void
     {
         $existing = DB::table('g7pb_site_part_artifacts')->where('site_part_id', $sitePartId)->where('source_revision', $artifact->sourceRevision)->first();
@@ -77,11 +79,7 @@ final class EloquentSitePartArtifactStore implements SitePartArtifactPort
             ->get(['part.id', 'part.set_id', 'part.lock_version', 'part.active_revision', 'revision.title', 'revision.document_json']);
         $result = [];
         foreach ($rows as $row) {
-            $payload = json_decode((string) $row->document_json, true, flags: JSON_THROW_ON_ERROR);
-            if (! is_array($payload)) {
-                throw new \RuntimeException('Stored Site Part JSON is invalid.');
-            }
-            $document = SitePartDocument::fromStoredArray($payload);
+            $document = $this->documents->decodeStored((string) $row->document_json);
             if ($document->sitePartId !== $row->id) {
                 throw new \RuntimeException('Stored Site Part identity does not match its revision.');
             }
@@ -102,7 +100,7 @@ final class EloquentSitePartArtifactStore implements SitePartArtifactPort
             if ($artifact->sourceRevision !== $source->revision || $artifact->kind !== $record->kind) {
                 throw new \InvalidArgumentException('Historical Site Part artifact identity does not match.');
             }
-            $source->document->assertWritable();
+            $this->documents->encodeRevision($source->document);
             $this->store($record->id, $artifact);
         });
     }

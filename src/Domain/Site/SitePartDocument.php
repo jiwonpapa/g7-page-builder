@@ -5,7 +5,7 @@ namespace Modules\Jiwonpapa\PageBuilder\Domain\Site;
 /**
  * G7 Layout Editor와 분리된 전역 Header/Footer 원본 문서입니다.
  */
-final readonly class SitePartDocument
+final readonly class SitePartDocument implements SitePartSource
 {
     /** @var list<array<string, mixed>> */
     public array $blocks;

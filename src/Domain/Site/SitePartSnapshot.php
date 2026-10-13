@@ -5,7 +5,7 @@ namespace Modules\Jiwonpapa\PageBuilder\Domain\Site;
 final readonly class SitePartSnapshot
 {
     public function __construct(
-        public SitePartDocument $document,
+        public SitePartSource $document,
         public string $title,
         public int $lockVersion,
         public int $revision,

@@ -4,28 +4,33 @@ namespace Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Modules\Jiwonpapa\PageBuilder\Application\Documents\SitePartStorageCodec;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartArtifactPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\SitePartNotFoundException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\PublishedSitePartSet;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\SitePartArtifact;
-use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Site\ElementSitePartDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSetSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSnapshot;
+use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSource;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\SitePartRecord;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\SitePartRevisionRecord;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\SitePartSetRecord;
 
 final class EloquentSitePartRepository implements SitePartRepository
 {
-    public function __construct(private readonly SitePartArtifactPort $artifacts = new EloquentSitePartArtifactStore) {}
+    public function __construct(
+        private readonly SitePartArtifactPort $artifacts = new EloquentSitePartArtifactStore,
+        private readonly SitePartStorageCodec $documents = new SitePartStorageCodec,
+    ) {}
 
     public function createSet(
         string $title,
-        SitePartDocument $header,
-        SitePartDocument $footer,
+        SitePartSource $header,
+        SitePartSource $footer,
         ?int $actorId,
         bool $activateIfFirst = true,
     ): SitePartSetSnapshot {
@@ -113,10 +118,10 @@ final class EloquentSitePartRepository implements SitePartRepository
     public function saveSetDraft(
         string $setId,
         string $headerTitle,
-        SitePartDocument $header,
+        SitePartSource $header,
         int $headerExpectedLockVersion,
         string $footerTitle,
-        SitePartDocument $footer,
+        SitePartSource $footer,
         int $footerExpectedLockVersion,
         ?int $actorId,
     ): SitePartSetSnapshot {
@@ -124,13 +129,19 @@ final class EloquentSitePartRepository implements SitePartRepository
             if ($header->kind !== 'header' || $footer->kind !== 'footer' || $header->locale !== $footer->locale) {
                 throw new \InvalidArgumentException('Site Part set requires one Header and one Footer in the same locale.');
             }
-            $this->saveDraft($headerTitle, $header, $headerExpectedLockVersion, $actorId);
-            $this->saveDraft($footerTitle, $footer, $footerExpectedLockVersion, $actorId);
             /** @var SitePartSetRecord|null $set */
             $set = SitePartSetRecord::query()->whereKey($setId)->lockForUpdate()->first();
             if (! $set instanceof SitePartSetRecord) {
                 throw new SitePartNotFoundException('헤더·푸터 세트를 찾을 수 없습니다.');
             }
+            $current = $this->setSnapshot($set);
+            if ($current->header->document->sitePartId !== $header->sitePartId
+                || $current->footer->document->sitePartId !== $footer->sitePartId
+                || $set->locale !== $header->locale) {
+                throw new \InvalidArgumentException('Site Part documents do not belong to the requested set.');
+            }
+            $this->saveDraft($headerTitle, $header, $headerExpectedLockVersion, $actorId);
+            $this->saveDraft($footerTitle, $footer, $footerExpectedLockVersion, $actorId);
 
             return $this->setSnapshot($set);
         });
@@ -236,7 +247,7 @@ final class EloquentSitePartRepository implements SitePartRepository
 
     public function saveDraft(
         string $title,
-        SitePartDocument $document,
+        SitePartSource $document,
         int $expectedLockVersion,
         ?int $actorId,
     ): SitePartSnapshot {
@@ -246,6 +257,7 @@ final class EloquentSitePartRepository implements SitePartRepository
             if ($record->kind !== $document->kind || $record->locale !== $document->locale) {
                 throw new \InvalidArgumentException('Site Part identity cannot be changed.');
             }
+            $this->documents->decodeDraft($this->documents->encodeRevision($document), $this->snapshot($record)->document);
 
             $nextRevision = $record->current_revision + 1;
             $this->insertRevision($document, $title, $nextRevision, $actorId);
@@ -268,6 +280,9 @@ final class EloquentSitePartRepository implements SitePartRepository
         return DB::transaction(function () use ($sitePartId, $expectedLockVersion, $actorId, $artifact): SitePartSnapshot {
             $record = $this->lock($sitePartId);
             $this->assertLock($record, $expectedLockVersion);
+            if ($this->snapshot($record)->document instanceof ElementSitePartDocument) {
+                throw new \InvalidArgumentException('Element Site Parts must be published as a complete Header/Footer set.');
+            }
             $this->assertPublicationArtifact($record, $artifact);
             $this->artifacts->store($record->id, $artifact);
             if ($record->active_revision === $record->current_revision) {
@@ -310,7 +325,7 @@ final class EloquentSitePartRepository implements SitePartRepository
         if ($artifact->sourceRevision !== $record->current_revision || $artifact->kind !== $record->kind) {
             throw new LockConflictException($record->lock_version);
         }
-        $this->snapshot($record)->document->assertWritable();
+        $this->documents->encodeRevision($this->snapshot($record)->document);
     }
 
     private function snapshot(SitePartRecord $record, ?int $revisionNumber = null): SitePartSnapshot
@@ -325,8 +340,14 @@ final class EloquentSitePartRepository implements SitePartRepository
             throw new \RuntimeException('Current Site Part revision is missing.');
         }
 
+        $document = $this->decode($revision->document_json);
+        if ($document->sitePartId !== $record->id || $document->kind !== $record->kind || $document->locale !== $record->locale
+            || $document->schemaVersion !== $revision->schema_version) {
+            throw new \RuntimeException('Stored Site Part identity does not match its revision.');
+        }
+
         return new SitePartSnapshot(
-            document: $this->decode($revision->document_json),
+            document: $document,
             title: $revision->title,
             lockVersion: $record->lock_version,
             revision: $revisionNumber,
@@ -357,7 +378,7 @@ final class EloquentSitePartRepository implements SitePartRepository
     private function createPart(
         string $setId,
         string $title,
-        SitePartDocument $document,
+        SitePartSource $document,
         ?int $actorId,
     ): SitePartRecord {
         $record = SitePartRecord::query()->create([
@@ -400,8 +421,13 @@ final class EloquentSitePartRepository implements SitePartRepository
 
     private function revision(SitePartRevisionRecord $record): SitePartRevision
     {
+        $document = $this->decode($record->document_json);
+        if ($document->sitePartId !== $record->site_part_id || $document->schemaVersion !== $record->schema_version) {
+            throw new \RuntimeException('Stored Site Part identity does not match its revision.');
+        }
+
         return new SitePartRevision(
-            document: $this->decode($record->document_json),
+            document: $document,
             title: $record->title,
             revision: $record->revision,
             authorId: $record->author_id,
@@ -410,34 +436,26 @@ final class EloquentSitePartRepository implements SitePartRepository
     }
 
     private function insertRevision(
-        SitePartDocument $document,
+        SitePartSource $document,
         string $title,
         int $revision,
         ?int $actorId,
     ): void {
-        $document->assertWritable();
+        $json = $this->documents->encodeRevision($document);
         SitePartRevisionRecord::query()->create([
             'id' => $this->uuidV4(),
             'site_part_id' => $document->sitePartId,
             'revision' => $revision,
             'schema_version' => $document->schemaVersion,
             'title' => $title,
-            'document_json' => json_encode(
-                $document->toArray(),
-                JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
-            ),
+            'document_json' => $json,
             'author_id' => $actorId,
         ]);
     }
 
-    private function decode(string $json): SitePartDocument
+    private function decode(string $json): SitePartSource
     {
-        $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
-        if (! is_array($data)) {
-            throw new \RuntimeException('Stored Site Part JSON is invalid.');
-        }
-
-        return SitePartDocument::fromStoredArray($data);
+        return $this->documents->decodeStored($json);
     }
 
     private function uuidV4(): string

@@ -4,17 +4,17 @@ namespace Modules\Jiwonpapa\PageBuilder\Contracts;
 
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\PublishedSitePartSet;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\SitePartArtifact;
-use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSetSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSnapshot;
+use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSource;
 
 interface SitePartRepository
 {
     public function createSet(
         string $title,
-        SitePartDocument $header,
-        SitePartDocument $footer,
+        SitePartSource $header,
+        SitePartSource $footer,
         ?int $actorId,
         bool $activateIfFirst = true,
     ): SitePartSetSnapshot;
@@ -27,10 +27,10 @@ interface SitePartRepository
     public function saveSetDraft(
         string $setId,
         string $headerTitle,
-        SitePartDocument $header,
+        SitePartSource $header,
         int $headerExpectedLockVersion,
         string $footerTitle,
-        SitePartDocument $footer,
+        SitePartSource $footer,
         int $footerExpectedLockVersion,
         ?int $actorId,
     ): SitePartSetSnapshot;
@@ -55,7 +55,7 @@ interface SitePartRepository
 
     public function saveDraft(
         string $title,
-        SitePartDocument $document,
+        SitePartSource $document,
         int $expectedLockVersion,
         ?int $actorId,
     ): SitePartSnapshot;

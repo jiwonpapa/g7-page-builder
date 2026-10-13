@@ -48,3 +48,14 @@ ENV03: 문서 데이터를 apply_patch로 작성하기 전 임시 orchestration�
 STARTER-TARGET01: 최초 데이터 점검에서 문의 binding이 root가 아닌 자식에 있으므로 root-only 선택은 0건을 반환했습니다. 기존 indexTree로 binding 보유 문서를 선택하도록 한 번 보완하며 기존 5개 대상/합격 기준을 유지합니다. 이후 같은 문제는 추가 보완하지 않습니다.
 
 STARTER-REFERENCE01: 최초 공식 제출에서 기존 v3BuiltinCompositions의 과거 전체 개수 68 고정 단언이 새 85개 데이터와 불일치했습니다. 원본 63개와 기존 5개 문의를 보존하는 reference 회귀 범위는 그대로 68개로 명시하도록 별도 소유 task로 한 번 보완합니다. 대상·기준을 확장하거나 원본 일치 검사를 완화하지 않습니다. 실패 보고서 submission-26fb948c4dd64f7abf96c255baca473a.json을 보존합니다. 추가 제품 브라우저 검증은 실행하지 않습니다.
+
+## 공식 제출·통합 결과
+
+- reference 범위 보존: 제출 2b54b65532c9f8de7b6a71844a333e27179ac32b, 통합 3a043291eef19be0e3f0ca6b889b741a49609ff4.
+- 데이터 구현: 공식 task-replace-active로 원 active 원본/patch/worktree를 보존하고 새 기준으로 이관했습니다. 새 task는 editor-starter-data-rebased-20261014이며 제품 구현을 다시 작성하지 않았습니다.
+- 데이터 제출 4c13071a44b65974955d0e7da2bfc2eff75c4650, 통합 e235b399abc8219f2772d3dc45e6a2934c400ef4.
+- 관련 기존 검사: structureEditorV3 18건의 동일 입력 성공 재사용, v3BuiltinCompositions 2건, v3FormCompositions 6건 및 타입 검사 성공. 원본 63개의 정확 일치와 기존 68개 reference·5개 문의 대상은 유지합니다. 새 제품 시험 정의를 추가하지 않았습니다.
+- source 입력이 바뀐 production build 한 번 성공. fingerprint 6374d857100138bde0e7c8bf0ec94215c9a5e72ce37f1c2b806a1cf9cee18f03. 이후 제품 JS/CSS/schema/문서 데이터 입력을 다시 바꾸지 않았습니다.
+- browser-assets 및 structureEditorV3 실제 브라우저 시험은 implementation-handoff의 deferred이며 제품 수용 성공이 아닙니다. 실제 동작·UX·출력의 추가 감사는 실행하지 않습니다.
+
+STARTER-TARGET01과 STARTER-REFERENCE01의 해당 보완은 성공했고 같은 문제에 대한 추가 반복을 하지 않았습니다. DATA02 실패는 여전히 보존·미통합이며 전체 목표 완료를 주장하지 않습니다.

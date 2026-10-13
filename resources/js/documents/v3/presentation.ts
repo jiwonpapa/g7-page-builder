@@ -42,6 +42,7 @@ function nodeDeclarations(node: Node, document: DocumentV3, style: Style, parent
   if (node.type === 'content.heading' || node.type === 'content.text' || node.type === 'action.link') out['white-space'] = 'pre-wrap';
   if (node.type === 'content.heading') { out['font-size'] = `${[2, 1.5, 1.17, 1, 0.83, 0.67][node.props.level - 1]}em`; out['font-weight'] = '700'; }
   if (node.type === 'media.icon') { out.width = '24px'; out.height = '24px'; }
+  if (node.type === 'media.embed') { out.width = '100%'; out['aspect-ratio'] = '16 / 9'; }
   for (const key of ['width', 'height', 'basis'] as const) if (style[key] !== undefined) size(out, key, style[key], parent, style);
   for (const key of ['min_width', 'max_width', 'min_height', 'max_height', 'row_gap', 'column_gap', 'font_size', 'letter_spacing'] as const) {
     if (style[key] !== undefined) out[key.replaceAll('_', '-')] = length(style[key]);

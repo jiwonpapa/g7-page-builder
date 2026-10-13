@@ -6,6 +6,7 @@ import { InputButton, TypedInput } from './TypedInput';
 import { effectiveStyle, type Viewport } from '../../documents/v3/validate';
 import { viewportLabel } from './ResponsiveControls';
 import { IconInspector } from './IconInspector';
+import { EmbedInspector } from './EmbedInspector';
 
 export function Inspector({ node, document, disabled, apply, viewport = 'base' }: {
   node: Node; document: DocumentV3; disabled: boolean; apply: (command: DesignCommand) => void; viewport?: Viewport;
@@ -74,5 +75,6 @@ export function Inspector({ node, document, disabled, apply, viewport = 'base' }
       <InputButton type="submit">의미 적용</InputButton>
     </fieldset></form>}
     {node.type === 'media.icon' && <IconInspector node={node} disabled={disabled} apply={apply} />}
+    {node.type === 'media.embed' && <EmbedInspector node={node} disabled={disabled} apply={apply} />}
   </section>;
 }

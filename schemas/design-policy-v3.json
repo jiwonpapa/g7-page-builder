@@ -55,6 +55,7 @@
       "paragraphs"
     ],
     "media.icon": ["icon", "label", "decorative"],
+    "media.embed": ["title", "source"],
     "media.image": [
       "asset_id",
       "alt"

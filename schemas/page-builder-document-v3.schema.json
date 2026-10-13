@@ -1466,6 +1466,21 @@
         }
       ]
     },
+    "embed_source": {
+      "anyOf": [
+        { "type": "object", "properties": { "provider": { "const": "none" } }, "required": ["provider"], "additionalProperties": false },
+        { "type": "object", "properties": { "provider": { "const": "youtube" }, "video_id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{11}$" } }, "required": ["provider", "video_id"], "additionalProperties": false },
+        { "type": "object", "properties": { "provider": { "const": "vimeo" }, "video_id": { "type": "string", "pattern": "^[0-9]{6,12}$" } }, "required": ["provider", "video_id"], "additionalProperties": false },
+        {
+          "type": "object", "properties": {
+            "provider": { "enum": ["openstreetmap", "google"] },
+            "latitude": { "type": "number", "minimum": -90, "maximum": 90, "multipleOf": 0.000001 },
+            "longitude": { "type": "number", "minimum": -180, "maximum": 180, "multipleOf": 0.000001 },
+            "zoom": { "enum": [12, 14, 16, 18] }
+          }, "required": ["provider", "latitude", "longitude", "zoom"], "additionalProperties": false
+        }
+      ]
+    },
     "node": {
       "type": "object",
       "properties": {
@@ -1480,6 +1495,7 @@
             "content.text",
             "media.image",
             "media.icon",
+            "media.embed",
             "action.link",
             "action.button"
           ]
@@ -1497,6 +1513,12 @@
         "behavior": { "$ref": "#/$defs/behavior" },
         "props": {
           "anyOf": [
+            {
+              "type": "object", "properties": {
+                "title": { "type": "string", "minLength": 1, "maxLength": 300, "pattern": "[^\\p{Z}\\p{C}]" },
+                "source": { "$ref": "#/$defs/embed_source" }
+              }, "required": ["title", "source"], "additionalProperties": false
+            },
             {
               "type": "object",
               "properties": {

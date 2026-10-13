@@ -54,6 +54,8 @@ V3_PRODUCT = BrowserScenario("tests/E2E/structureDocumentProduct.spec.ts", title
     *("publishes common icons with authored sizing meaning and safe hydration " + shell
       for shell in ("none", "template", "builder")),
     *("publishes common embeds with safe providers responsive sizing and persisted settings " + shell
+      for shell in ("none", "template", "builder")),
+    *("publishes common form elements with persisted edits preview isolation and real inquiry storage " + shell
       for shell in ("none", "template", "builder"))))
 
 V3_SITE_PART = BrowserScenario("tests/E2E/structureSitePartProduct.spec.ts", titles=(
@@ -63,6 +65,7 @@ V3_SITE_PART = BrowserScenario("tests/E2E/structureSitePartProduct.spec.ts", tit
 # New v3 modules use the independent editor and injected draft-port contract.
 # The v1/v2 installed-entry scenarios retain their existing mappings below.
 V3_STRUCTURE = BrowserScenario("tests/E2E/structureEditorV3.spec.ts", titles=(
+    "v3 common form controls labels binding history and PHP parity without a catalog",
     "v3 common embed insertion settings history responsive sizing and PHP parity without a catalog",
     "v3 common icon insertion meaning history responsive styles and PHP parity without a catalog",
     "v3 empty catalog builds an interactive composition from primitive insertions",
@@ -189,11 +192,11 @@ PUBLIC_CODE_SCOPES = {
     **{"resources/js/public/" + name: (PUBLIC, PUBLIC_DATA) for name in (
         "publicDataRendering.ts", "publicArchiveControls.ts", "publicDataRuntime.ts",
     )},
-    "resources/js/public/publicHydration.ts": (PUBLIC, PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_SHELL),
+    "resources/js/public/publicHydration.ts": (PUBLIC, PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_SHELL, V3_PRODUCT),
     **{"resources/js/public/" + name: (PUBLIC, PUBLIC_CONTROLS) for name in (
         "publicContentControls.ts",
     )},
-    "resources/js/public/publicInquiryForms.ts": (PUBLIC, PUBLIC_CONTROLS, SITE_KIT_INQUIRY),
+    "resources/js/public/publicInquiryForms.ts": (PUBLIC, PUBLIC_CONTROLS, SITE_KIT_INQUIRY, V3_PRODUCT),
     **{"resources/js/public/" + name: (PUBLIC, PUBLIC_MOTION) for name in (
         "publicMotion.ts", "publicSliders.ts", "publicSliderEntry.ts", "publicSliderControls.ts",
     )},
@@ -276,6 +279,10 @@ STYLE_CODE_SCOPES = {
 # Most-specific source rules win. Adding a scenario requires a real registered
 # Playwright test; a missing spec/title must fail instead of claiming acceptance.
 RULES = (
+    (("resources/js/editor/v3/FormInspector.tsx", "resources/js/editor/v3/BindingInspector.tsx",
+      "resources/js/documents/v3/bindings.ts", "resources/js/documents/v3/formPresentation.ts",
+      "src/Domain/Documents/V3/Bindings.php", "src/Application/Compilation/V3/FormMarkup.php"), (V3_STRUCTURE, V3_PRODUCT)),
+    (("src/Infrastructure/Gnuboard7/Http/Controllers/FormSubmissionController.php",), (V3_PRODUCT, SITE_KIT_INQUIRY)),
     (("resources/js/editor/v3/IconInspector.tsx", "resources/js/editor/v3/EmbedInspector.tsx", "resources/js/editor/v3/NodeRenderer.tsx",
       "resources/js/documents/v3/embeds.ts", "src/Application/Compilation/V3/EmbedMarkup.php",
       "src/Application/Compilation/V3/ElementMarkup.php"), (V3_STRUCTURE, V3_PRODUCT)),

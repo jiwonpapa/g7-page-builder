@@ -104,7 +104,11 @@ it('opens both canonical owners in the same editor and preserves sessions across
   await click('Footer'); expect(editor('footer').readonly).toBe(false); expect(editor('header').readonly).toBe(true);
   await click('공통영역 미리보기');
   expect(editor('header').readonly).toBe(true); expect(editor('footer').readonly).toBe(true);
-  expect(document.querySelector('[data-testid="site-part-pair-preview"]')).not.toBeNull();
+  const preview = document.querySelector<HTMLElement>('[data-testid="site-part-pair-preview"]')!;
+  expect(preview).not.toBeNull();
+  expect(preview.style.background).toBe('var(--g7pb-surface-strong)');
+  expect(editor('header').document).toBe(header.document);
+  expect(editor('footer').document).toBe(footer.document);
   await click('Header');
   expect(editor('header').sessionId).toBe(header.sessionId); expect(editor('footer').document).toBe(footer.document);
   expect(mounts).toHaveBeenCalledTimes(2); expect(unmounts).not.toHaveBeenCalled();

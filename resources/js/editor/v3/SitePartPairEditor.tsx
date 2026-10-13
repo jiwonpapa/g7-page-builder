@@ -101,7 +101,7 @@ export function SitePartPairEditor({ initial, ports, compositions, onUnsafe, onS
       <label>미리보기 폭<select value={width} onChange={event => setWidth(Number(event.target.value))}>
         <option value={1280}>PC 1280px</option><option value={768}>태블릿 768px</option><option value={360}>모바일 360px</option>
       </select></label>
-      <div style={{ width }} data-testid="site-part-pair-preview">
+      <div style={{ width, background: 'var(--g7pb-surface-strong)' }} data-testid="site-part-pair-preview">
         <header><BehaviorPreview document={documents.header} viewport={viewportAt(width)} /></header>
         <div className="g7pb-site-part-structure__body">본문 영역 · 이 화면에서 변경하지 않습니다.</div>
         <footer><BehaviorPreview document={documents.footer} viewport={viewportAt(width)} /></footer>

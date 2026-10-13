@@ -55,7 +55,17 @@ async function measure(node: Locator) {
   return node.evaluate(async element => {
     await element.ownerDocument.fonts.ready;
     const rect = element.getBoundingClientRect(), css = getComputedStyle(element);
-    return { text: element.textContent, width: rect.width, height: rect.height, font: css.fontSize };
+    // Puck's transparent iframe paints over the host workspace. Inspect that
+    // same-origin ancestor too; a transparent node alone does not prove parity.
+    let ancestor: Element | null = element, background: string | undefined;
+    while (ancestor) {
+      const paint = ancestor.ownerDocument.defaultView!.getComputedStyle(ancestor).backgroundColor;
+      if (paint !== 'transparent' && paint !== 'rgba(0, 0, 0, 0)') { background = paint; break; }
+      ancestor = ancestor.parentElement ?? ancestor.ownerDocument.defaultView?.frameElement ?? null;
+    }
+    if (!background) throw new Error('The authored surface has no measurable background');
+    return { text: element.textContent, width: rect.width, height: rect.height, font: css.fontSize,
+      color: css.color, background };
   });
 }
 
@@ -146,6 +156,7 @@ test('generic Site Parts preserve separate histories save reopen preview and ato
       const output = await measure(outputNode);
       for (const actual of [preview, output]) {
         expect(actual.text).toBe(canvas.text); expect(actual.font).toBe(canvas.font);
+        expect(actual.color).toBe(canvas.color); expect(actual.background).toBe(canvas.background);
         expect(Math.abs(actual.width - canvas.width)).toBeLessThanOrEqual(1);
         expect(Math.abs(actual.height - canvas.height)).toBeLessThanOrEqual(1);
       }
@@ -155,9 +166,14 @@ test('generic Site Parts preserve separate histories save reopen preview and ato
         await expect(node).toHaveCSS('font-size', footerCanvas.font);
         const actual = await measure(node);
         expect(actual.text).toBe(footerCanvas.text); expect(actual.font).toBe(footerCanvas.font);
+        expect(actual.color).toBe(footerCanvas.color); expect(actual.background).toBe(footerCanvas.background);
         expect(Math.abs(actual.width - footerCanvas.width)).toBeLessThanOrEqual(1);
         expect(Math.abs(actual.height - footerCanvas.height)).toBeLessThanOrEqual(1);
       }
+      await info.attach('site-part-appearance-' + width, { contentType: 'application/json', body: JSON.stringify({
+        header: { canvas, preview, output },
+        footer: { canvas: footerCanvas, preview: await measure(footerPreview), output: await measure(footerOutput) },
+      }) });
       await info.attach('site-part-preview-' + width, { body: await page.screenshot(), contentType: 'image/png' });
       await info.attach('site-part-public-' + width, { body: await viewer.screenshot({ fullPage: true }), contentType: 'image/png' });
     }

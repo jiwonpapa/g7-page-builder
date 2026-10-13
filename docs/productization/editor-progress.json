@@ -777,6 +777,13 @@
           "commit": "2cbdd892ac8057b882b4724f1ce0d38226be88b1",
           "result": "pass",
           "path": "docs/audits/2026-10-13-ip7-site-part-persistence.md"
+        },
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-site-part-browser-candidate",
+          "commit": "a3fe48d47588c49e5e6143271b612ba6ed357f64",
+          "result": "pass",
+          "path": "docs/audits/2026-10-13-ip7-site-part-editor.md"
         }
       ],
       "blocked_reason": null,

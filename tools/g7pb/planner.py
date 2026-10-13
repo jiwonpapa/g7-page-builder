@@ -783,31 +783,33 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             inputs = [p.relative_to(root).as_posix() for p in (root / "src").rglob("*.php")]
             add("phpstan:g7" if adapter else "phpstan:core", argv, [*inputs, config, "composer.json", "composer.lock"],
                 "Changed PHP types and dependency contracts", ("php", "g7") if adapter else ("php",), adapter)
-    if not full:
-        kit_changes = [path for path in plan.paths if path == "resources/site-kits/professional-services.json"]
-        browser_changes = [*browser_sources(root, ts_sources, base), *php_sources, *css, *viewer_styles, *kit_changes]
-        for scenario in scenarios_for(browser_changes):
-            affected = [path for path in browser_changes if any(item.spec == scenario.spec for item in scenarios_for([path]))]
-            if scenario.spec == "tests/E2E/siteKitInstallation.spec.ts":
-                affected.extend(site_kit_inputs(root))
-            if not (root / scenario.spec).is_file():
-                plan.unresolved.append(f"Missing required browser scenario: {scenario.spec}")
-                continue
-            name = "browser:" + scenario.spec
-            # A changed spec requests all its tests. Source mapping must not
-            # overwrite that explicit scope with a narrower title/preset filter.
-            expectations = tuple((project, title) for project in scenario.projects for title in scenario.titles)
-            if name in gates:
-                gates[name] = replace(gates[name], inputs=tuple(sorted(set(gates[name].inputs) | set(affected))), browser_expectations=tuple(sorted(set(gates[name].browser_expectations + expectations))))
-                continue
-            try:
-                environment = scenario.environment(root)
-            except (ValueError, OSError, KeyError) as error:
-                plan.unresolved.append(f"Browser target selection required: {error}")
-                continue
-            add(name, scenario.arguments(),
-                [*affected, *source_inputs(root, scenario.spec).files, "playwright.config.ts", "package-lock.json", "tools/g7pb/browser_requirements.py"],
-                "Existing user workflow affected by product source changes", ("node", "php", "g7", "browser"), True, env=environment, browser_expectations=expectations)
+    covered_by_full = full_product_specs(root) if full else set()
+    kit_changes = [path for path in plan.paths if path == "resources/site-kits/professional-services.json"]
+    browser_changes = [*browser_sources(root, ts_sources, base), *php_sources, *css, *viewer_styles, *kit_changes]
+    for scenario in scenarios_for(browser_changes):
+        if scenario.spec in covered_by_full:
+            continue  # The unfiltered full suite already executes this exact spec.
+        affected = [path for path in browser_changes if any(item.spec == scenario.spec for item in scenarios_for([path]))]
+        if scenario.spec == "tests/E2E/siteKitInstallation.spec.ts":
+            affected.extend(site_kit_inputs(root))
+        if not (root / scenario.spec).is_file():
+            plan.unresolved.append(f"Missing required browser scenario: {scenario.spec}")
+            continue
+        name = "browser:" + scenario.spec
+        # A changed spec requests all its tests. Source mapping must not
+        # overwrite that explicit scope with a narrower title/preset filter.
+        expectations = tuple((project, title) for project in scenario.projects for title in scenario.titles)
+        if name in gates:
+            gates[name] = replace(gates[name], inputs=tuple(sorted(set(gates[name].inputs) | set(affected))), browser_expectations=tuple(sorted(set(gates[name].browser_expectations + expectations))))
+            continue
+        try:
+            environment = scenario.environment(root)
+        except (ValueError, OSError, KeyError) as error:
+            plan.unresolved.append(f"Browser target selection required: {error}")
+            continue
+        add(name, scenario.arguments(),
+            [*affected, *source_inputs(root, scenario.spec).files, "playwright.config.ts", "package-lock.json", "tools/g7pb/browser_requirements.py"],
+            "Existing user workflow affected by product source changes", ("node", "php", "g7", "browser"), True, env=environment, browser_expectations=expectations)
     if content:
         try:
             policy = content_policy(root, plan.paths)

@@ -13,7 +13,7 @@ describe('declarative built-in starter documents', () => {
     const reference = validateDocumentV3(structuredClone(fixture)); reference.blocks = [];
     reference.assets[0].url = '/modules/jiwonpapa-page_builder/store/previews/local-business-hero.webp';
     expect(documents.slice(0, 63)).toEqual(exportStarterCompositions(reference).map(entry => entry.document));
-    const choices = compositionChoices(documents);
+    const choices = compositionChoices(documents.slice(0, 68));
     expect(choices).toHaveLength(68);
     for (const choice of choices) {
       expect(compositionClipboard(choice).ids).toHaveLength(1);

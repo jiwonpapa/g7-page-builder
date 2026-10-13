@@ -16,6 +16,37 @@ IP7은 진행 중이다. 기준 SHA `f1f84194d212bdcc4aed944654116199bdf89e8b`�
 
 초기 관련 검사에서 기존 계약/발행 단위 시험 20개·107 assertions와 새 codec/factory/compiler 시험 16개·50 assertions가 통과했다. 새 시험은 raw JSON 왕복, 객체/목록·0/false 보존, 신원과 버전 변경 거부, 구형 기록 보존, 같은 요소 compiler 출력 및 누락 capability 거부를 포함한다.
 
-DB와 controller 검사는 임시 SQLite에서 생성·저장·재조회·리비전·세트 발행/활성화·충돌·오류 rollback·마지막 정상 발행본·과거 발행본 준비를 확인한다. 공식 제출에서 runtime 검사를 보류하고 Local 통합에서 실행한다. 시험 정의만으로 DB/API 동작 성공 또는 브라우저 편집 성공을 주장하지 않는다.
+DB와 controller 검사는 임시 SQLite에서 생성·저장·재조회·리비전·세트 발행/활성화·충돌·오류 rollback·마지막 정상 발행본·과거 발행본 준비를 확인했다. 공식 제출에서는 runtime 검사를 보류했고 Local 통합에서 새 시험 10개·110 assertions를 통과했다. 이 증거는 실제 저장소/controller 동작 검증이며 새 v2 편집 화면의 사용자 조작 증거는 아니다.
 
-원장에는 이 작업을 진행 기록으로 연결한다. 통합 SHA와 실행 결과를 확보한 뒤 부분 증거를 별도 기록하며 IP7을 완료로 올리지 않는다.
+## 공식 통합 결과
+
+제출 SHA는 `da7f6d36f59610e51e1db614c6e6fbad703acffc`, 통합 SHA는 `2cbdd892ac8057b882b4724f1ce0d38226be88b1`이다. PHP 8.5.3/Node 24의 Worktree 제출 검사와 PHP 8.5.9/Node 24.19.0의 Local Docker 검사를 구분했다. 최초 정적 검사에서 공통 CompileResult의 HTML 문자열 확인 누락을 보완한 뒤 타입 검사를 통과했다. 기존 성공 입력은 공식 하네스의 재사용 판단을 따랐다.
+
+```sh
+make task-submit TASK=ip7-site-part-persistence-20261013 FULL=1
+make task-integrate-scoped TASK=ip7-site-part-persistence-20261013 INTEGRATION_TASK=integration-ip7-20261012 FULL=1
+```
+
+| 검사 | 결과 |
+|---|---|
+| 관련 PHP 단위 | 64개 통과 |
+| 관련 DB/controller 및 기존 통합 | 72개 통과, 새 Site Part 시험 10개 포함 |
+| 전체 하네스 | 478개 통과 |
+| 전체 PHP 단위 | 425개·5,818 assertions 통과 |
+| PHP coverage 실행 | 513개·6,634 assertions 통과, 기존 PHPUnit notice 1건 |
+| 프런트엔드 | 160개 파일·1,712개 시험 통과 |
+| 구조·타입·빌드·자산·예산 | 통과 |
+| 제품 브라우저 | PC/태블릿/모바일 49개 통과 |
+| 공통 셸·모바일 메뉴 | 45개 통과 |
+
+PHP 전체 coverage는 77.87%, compiler facade 93.68%, compiler family 89.63%, 기존 페이지 service 96.59%, 페이지 repository 94.81%로 각 기준을 통과했다. 기존 공통영역 편집·발행·세트 전환, 페이지 발행·revision 복원, 전체 카탈로그 출력, 레이아웃·접근성·100블록 성능, 공통 셸·로그아웃 회귀를 유지했다. 새 v2 문서는 같은 컴파일러의 HTML 일치를 검증했지만 브라우저의 정밀 편집·세트 미리보기와 1px 출력 비교는 화면 연결 차수에 남아 있다.
+
+FULL 증거 경로:
+
+```text
+output/playwright/gates/integration-ip7-20261012/f4375c645e369976817667b63bfaf81ba7c9e3860376c031c119e0e1c6836d60/a3fb4a248c0e48f49f683b19dece96b8/
+```
+
+`site-part-state.json`은 `closed: true`이며 16개 세션 모두 `restored: true`다. 승인된 로컬 시험용 `sirsoft-basic` 1.1.4 전환 뒤 원래 `jwsoft-business01` 0.3.1로 복구했다. 두 테마와 번들 원본의 파일 해시 집계는 전후 모두 `92b96b54a6e26e4c9dc2fe8e0525367d9f0bdb557094af3313f7cec2f76994f6`이다.
+
+별도 task `ip7-site-part-persistence-proof-20261013`가 이 결과와 통합 SHA를 원장에 부분 증거로 기록했다. IP7은 진행 중이며 UI 연결·명시 이행/복원·고정 runtime capability·전체 카탈로그 수용은 완료되지 않았다. 운영 배포는 하지 않았다.

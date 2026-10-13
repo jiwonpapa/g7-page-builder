@@ -1,4 +1,4 @@
-import React, { createContext, forwardRef, useContext, useMemo, useRef, useState } from 'react';
+import React, { createContext, forwardRef, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ActionBar, Puck, type Overrides, type ComponentConfig, type Field, type SlotComponent } from '@puckeditor/core';
 import type { DocumentV3, Node } from '../../documents/v3/types';
@@ -120,6 +120,9 @@ function EditorSession(props: StructureEditorProps) {
   const [actionTarget, setActionTarget] = useState<HTMLDivElement | null>(null);
   const [geometryTools, setGeometryTools] = useState<HTMLDivElement | null>(null);
   const serverRevision = useRef(props.serverRevision);
+  // A pair publication can advance the same document's CAS token without
+  // replacing its canonical input or remounting its existing Puck history.
+  useEffect(() => { serverRevision.current = Math.max(serverRevision.current, props.serverRevision); }, [props.serverRevision]);
   const bridge = useMemo(() => createPuckBridge(validateDocumentV3(props.document), {
     context: () => ({ sessionId: live.current.sessionId, readonly: Boolean(live.current.readonly) }),
     nextId: () => live.current.nextId(),

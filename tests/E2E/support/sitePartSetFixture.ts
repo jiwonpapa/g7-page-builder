@@ -140,6 +140,18 @@ export class SitePartSetFixture {
     return (await published.json() as { data: { set: SitePartSetResource } }).data.set;
   }
 
+  reserveProductCreation(): string {
+    if (!this.started) throw new Error('Owned Site Part session is not ready.');
+    const title = `E2E-owned-${this.session}-${this.next++}`;
+    stateCommand('reserve', { session: this.session, title });
+    return title;
+  }
+
+  registerProductCreation(id: string): void {
+    stateCommand('register', { session: this.session, id });
+    this.owned.add(id);
+  }
+
   prepareActivation(id: string): void {
     this.assertOwned(id);
     stateCommand('prepare', { session: this.session, id });

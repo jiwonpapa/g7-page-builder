@@ -11,6 +11,7 @@ import type {
 } from '../documents/types';
 import type { SitePartResource, SitePartSetPartSummary, SitePartSetResource } from '../api/resources';
 import { SitePartSetEditor } from './SitePartSetEditor';
+import { PAGE_BUILDER_SITE_PART_EDITOR_PATH } from '../api/pageBuilderApi';
 
 interface SitePartWorkspaceProps {
   locale: string;
@@ -122,6 +123,7 @@ export function SitePartWorkspace({ locale }: SitePartWorkspaceProps): React.Rea
         <span className="g7pb-product-mark" aria-hidden="true"><PanelsTopLeft size={20} /></span>
         <div><p>Site Parts</p><h1>헤더·푸터</h1><span>사이트 공통 영역을 한 화면에서 관리합니다.</span></div>
       </div>
+      <a className="g7pb-button g7pb-button--quiet" href={PAGE_BUILDER_SITE_PART_EDITOR_PATH + '?editor=structure&locale=' + encodeURIComponent(locale)}>새 정밀 세트</a>
       <button type="button" className="g7pb-button g7pb-button--primary" data-testid="page-builder-site-part-set-create" onClick={() => setCreateOpen(true)}>
         <CirclePlus size={17} /> 새 세트
       </button>

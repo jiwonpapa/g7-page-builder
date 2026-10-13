@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { elementSitePartUrl } from './sitePartEditorRouting';
 import { Puck, type Viewports } from '@puckeditor/core';
 import {
   Check,
@@ -106,6 +107,8 @@ export function SitePartSetEditor({
       api.getSitePart('footer', locale, setId),
     ]).then(([header, footer]) => {
       if (!active) return;
+      const url = elementSitePartUrl(header.document, header.set_id, locale) ?? elementSitePartUrl(footer.document, footer.set_id, locale);
+      if (url) { window.location.replace(url); return; }
       applyResources({
         set: setSummaryRef.current.sets.find((set) => set.id === setId) ?? {
           id: setId, title: setSummaryRef.current.setTitle, locale, is_active: setSummaryRef.current.isActive, is_ready: false,

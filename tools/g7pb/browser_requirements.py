@@ -52,6 +52,10 @@ V3_PRODUCT = BrowserScenario("tests/E2E/structureDocumentProduct.spec.ts", title
     *("publishes generic elements through the installed UI with explicit confirmation and preserves the live version " + shell
       for shell in ("none", "template", "builder"))))
 
+V3_SITE_PART = BrowserScenario("tests/E2E/structureSitePartProduct.spec.ts", titles=(
+    "generic Site Parts preserve separate histories save reopen preview and atomic publication at three widths",
+    "generic Site Part save conflicts and delayed responses preserve current input and block publication"))
+
 # New v3 modules use the independent editor and injected draft-port contract.
 # The v1/v2 installed-entry scenarios retain their existing mappings below.
 V3_STRUCTURE = BrowserScenario("tests/E2E/structureEditorV3.spec.ts", titles=(
@@ -266,11 +270,17 @@ STYLE_CODE_SCOPES = {
 # Most-specific source rules win. Adding a scenario requires a real registered
 # Playwright test; a missing spec/title must fail instead of claiming acceptance.
 RULES = (
+    (("resources/js/editor/v3/StructureSitePartHost.tsx", "resources/js/editor/v3/SitePartPairEditor.tsx",
+      "resources/js/editor/v3/sitePartPorts.ts", "resources/js/api/elementSitePartApi.ts",
+      "resources/js/api/elementSitePartResource.ts"), (V3_SITE_PART,)),
+    (("resources/js/editor/v3/entry.tsx", "resources/css/page-builder-structure.css"), (V3_PRODUCT, V3_SITE_PART)),
+    (("resources/js/editor/SitePartEditor.tsx", "resources/js/editor/SitePartSetEditor.tsx",
+      "resources/js/editor/sitePartEditorRouting.ts", "resources/views/site-part-editor.blade.php"), (SITE_PART, V3_SITE_PART)),
     (("resources/js/editor/v3/entry.tsx", "resources/js/editor/v3/StructureDocumentHost.tsx",
       "resources/js/editor/v3/PublicationControls.tsx", "resources/js/editor/v3/apiPublicationPort.ts",
       "resources/js/editor-application/v3/publication.ts",
       "resources/css/page-builder-structure.css", "vite.structure.config.ts"), (V3_PRODUCT,)),
-    (("resources/js/editor/v3/StructureEditor.tsx",), (V3_STRUCTURE, V3_PRODUCT)),
+    (("resources/js/editor/v3/StructureEditor.tsx",), (V3_STRUCTURE, V3_PRODUCT, V3_SITE_PART)),
     (("resources/views/editor.blade.php",), (PAGE, DOCUMENT_BOUNDARY, V3_PRODUCT)),
     (("src/Application/Compilation/V3/*",), (V3_STRUCTURE,)),
     (("resources/js/documents/v3/*", "resources/js/editor/v3/*", "resources/js/editor-application/v3/*",
@@ -286,7 +296,7 @@ RULES = (
       "src/Contracts/SiteKit*", "src/Infrastructure/Store/BundledSiteKitSource.php",
       "src/Infrastructure/Gnuboard7/Persistence/EloquentSiteKitInstallation.php",
       "src/Infrastructure/Gnuboard7/Http/Controllers/AdminSiteKitController.php"), (SITE_KIT,)),
-    (("resources/js/editor/SitePartWorkspace.tsx",), (SITE_PART, SITE_KIT)),
+    (("resources/js/editor/SitePartWorkspace.tsx",), (SITE_PART, SITE_KIT, V3_SITE_PART)),
     # The planner admits this view only for the byte-identical root-class addition.
     (("resources/views/viewer.blade.php",), (PAGE, STRUCTURE_THEME)),
     # The compiler family owns publishing, nested markup and typed responsive output.

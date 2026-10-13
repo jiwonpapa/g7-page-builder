@@ -64,13 +64,43 @@ class FrontendBudgetTests(unittest.TestCase):
     def payload(label, count):
         return "".join(hashlib.sha256(f"{label}-{index}".encode()).hexdigest() for index in range(count))
 
-    def test_structure_entry_enforces_the_same_editor_gzip_ceiling(self):
-        self.full_fixture()
-        self.write("dist/js/page-builder-structure.iife.js", self.payload("structure-entry", 16000))
-        result = self.run_checker()
-        self.assertNotEqual(result.returncode, 0, result.stdout)
-        self.assertIn("page-builder-structure.iife.js", result.stderr)
-        self.assertIn("/508500 gzip bytes", result.stderr)
+    def test_both_editor_entries_enforce_the_approved_gzip_ceiling(self):
+        for entry in ("editor", "structure"):
+            with self.subTest(entry=entry):
+                self.full_fixture()
+                path = f"dist/js/page-builder-{entry}.iife.js"
+                self.write(path, self.payload(entry, 16000))
+                result = self.run_checker()
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+                self.assertIn(path, result.stderr)
+                self.assertIn("/512000 gzip bytes", result.stderr)
+
+    def test_editor_growth_above_old_ceiling_passes_only_within_approved_ceiling(self):
+        script = """
+          const {gzipSync} = require('node:zlib');
+          const data = require('node:fs').readFileSync(0);
+          let low = 0, high = data.length;
+          while (low < high) {
+            const mid = Math.ceil((low + high) / 2);
+            if (gzipSync(data.subarray(0, mid)).length <= 510000) low = mid;
+            else high = mid - 1;
+          }
+          const source = data.subarray(0, low);
+          process.stdout.write(JSON.stringify({source: source.toString(), bytes: gzipSync(source).length}));
+        """
+        measured = subprocess.run(["node", "-e", script], input=self.payload("editor-budget", 16000),
+                                  capture_output=True, text=True, check=True, timeout=30)
+        sample = json.loads(measured.stdout)
+        self.assertGreater(sample["bytes"], 508_500)
+        self.assertLessEqual(sample["bytes"], 512_000)
+        for entry in ("editor", "structure"):
+            with self.subTest(entry=entry):
+                self.full_fixture()
+                path = f"dist/js/page-builder-{entry}.iife.js"
+                self.write(path, sample["source"])
+                result = self.run_checker()
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn(f"{path}={sample['bytes']}/512000 gzip bytes", result.stdout)
 
     def test_full_command_rejects_split_family_total_over_original_limit(self):
         self.full_fixture()

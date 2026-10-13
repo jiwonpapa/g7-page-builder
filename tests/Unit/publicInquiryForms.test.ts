@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { bootInquiryForms } from '../../resources/js/public/pageEffects';
 import { disposeInquiryForms } from '../../resources/js/public/publicInquiryForms';
+import { bootPageEffects, disposePageEffects, observePageEffects } from '../../resources/js/public/publicRuntime';
+import { act, createElement } from 'react';
+import { createRoot } from 'react-dom/client';
 const documents = new Set<Document>();
 afterEach(() => { documents.forEach(disposeInquiryForms); documents.clear(); });
 
@@ -26,6 +29,81 @@ function deferred<T>() {
 }
 
 describe('public inquiry input lifetime', () => {
+  it.each(['synchronous', 'observer-first'])('hands unsent input to an identical %s rendering only once', async schedule => {
+    const { root, form, name, message } = fixture(); const markup = root.body.innerHTML;
+    const fetcher = vi.fn<typeof fetch>(); bootInquiryForms(root, fetcher);
+    name.value = 'Unsent visitor'; message.value = '두 줄\n문의';
+    root.body.innerHTML = markup;
+    if (schedule === 'observer-first') await Promise.resolve();
+    bootInquiryForms(root, fetcher);
+    const next = root.querySelector('form')!;
+    expect(next).not.toBe(form);
+    expect(next.querySelector<HTMLInputElement>('[name="name"]')!.value).toBe('Unsent visitor');
+    expect(next.querySelector('textarea')!.value).toBe('두 줄\n문의');
+    expect(next.elements.namedItem('started_at')).toHaveProperty('value', expect.stringMatching(/^\d+$/u));
+    next.reset(); root.body.innerHTML = markup; bootInquiryForms(root, fetcher);
+    expect(root.querySelector<HTMLInputElement>('[name="name"]')!.value).toBe('');
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it.each(['later-turn', 'dispose', 'action', 'owner', 'source', 'duplicates'])('does not transfer input across the %s boundary', async boundary => {
+    const { root, name } = fixture(); const markup = root.body.innerHTML;
+    const fetcher = vi.fn<typeof fetch>(); bootInquiryForms(root, fetcher); name.value = 'Private unsent content';
+    if (boundary === 'dispose') disposeInquiryForms(root);
+    root.body.innerHTML = boundary === 'later-turn' ? '' : markup;
+    if (boundary === 'later-turn') {
+      await new Promise(resolve => setTimeout(resolve, 10)); root.body.innerHTML = markup;
+    }
+    if (boundary === 'action') root.querySelector('form')!.action = 'https://example.test/other';
+    if (boundary === 'owner') root.querySelector('section')!.dataset.blockId = 'another';
+    if (boundary === 'source') root.querySelector('button')!.textContent = 'Changed source';
+    if (boundary === 'duplicates') root.body.insertAdjacentHTML('beforeend', markup);
+    bootInquiryForms(root, fetcher);
+    for (const control of root.querySelectorAll<HTMLInputElement>('[name="name"]')) expect(control.value).toBe('');
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it('never transfers or retries a pending submission into a replacement form', async () => {
+    const { root, form, name } = fixture(); const markup = root.body.innerHTML;
+    const pending = deferred<Response>(); const fetcher = sessionFetcher(root, () => pending.promise);
+    bootInquiryForms(root, fetcher); name.value = 'Already submitted'; submitForm(form);
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
+    root.body.innerHTML = markup; bootInquiryForms(root, fetcher);
+    pending.resolve(new Response('{}')); await pending.promise; await Promise.resolve();
+    expect(root.querySelector<HTMLInputElement>('[name="name"]')!.value).toBe('');
+    expect(root.querySelector('[data-g7pb-form-status]')!.textContent).toBe('');
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it('preserves typed text and privacy through actual React replacement and public hydration', async () => {
+    Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+    const container = document.createElement('div'); document.body.append(container);
+    const react = createRoot(container); const fetcher = vi.fn<typeof fetch>();
+    const fetchSpy = vi.spyOn(window, 'fetch').mockImplementation(fetcher);
+    const markup = '<div data-block-id="owned" data-g7pb-inquiry-host data-g7pb-inquiry-form data-g7pb-form-action="/pages/owned/inquiries">'
+      + '<span data-g7pb-form-control="input" data-g7pb-control-type="text" data-g7pb-control-name="name"></span>'
+      + '<span data-g7pb-form-control="input" data-g7pb-control-type="checkbox" data-g7pb-control-name="privacy"></span>'
+      + '<span data-g7pb-form-control="button" data-g7pb-control-type="submit">Send</span><p data-g7pb-form-status></p></div>';
+    const render = () => act(async () => react.render(createElement('div', { dangerouslySetInnerHTML: { __html: markup } })));
+    try {
+      await render(); bootPageEffects(document, window); observePageEffects(document, window);
+      const before = document.querySelector('form')!;
+      (before.elements.namedItem('name') as HTMLInputElement).value = '실제 입력';
+      (before.elements.namedItem('privacy') as HTMLInputElement).checked = true;
+      await render();
+      const after = document.querySelector('form')!;
+      expect(after).not.toBe(before);
+      expect((after.elements.namedItem('name') as HTMLInputElement).value).toBe('실제 입력');
+      expect((after.elements.namedItem('privacy') as HTMLInputElement).checked).toBe(true);
+      expect(fetcher).not.toHaveBeenCalled();
+      const priorUrl = location.href;
+      try {
+        history.replaceState(null, '', '/different-page'); await render();
+        expect(document.querySelector<HTMLInputElement>('[name="name"]')!.value).toBe('');
+      } finally { history.replaceState(null, '', priorUrl); }
+    } finally { disposePageEffects(document); await act(async () => react.unmount()); container.remove(); fetchSpy.mockRestore(); }
+  });
+
   it('keeps edits made after the submitted snapshot when its response succeeds', async () => {
     const root = document.implementation.createHTMLDocument('inquiry');
     documents.add(root);

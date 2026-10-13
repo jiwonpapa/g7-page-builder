@@ -805,6 +805,13 @@
           "commit": "202a3e7538c16d7c7622944ad50cd3a8f00231a3",
           "result": "pass",
           "path": "docs/audits/2026-10-13-ip7-embed-product-proof.md"
+        },
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-integrated-common-embed",
+          "commit": "a7f9d6734bbdfc1510c6f20813f052a61a33d0b8",
+          "result": "pass",
+          "path": "docs/audits/2026-10-13-ip7-embed-product-proof.md"
         }
       ],
       "blocked_reason": null,

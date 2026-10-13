@@ -1,4 +1,5 @@
 import React from 'react';
+import type { IconName } from '../documents/v3/types';
 import {
   AtSign,
   BriefcaseBusiness,
@@ -25,10 +26,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-export type CatalogIconName =
-  | 'bolt' | 'check' | 'code' | 'globe' | 'heart' | 'layers' | 'mobile' | 'palette' | 'shield' | 'sparkles' | 'star'
-  | 'trend' | 'users' | 'target' | 'chart'
-  | 'instagram' | 'youtube' | 'facebook' | 'linkedin' | 'x' | 'kakao' | 'blog' | 'website';
+export type CatalogIconName = IconName;
 
 const CATALOG_ICONS: Record<CatalogIconName, LucideIcon> = {
   bolt: Zap,
@@ -55,17 +53,22 @@ const CATALOG_ICONS: Record<CatalogIconName, LucideIcon> = {
   blog: Rss,
   website: ExternalLink,
 };
+export const catalogIconNames = Object.keys(CATALOG_ICONS).filter(isCatalogIconName);
+export function isCatalogIconName(value: string): value is CatalogIconName { return Object.hasOwn(CATALOG_ICONS, value); }
 
 export function CatalogIcon({
   name,
   size = 24,
   className,
+  fillParent = false,
 }: {
   name: CatalogIconName;
   size?: number;
   className?: string;
+  fillParent?: boolean;
 }): React.ReactElement {
   const Icon = CATALOG_ICONS[name];
 
-  return <Icon aria-hidden="true" className={className} focusable="false" size={size} strokeWidth={2.1} />;
+  return <Icon aria-hidden="true" className={className} focusable="false" size={fillParent ? '100%' : size} strokeWidth={2.1}
+    style={fillParent ? { display: 'block' } : undefined} />;
 }

@@ -22,6 +22,10 @@ export function hydrateCatalogIcons(root: Document): void {
     svg.setAttribute('stroke-linecap', 'round');
     svg.setAttribute('stroke-linejoin', 'round');
     svg.setAttribute('aria-hidden', 'true');
+    if (marker.dataset.g7pbIconSizing === 'parent') {
+      svg.setAttribute('width', '100%'); svg.setAttribute('height', '100%');
+      svg.setAttribute('focusable', 'false'); svg.style.display = 'block';
+    }
     if (marker.className) svg.setAttribute('class', marker.className);
     svg.innerHTML = markup;
     marker.replaceWith(svg);

@@ -54,6 +54,7 @@
     "content.text": [
       "paragraphs"
     ],
+    "media.icon": ["icon", "label", "decorative"],
     "media.image": [
       "asset_id",
       "alt"

@@ -1,4 +1,14 @@
 {
+"icons": [
+  {"name":"decorative icon", "props":{"icon":"check","label":"","decorative":true}, "valid":true},
+  {"name":"meaningful icon", "props":{"icon":"shield","label":"보안 안내 <문자>","decorative":false}, "valid":true},
+  {"name":"empty icon label", "props":{"icon":"shield","label":"","decorative":false}, "valid":false,"error":"icon_label"},
+  {"name":"invisible icon label", "props":{"icon":"shield","label":"　\u200b\n","decorative":false}, "valid":false,"error":"icon_label"},
+  {"name":"unknown icon", "props":{"icon":"not-registered","label":"","decorative":true}, "valid":false,"error":"value"},
+  {"name":"icon markup forbidden", "props":{"icon":"check","label":"","decorative":true,"markup":"<svg></svg>"}, "valid":false,"error":"value"},
+  {"name":"icon handler forbidden", "props":{"icon":"check","label":"","decorative":true,"onclick":"alert(1)"}, "valid":false,"error":"value"},
+  {"name":"icon requires decorative flag", "props":{"icon":"check","label":"설명"}, "valid":false,"error":"value"}
+],
 "semantics": [
     {
       "name": "unordered list",

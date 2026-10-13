@@ -5,7 +5,7 @@ import type { ElementPartResource, PartKind } from '../../resources/js/api/eleme
 import type { SitePartSetResource } from '../../resources/js/api/resources';
 
 // SPEC-09 edits every canvas width on a desktop host, without a mobile-UA/OS keymap mix.
-test.use({ isMobile: false, hasTouch: false, userAgent: devices['Desktop Chrome'].userAgent });
+test.use({ locale: 'ko-KR', isMobile: false, hasTouch: false, userAgent: devices['Desktop Chrome'].userAgent });
 
 const API = '/api/modules/jiwonpapa-page_builder/admin';
 const EDITOR = '/modules/jiwonpapa-page_builder/admin/site-parts';
@@ -14,6 +14,7 @@ const pane = (page: Page, kind: PartKind) => page.locator('[data-part="' + kind 
 async function create(page: Page, owned: SitePartSetFixture) {
   const title = owned.reserveProductCreation();
   await page.goto(EDITOR + '?editor=structure&locale=' + owned.locale);
+  await expect(page.getByTestId('page-builder-site-part-editor-root')).toHaveAttribute('data-locale', owned.locale);
   await page.getByLabel('세트 이름', { exact: true }).fill(title);
   const creating = page.waitForResponse(response => response.url().endsWith('/site-part-sets') && response.request().method() === 'POST');
   await click(page, '빈 정밀 세트 만들기');

@@ -67,8 +67,9 @@ test.beforeAll(async () => {
   stylesheet = output.filter(item => item.type === 'asset').filter(item => item.fileName.endsWith('.css') && !item.fileName.startsWith('fonts/'))
     .map(item => typeof item.source === 'string' ? item.source : new TextDecoder().decode(item.source)).join('\n');
   sizes = { javascript: gzipSync(javascript).length, stylesheet: gzipSync(stylesheet).length };
-  // Do not raise the installed editor's limits or hide its bytes in this host.
-  expect(sizes.javascript).toBeLessThanOrEqual(508_500);
+  // Same 512,000-byte editor limit approved on 2026-10-13 and enforced by
+  // check-frontend-budgets.mjs; this host may not hide its own dependency bytes.
+  expect(sizes.javascript).toBeLessThanOrEqual(512_000);
   expect(sizes.stylesheet).toBeLessThanOrEqual(45_200);
 });
 async function open(page: Page, source?: DocumentV3, readonly = false, compositions?: DocumentV3[]) {

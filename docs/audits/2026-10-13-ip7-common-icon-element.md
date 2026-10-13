@@ -25,3 +25,9 @@ Node 24와 PHP 8.5.3의 직접 검사에서 Vitest 121개, TypeScript strict, PH
 최초 설치형 실행은 기존 12개 통과·새 아이콘 9개 실패로 종료했고, Local은 `59116bfa685959d5eb56bbedc629c8a6053eed12`로 원복됐다. 원래 활성 테마도 복구했다. 수정 후 `V3IconElementTest`, `CompilerCollaboratorsTest`, `DocumentV3CompilerTest`는 합계 25개·2,083 assertions와 Pint를 통과했다. 실제 `HtmlCompiler`의 69개 아이콘/shell 조합이 기존 금지 태그 정책을 통과한 결과이며, 수정 후 브라우저 검증은 별도로 남아 있다.
 
 재제출 `5c54f9a193347a10757c750098e915aeccce456a`의 설치형 시험은 실제 미리보기·발행까지 진행했지만, 편집 화면에서 Puck이 부여한 장식용 요소의 `role=button`을 공개 의미의 `role` 없음과 비교해 실패했다. 이 검사 혼동과 함께 선택 가능한 편집 요소까지 `aria-hidden`으로 숨기는 접근성 결함을 확인했다. 편집 중 장식용 아이콘은 문서의 요소 이름을 가진 선택 대상으로 노출하고 내부 SVG만 숨긴다. React 미리보기·PHP 공개 의미의 장식용 숨김은 유지한다. 시험은 편집용 컨트롤과 공개 의미를 각각 명시적으로 검증하며, 두 출력의 SVG·색상·크기·장식용/의미 있는 구분을 생략하지 않는다. 문서 props와 저장 결과는 바꾸지 않는다.
+
+## 설치형 통과와 독립 시험의 기존 상한 정합화
+
+소스 `09d06f0dd70782d5d4fe875884b72bd35e571b5f`와 제품 검사 `b3f534f97ab5bb1cca2c3a3f96b128acabb36a4e`의 후보는 설치형 브라우저 21개를 실패·skipped·flaky 없이 통과했다. 27개 폭별 기록의 편집/React 미리보기/PHP 미리보기/공개 SVG 크기 최대 차이는 0 CSS px다. 시험 문서 21개가 모두 보관 처리됐다. 증거는 `output/playwright/gates/integration-ip7-20261012/e91c139c9518d3b23dadc32ff6a9c6ef35402d5f8829d20d2eedcd425a3740da/623b29c6902640c0abc57406f6471c3a/results.json`이다.
+
+이어진 독립 시험은 실행 전 번들 검사에서 멈췄다. 격리 포트 host가 510,736바이트인데 이 시험에만 승인 전 508,500바이트 상한이 남아 있었다. 사용자가 2026-10-13 승인하고 제품의 두 편집기 entry에 이미 적용한 512,000바이트와 일치시킨다. CSS·성능·기능 기준은 유지하며 새 예산 증액이나 최적화 성과로 보고하지 않는다. 실패 기록은 `output/playwright/gates/integration-ip7-20261012/9f6badea8462d594b2c2db4a860f9ae92973a3f9078d2d82990ab62b88abf71d/e008cf8f52374406ab08c9bbaf6a7aa4/results.json`의 beforeAll 실패 3개·미실행 261개다. Local 후보와 원래 테마가 원복됐으며 전체 batch 통합 성공은 아직 아니다.

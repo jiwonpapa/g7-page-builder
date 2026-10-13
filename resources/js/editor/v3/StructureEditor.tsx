@@ -35,6 +35,7 @@ import type { CompositionLibraryPort } from '../../editor-application/v3/composi
 import { UserCompositionPanel } from './UserCompositionPanel';
 import { MediaInsertion } from './MediaInsertion';
 import { SystemInspector } from './SystemInspector';
+import { DataInspector } from './DataInspector';
 
 export interface StructureEditorProps {
   document: DocumentV3;
@@ -323,6 +324,8 @@ function EditorSession(props: StructureEditorProps) {
             {focus && <BehaviorInspector key={'behavior:' + focus.node.instance_id + ':' + JSON.stringify(focus.node)} node={focus.node} document={document}
               disabled={Boolean(preview || props.readonly || focus.node.locked || focus.ancestors.some(node => node.locked))} apply={value => { bridge.execute(value); }} />}
             {focus && <SystemInspector key={'system:' + focus.node.instance_id + ':' + JSON.stringify(focus.node)} node={focus.node}
+              disabled={Boolean(preview || props.readonly || focus.node.locked || focus.ancestors.some(node => node.locked))} apply={value => { bridge.execute(value); }} />}
+            {focus && <DataInspector key={'data:' + focus.node.instance_id + ':' + JSON.stringify(focus.node)} node={focus.node}
               disabled={Boolean(preview || props.readonly || focus.node.locked || focus.ancestors.some(node => node.locked))} apply={value => { bridge.execute(value); }} />}
             {focus && <BindingInspector key={'binding:' + focus.node.instance_id + ':' + JSON.stringify(focus.node)} node={focus.node} document={document}
               disabled={Boolean(preview || props.readonly || focus.node.locked || focus.ancestors.some(node => node.locked))} apply={value => { bridge.execute(value); }} />}

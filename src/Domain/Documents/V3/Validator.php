@@ -39,6 +39,7 @@ final readonly class Validator
         $this->nodes($value->blocks, null, 1, $ids, $assets);
         Behaviors::validate($value, $this->policy['behaviors']);
         Bindings::validate($value, $this->policy['bindings']);
+        DataBindings::validate($value, $this->policy['data']);
 
         return $value;
     }

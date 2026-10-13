@@ -85,7 +85,7 @@ final readonly class ElementMarkup
             };
             $attrs = ' id="node-'.$node->instance_id.'" data-v3-node="'.$node->instance_id.'" style="'.self::css($style).'"';
             $formControl = $node->type === 'form.control' || isset($attributes[$node->instance_id]['data-g7pb-form-submit']);
-            foreach (array_replace($attributes[$node->instance_id] ?? [], SystemMarkup::attributes($node, $document)) as $key => $value) {
+            foreach (array_replace($attributes[$node->instance_id] ?? [], SystemMarkup::attributes($node, $document), DataMarkup::attributes($node)) as $key => $value) {
                 $name = $this->publication && $formControl && in_array($key, ['name', 'required', 'maxlength', 'autocomplete', 'value'], true) ? 'data-g7pb-control-'.$key : $key;
                 $attrs .= ' '.$name.'="'.self::escape($value).'"';
             }
@@ -126,6 +126,7 @@ final readonly class ElementMarkup
                 $body = self::escape($node->props->label);
             } else {
                 $body = FormMarkup::wrap($node, $document, $this->nodes($node->slots->content ?? [], $document, $styles, $attributes), $this->publication);
+                $body = DataMarkup::wrap($node, $body);
             }
             $html .= '<'.$tag.$attrs.'>'.(in_array($tag, ['img', 'input'], true) ? '' : $body.'</'.$tag.'>');
         }

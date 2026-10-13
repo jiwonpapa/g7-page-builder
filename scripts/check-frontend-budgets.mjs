@@ -22,9 +22,10 @@ const budgets = [
   { path: 'dist/css/page-builder-structure.css', gzip: 45_200 },
   { path: 'dist/css/page-builder-site-part.css', gzip: 32_000 },
   { path: 'dist/js/page-builder-manager.iife.js', gzip: 90_000 },
-  // UI6 measured release input: 508,050 gzip bytes; reserve 450 bytes for release metadata.
-  { path: 'dist/js/page-builder-editor.iife.js', gzip: 508_500 },
-  { path: 'dist/js/page-builder-structure.iife.js', gzip: 508_500 },
+  // User-approved 2026-10-13: 512,000 gzip bytes for either editor entry.
+  // Runtime performance and every unrelated asset budget remain unchanged.
+  { path: 'dist/js/page-builder-editor.iife.js', gzip: 512_000 },
+  { path: 'dist/js/page-builder-structure.iife.js', gzip: 512_000 },
   { path: 'dist/js/page-builder-site-part.iife.js', gzip: 410_000 },
   { path: 'dist/js/page-effects.iife.js', gzip: 24_000 },
   { path: 'dist/js/page-sliders.iife.js', gzip: 12_000 },

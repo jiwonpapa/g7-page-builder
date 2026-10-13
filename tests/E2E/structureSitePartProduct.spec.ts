@@ -84,6 +84,13 @@ test('generic Site Parts preserve separate histories save reopen preview and ato
     await expect(rich).toHaveText('공통 요소로 만든 헤더'); await click(header, '구조 선택');
     await font(header, 27); await click(header, '모바일'); await font(header, 21);
     await click(page, 'Footer'); await click(footer, '본문 삽입');
+    const paragraph = (await footer.getByTestId(/^layer-/).getAttribute('data-testid'))!.slice('layer-'.length);
+    await footer.getByTestId('layer-' + paragraph).click(); await click(footer, '본문 입력');
+    await footer.frameLocator('iframe').locator('[data-v3-node="' + paragraph + '"] [contenteditable]').click();
+    const footerRich = footer.frameLocator('iframe').locator('[data-v3-node="' + paragraph + '"] .tiptap[contenteditable="true"]');
+    await footerRich.click(); await footerRich.press('ControlOrMeta+A'); await page.keyboard.insertText('공통 요소로 만든 푸터');
+    await expect(footerRich).toHaveText('공통 요소로 만든 푸터'); await click(footer, '구조 선택');
+    await font(footer, 19); await click(footer, '모바일'); await font(footer, 17);
     await click(page, 'Header'); await click(header, '실행 취소');
     await expect(header.frameLocator('iframe').locator('[data-v3-node="' + heading + '"]')).toHaveCSS('font-size', '27px');
     await click(header, '다시 실행');
@@ -123,6 +130,11 @@ test('generic Site Parts preserve separate histories save reopen preview and ato
       // Return to 100% for source CSS pixel geometry, not screenshot zoom pixels.
       await header.getByRole('combobox', { name: '작업면 확대', exact: true }).selectOption('1');
       const canvas = await measure(canvasNode);
+      await click(page, 'Footer'); await click(footer, label);
+      await footer.getByRole('combobox', { name: '작업면 확대', exact: true }).selectOption('1');
+      const footerNode = footer.frameLocator('iframe').locator('[data-v3-node="' + paragraph + '"]');
+      await expect(footerNode).toHaveCSS('font-size', width === 360 ? '17px' : '19px');
+      const footerCanvas = await measure(footerNode);
       await click(page, '공통영역 미리보기');
       await page.getByLabel('미리보기 폭').selectOption(String(width));
       const previewNode = page.getByTestId('site-part-pair-preview').locator('[data-v3-node="' + heading + '"]');
@@ -137,8 +149,17 @@ test('generic Site Parts preserve separate histories save reopen preview and ato
         expect(Math.abs(actual.width - canvas.width)).toBeLessThanOrEqual(1);
         expect(Math.abs(actual.height - canvas.height)).toBeLessThanOrEqual(1);
       }
+      const footerPreview = page.getByTestId('site-part-pair-preview').locator('[data-v3-node="' + paragraph + '"]');
+      const footerOutput = viewer.locator('[data-g7pb-element-site-part="footer"] [data-v3-node="' + paragraph + '"]');
+      for (const node of [footerPreview, footerOutput]) {
+        await expect(node).toHaveCSS('font-size', footerCanvas.font);
+        const actual = await measure(node);
+        expect(actual.text).toBe(footerCanvas.text); expect(actual.font).toBe(footerCanvas.font);
+        expect(Math.abs(actual.width - footerCanvas.width)).toBeLessThanOrEqual(1);
+        expect(Math.abs(actual.height - footerCanvas.height)).toBeLessThanOrEqual(1);
+      }
       await info.attach('site-part-preview-' + width, { body: await page.screenshot(), contentType: 'image/png' });
-      await info.attach('site-part-public-' + width, { body: await viewer.screenshot(), contentType: 'image/png' });
+      await info.attach('site-part-public-' + width, { body: await viewer.screenshot({ fullPage: true }), contentType: 'image/png' });
     }
     // Publishing advanced both CAS tokens without resetting either local history.
     await click(page, 'Header'); await click(header, '본문 삽입'); await save(page, 'header');

@@ -8,6 +8,23 @@ import { StructureSitePartHost } from '../../resources/js/editor/v3/StructureSit
 import { mountStructureSiteParts } from '../../resources/js/editor/v3/entry';
 import type { SitePartHostPorts } from '../../resources/js/editor/v3/sitePartPorts';
 import type { StructureEditorProps } from '../../resources/js/editor/v3/StructureEditor';
+import { elementSitePartUrl, sitePartEditorUrl } from '../../resources/js/editor/sitePartEditorRouting';
+
+it('routes only explicit v2 sources and encodes set and locale without query injection', () => {
+  for (const structure of [false, true]) {
+    const url = new URL(sitePartEditorUrl('set &editor=bad', 'ko &set_id=other', structure), 'https://example.test');
+    expect(url.searchParams.get('set_id')).toBe('set &editor=bad');
+    expect(url.searchParams.get('locale')).toBe('ko &set_id=other');
+    expect(url.searchParams.get('editor')).toBe(structure ? 'structure' : null);
+    expect([...url.searchParams.keys()]).toHaveLength(structure ? 3 : 2);
+  }
+  const source = Object.freeze({ schema_version: 'g7-page-builder/site-part/v2' });
+  expect(elementSitePartUrl(source, 'set-a', 'ko')).toBe(sitePartEditorUrl('set-a', 'ko', true));
+  expect(() => elementSitePartUrl(source, null, 'ko')).toThrow('세트 정보가 없습니다');
+  for (const value of [null, undefined, false, 'v2', [], {}, { schema_version: 'g7-page-builder/site-part/v1' }]) {
+    expect(elementSitePartUrl(value, null, 'ko')).toBeNull();
+  }
+});
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 const editors = new Map<string, StructureEditorProps>(), mounts = vi.fn(), unmounts = vi.fn();

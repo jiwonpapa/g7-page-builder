@@ -71,8 +71,19 @@ it('keeps standalone controls accessible, leaves user values transient and block
   document.body.innerHTML = renderToStaticMarkup(<NodeRenderer node={node} document={doc} {...projection} editing />);
   const input = document.querySelector('input')!;
   expect(input.getAttribute('aria-label')).toBe('name'); expect(input.name).toBe('');
-  expect(input.readOnly).toBe(true); expect(input.tabIndex).toBe(-1); expect(input.style.pointerEvents).toBe('none');
+  expect(input.readOnly).toBe(true); expect(input.tabIndex).toBe(-1);
   input.value = 'not a document field'; expect(JSON.stringify(doc)).toBe(before);
+});
+it('allows canvas selection events but cancels native checkbox activation only while editing', async () => {
+  const doc = source(), node = indexTree(doc).get(doc.blocks[0].binding!.fields.find(field => field.name === 'privacy')!.input_id)!.node;
+  const selected = vi.fn(), projection = formPresentation(doc);
+  const host = await mount(<div onClick={selected}><NodeRenderer node={node} document={doc} {...projection} editing /></div>);
+  const input = host.querySelector('input')!;
+  await act(async () => input.click());
+  expect(input.checked).toBe(false); expect(selected).toHaveBeenCalledTimes(1);
+  await act(async () => root!.render(<NodeRenderer node={node} document={doc} {...projection} />));
+  await act(async () => host.querySelector('input')!.click());
+  expect(host.querySelector('input')!.checked).toBe(true);
 });
 it('round-trips plain label text through the existing Puck codec without interpreting markup or changing bindings', () => {
   const doc = source(), data = documentToPuck(doc), label = data.content[0].props.content[0];
@@ -164,22 +175,27 @@ function markers() {
 }
 it('hydrates native form controls once, preserves identity/styles/labels and reuses the existing CSRF/snapshot/reset runtime', async () => {
   markers(); hydrateTemplateRuntime(document); ensureSiteShellButtons(document); hydrateTemplateRuntime(document);
+  document.head.querySelector('meta[name="csrf-token"]')?.remove();
+  const cookie = vi.spyOn(document, 'cookie', 'get').mockReturnValue('XSRF-TOKEN=test%2Btoken');
   const form = document.querySelector('form')!, input = document.querySelector<HTMLInputElement>('[name="name"]')!, submit = document.querySelector('button')!;
   expect(form.style.display).toBe('contents'); expect(input.id).toBe('field-id'); expect(input.style.fontSize).toBe('24px');
   expect(input.dataset.g7pbV3Style).toBe('width font-size'); expect(input.getAttribute('aria-labelledby')).toBe('field-label');
   expect(input.required).toBe(true); expect(input.maxLength).toBe(120); expect(submit.type).toBe('submit');
   expect(submit.id).toBe('submit-id'); expect(submit.hasAttribute('data-g7pb-form-submit')).toBe(true);
   input.value = '홍길동';
-  const fetcher = vi.fn<typeof fetch>(async () => new Response('{}', { status: 201 }));
+  const fetcher = vi.fn<typeof fetch>(async url => url === '/sanctum/csrf-cookie'
+    ? new Response(null, { status: 204 }) : new Response('{}', { status: 201 }));
   bootInquiryForms(document, fetcher); bootInquiryForms(document, fetcher);
   form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
   await vi.waitFor(() => expect(document.querySelector('[data-g7pb-form-status]')?.textContent).toBe('접수 완료'));
-  expect(fetcher).toHaveBeenCalledTimes(1);
-  const [url, options] = fetcher.mock.calls[0]; expect(String(url)).toContain('/pages/precision/inquiries');
-  expect(options?.headers).toEqual({ Accept: 'application/json', 'X-CSRF-TOKEN': 'test-token' });
+  const posts = fetcher.mock.calls.filter(([, options]) => options?.method === 'POST');
+  expect(posts).toHaveLength(1);
+  const [url, options] = posts[0]; expect(String(url)).toContain('/pages/precision/inquiries');
+  expect(options?.headers).toEqual({ Accept: 'application/json', 'X-XSRF-TOKEN': 'test+token' });
   expect(options?.body).toBeInstanceOf(FormData);
   if (!(options?.body instanceof FormData)) throw new Error('Expected FormData');
   expect(options.body.get('name')).toBe('홍길동'); expect(options.body.get('block_instance_id')).toBe('form-owner'); expect(input.value).toBe('');
+  cookie.mockRestore();
 });
 for (const context of ['preview', 'site-part']) it('does not activate submissions without a live page service: ' + context, () => {
   markers(); const surface = document.querySelector('[data-g7pb-v3-public]')!;

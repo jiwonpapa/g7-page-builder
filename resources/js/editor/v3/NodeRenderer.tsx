@@ -25,6 +25,20 @@ export function NodeRenderer({ node, document, styles, attributes, children, bod
   children?: React.ReactNode; body?: React.ReactNode; editing?: boolean;
   dragRef?: ((element: Element | null) => void) | null;
 }) {
+  const inputRef = React.useCallback((element: Element | null) => {
+    dragRef?.(element);
+    if (!element || !editing) return;
+    // Puck's native selection listener stops bubbling before React receives a
+    // synthetic click. Guard the owned control itself without stopping selection.
+    const prevent = (event: Event) => event.preventDefault();
+    element.addEventListener('mousedown', prevent, true);
+    element.addEventListener('click', prevent, true);
+    return () => {
+      element.removeEventListener('mousedown', prevent, true);
+      element.removeEventListener('click', prevent, true);
+      dragRef?.(null);
+    };
+  }, [dragRef, editing]);
   const declarations = styles.get(node.instance_id) ?? {};
   if (declarations.display === 'none') return null;
   const { tabindex, for: htmlFor, required, maxlength, autocomplete, value, ...generated } = attributes?.get(node.instance_id) ?? {};
@@ -38,7 +52,7 @@ export function NodeRenderer({ node, document, styles, attributes, children, bod
       const props = { ...identity, 'aria-label': generated['aria-labelledby'] ? undefined : node.props.label,
         placeholder: node.props.placeholder, required: required !== undefined, maxLength: maxlength === undefined ? undefined : Number(maxlength),
         autoComplete: autocomplete, defaultValue: value, readOnly: editing, tabIndex: editing ? -1 : undefined,
-        style: { ...identity.style, ...(editing ? { pointerEvents: 'none' as const } : {}) } };
+        ref: inputRef };
       return node.props.kind === 'textarea' ? <textarea {...props} rows={6} /> : <input {...props} type={node.props.kind} />;
     }
     case 'content.heading': return body !== undefined

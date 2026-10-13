@@ -1287,25 +1287,25 @@ final class PublicationPersistenceTest extends TestCase
         $codec = new DocumentStorageCodec($validator);
         $service = new PageBuilderService(new EloquentPageBuilderRepository($codec), new StructureHtmlCompiler($validator),
             $codec, new EmptyStructureDocument($validator), $policy['default_tokens']);
-        $blocks = json_decode(file_get_contents($root.'/tests/Fixtures/document-v3-cases.json'), true, flags: JSON_THROW_ON_ERROR)['form_binding']['blocks'];
+        $blocks = json_decode(file_get_contents($root.'/tests/Fixtures/document-v3-cases.json'), flags: JSON_THROW_ON_ERROR)->form_binding->blocks;
         foreach (['template', 'builder', 'none'] as $shell) {
             $slug = 'element-inquiry-'.$shell;
             $created = $service->create('공통 문의 요소', $slug, 'ko', null, $shell, 'g7-page-builder/v3');
             $source = $created->document->toArray();
             $source['blocks'] = $blocks;
-            $draft = $service->saveDraft($created->document->documentId, $source, $created->lockVersion, null);
+            $draft = $service->saveDraftJson($created->document->documentId, json_encode($source, JSON_THROW_ON_ERROR), $created->lockVersion, null);
             $ticket = $service->preparePublication($draft->document->documentId, $draft->lockVersion, null);
             $service->commitPublication($ticket->token);
             self::assertStringContainsString('data-g7pb-v3-inquiry', $service->findPublished($slug)->artifact);
             $controller = new FormSubmissionController($service);
-            $payload = ['block_instance_id' => $blocks[0]['instance_id'], 'form_kind' => 'inquiry', 'name' => '홍길동',
+            $payload = ['block_instance_id' => $blocks[0]->instance_id, 'form_kind' => 'inquiry', 'name' => '홍길동',
                 'email' => 'forms@example.com', 'phone' => '', 'subject' => '문의', 'message' => '공통 요소에서 제출합니다.',
                 'privacy' => '1', 'website' => '', 'started_at' => time() - 3];
             $response = $controller->store(Request::create('/pages/'.$slug.'/inquiries', 'POST', $payload), $slug);
             self::assertSame(201, $response->getStatusCode());
             $record = FormSubmissionRecord::query()->findOrFail($response->getData(true)['data']['submission_id']);
             self::assertSame($slug, $record->page_slug);
-            self::assertSame($blocks[0]['instance_id'], $record->block_instance_id);
+            self::assertSame($blocks[0]->instance_id, $record->block_instance_id);
             self::assertSame($payload['message'], $record->payload_json['message']);
             self::assertSame('failed', $record->mail_status); // No delivery configured; submission remains stored.
             foreach ([['privacy' => '0'], ['email' => 'invalid'], ['website' => 'bot'], ['started_at' => time()]] as $invalid) {

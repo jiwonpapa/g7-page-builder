@@ -1,6 +1,6 @@
 # 내장 구성 capability 및 미완료 인계
 
-2026-10-14 · 49개 block / 99개 preset · 기준 제품 소스 728e0e1fc800dfa27ab9277d43debb5e8fdf5c51
+2026-10-14 · 49개 block / 99개 preset · 기준 제품 소스 c8baed6cc4fbd2df1a1b735b916aa1665ff0cb9b
 
 기준은 기존 builtin-core manifest입니다. 아래 대응은 기존 문서 변환 매핑 코드가 아니라 요구 누락을 확인하는 보고입니다. 기존 문서 전환은 이번에 실행하지 않습니다. 현재 v3 시작 데이터는 85개이며 기존 일반 구성 63개 + 문의 5개 + 누락 시작 구성 17개입니다. **공통 편집 기능 존재와 전용 시작 데이터 제공 및 실제 제품 수용을 구분합니다.** 표 작성/이름 대응으로 전체 완료를 선언하지 않습니다.
 
@@ -28,8 +28,8 @@
 | company.team-grid-01 | 팀 소개 | 공통 요소/트리/typed 스타일/반응형/한 Undo | team-* (4) | 추가 제품 수용 미확인 |
 | media.gallery-grid-01 | 갤러리 그리드 | 공통 요소/트리/typed 스타일/반응형/한 Undo | gallery-* (4) | 추가 제품 수용 미확인 |
 | data.bar-chart-01 | 막대그래프 | 공통 요소/트리/typed 스타일/반응형/한 Undo | bar-chart-quarterly | 추가 제품 수용 미확인 |
-| g7.board-recent-posts-01 | G7 최근 게시글 | 동적 원형 후보 실패·미통합 | 미통합 | DATA02 동결; 기존 모드 고정 위젯 보존 |
-| g7.ecommerce-product-grid-01 | G7 상품 그리드 | 동적 원형 후보 실패·미통합 | 미통합 | DATA02 동결; 기존 모드 고정 위젯 보존 |
+| g7.board-recent-posts-01 | G7 최근 게시글 | 공통 data 연결·원형 트리 통합 | 일반 원형 직접 작성; 전용 시작 구성 없음 | DATA02 해소; 실제 응답/UX 미확인, 검색/필터/페이지 UI 미구현 |
+| g7.ecommerce-product-grid-01 | G7 상품 그리드 | 공통 data 연결·원형 트리 통합 | 일반 원형 직접 작성; 전용 시작 구성 없음 | DATA02 해소; 실제 응답/UX 미확인, 검색/필터/페이지 UI 미구현 |
 | form.inquiry-01 | 문의·신청 폼 | 공통 입력·라벨·스타일 + 고정 문의 binding | inquiry-* (5) | 실행/실제 입력값 외부 소유; 추가 제출 감사 필요 |
 | location.map-directions-01 | 지도·오시는 길 | 공통 media.embed + typed provider/스타일 | map-starter | 외부 iframe 내부 보호; 추가 제품 수용 미확인 |
 | trust.testimonials-01 | 고객 후기 | 공통 요소/트리/typed 스타일/반응형/한 Undo | testimonials-* (5) | 추가 제품 수용 미확인 |
@@ -43,10 +43,10 @@
 | trust.testimonial-slider-01 | 후기 슬라이더 | 공통 요소 + BehaviorInspector/안정 ID 동작 | testimonial-slider-starter | 추가 제품 동작/출력 수용 미확인 |
 | content.event-schedule-01 | 이벤트 일정 | 공통 요소/트리/typed 스타일/반응형/한 Undo | events-upcoming | 추가 제품 수용 미확인 |
 | content.download-resources-01 | 다운로드 자료 | 공통 요소/트리/typed 스타일/반응형/한 Undo | downloads-resource-center | 추가 제품 수용 미확인 |
-| g7.board-content-archive-01 | G7 콘텐츠 아카이브 | 동적 원형 후보 실패·미통합 | 미통합 | DATA02 동결; 기존 모드 고정 위젯 보존 |
-| g7.ecommerce-product-showcase-01 | G7 상품 쇼케이스 | 동적 원형 후보 실패·미통합 | 미통합 | DATA02 동결; 기존 모드 고정 위젯 보존 |
-| g7.board-post-detail-01 | G7 게시글 상세 | 동적 원형 후보 실패·미통합 | 미통합 | DATA02 동결; 기존 모드 고정 위젯 보존 |
-| g7.ecommerce-product-detail-01 | G7 상품 상세 | 동적 원형 후보 실패·미통합 | 미통합 | DATA02 동결; 기존 모드 고정 위젯 보존 |
+| g7.board-content-archive-01 | G7 콘텐츠 아카이브 | 공통 data 연결·원형 트리 통합 | 일반 원형 직접 작성; 전용 시작 구성 없음 | DATA02 해소; 실제 응답/UX 미확인, 검색/필터/페이지 UI 미구현 |
+| g7.ecommerce-product-showcase-01 | G7 상품 쇼케이스 | 공통 data 연결·원형 트리 통합 | 일반 원형 직접 작성; 전용 시작 구성 없음 | DATA02 해소; 실제 응답/UX 미확인, 검색/필터/페이지 UI 미구현 |
+| g7.board-post-detail-01 | G7 게시글 상세 | 공통 data 연결·원형 트리 통합 | 일반 원형 직접 작성; 전용 시작 구성 없음 | DATA02 해소; 실제 응답/UX 미확인, 검색/필터/페이지 UI 미구현 |
+| g7.ecommerce-product-detail-01 | G7 상품 상세 | 공통 data 연결·원형 트리 통합 | 일반 원형 직접 작성; 전용 시작 구성 없음 | DATA02 해소; 실제 응답/UX 미확인, 검색/필터/페이지 UI 미구현 |
 | content.divider-01 | 구분선 | 공통 요소/트리/typed 스타일/반응형/한 Undo | divider-section-break | 추가 제품 수용 미확인 |
 | content.blockquote-01 | 인용문 | 공통 요소/트리/typed 스타일/반응형/한 Undo | blockquote-customer-voice | 추가 제품 수용 미확인 |
 | content.notice-01 | 알림·안내 | 공통 요소/트리/typed 스타일/반응형/한 Undo | notice-service-info | 추가 제품 수용 미확인 |
@@ -92,8 +92,8 @@
 | team.leadership | company.team-grid-01 | 공통 capability 있음; 모든 preset 디자인/제품 수용은 미확인 |
 | gallery.project-scenes | media.gallery-grid-01 | 공통 capability 있음; 모든 preset 디자인/제품 수용은 미확인 |
 | bar-chart.quarterly | data.bar-chart-01 | 공통 capability 있음; 모든 preset 디자인/제품 수용은 미확인 |
-| g7-posts.latest | g7.board-recent-posts-01 | DATA02 실패·미통합 |
-| g7-products.new | g7.ecommerce-product-grid-01 | DATA02 실패·미통합 |
+| g7-posts.latest | g7.board-recent-posts-01 | 공통 data 연결 통합; 전용 preset 데이터·실제 수용 미제공 |
+| g7-products.new | g7.ecommerce-product-grid-01 | 공통 data 연결 통합; 전용 preset 데이터·실제 수용 미제공 |
 | inquiry.general | form.inquiry-01 | 공통 capability 있음; 모든 preset 디자인/제품 수용은 미확인 |
 | map.office | location.map-directions-01 | 공통 capability/시작 데이터 있음; 기존 preset 디자인/제품 수용 미확인 |
 | testimonials.customer-proof | trust.testimonials-01 | 공통 capability 있음; 모든 preset 디자인/제품 수용은 미확인 |
@@ -105,10 +105,10 @@
 | testimonial-slider.spotlight | trust.testimonial-slider-01 | 공통 capability/시작 데이터 있음; 기존 preset 디자인/제품 수용 미확인 |
 | events.upcoming | content.event-schedule-01 | 공통 capability 있음; 모든 preset 디자인/제품 수용은 미확인 |
 | downloads.resource-center | content.download-resources-01 | 공통 capability 있음; 모든 preset 디자인/제품 수용은 미확인 |
-| g7-archive.searchable | g7.board-content-archive-01 | DATA02 실패·미통합 |
-| g7-showcase.featured | g7.ecommerce-product-showcase-01 | DATA02 실패·미통합 |
-| g7-post-detail.featured | g7.board-post-detail-01 | DATA02 실패·미통합 |
-| g7-product-detail.featured | g7.ecommerce-product-detail-01 | DATA02 실패·미통합 |
+| g7-archive.searchable | g7.board-content-archive-01 | 공통 data 연결 통합; 전용 preset 데이터·실제 수용 미제공 |
+| g7-showcase.featured | g7.ecommerce-product-showcase-01 | 공통 data 연결 통합; 전용 preset 데이터·실제 수용 미제공 |
+| g7-post-detail.featured | g7.board-post-detail-01 | 공통 data 연결 통합; 전용 preset 데이터·실제 수용 미제공 |
+| g7-product-detail.featured | g7.ecommerce-product-detail-01 | 공통 data 연결 통합; 전용 preset 데이터·실제 수용 미제공 |
 | divider.section-break | content.divider-01 | 공통 capability 있음; 모든 preset 디자인/제품 수용은 미확인 |
 | blockquote.customer-voice | content.blockquote-01 | 공통 capability 있음; 모든 preset 디자인/제품 수용은 미확인 |
 | notice.service-info | content.notice-01 | 공통 capability 있음; 모든 preset 디자인/제품 수용은 미확인 |
@@ -168,6 +168,6 @@
 
 ## 감사 우선순위
 
-동적 6종 DATA02 복구 → 추가 시작 데이터와 보호된 runtime/iframe 경계 → 같은 편집기의 새 데이터 무코드 등록 → 내장 대상 실제 UX/저장·출력 수용 순서로 인계합니다. 검증은 이번에 확대하지 않았습니다. 시작 구성·미디어·리비전의 통합 범위와 실패 SHA는 [최종 인계](2026-10-14-editor-implementation-handoff.md)에 있습니다.
+DATA02 타입 차단은 별도 승인 1회 수정으로 해소·통합했습니다. 남은 동적 6종 검색/필터/페이지 UI와 실제 응답 수용 → 추가 시작 데이터와 보호된 runtime/iframe 경계 → 같은 편집기의 새 데이터 무코드 등록 → 내장 대상 실제 UX/저장·출력 수용 순서로 인계합니다. 검증은 이번에 확대하지 않았습니다. 시작 구성·미디어·리비전의 통합 범위와 실패 SHA는 [최종 인계](2026-10-14-editor-implementation-handoff.md)에 있습니다.
 
 17개 누락 시작 구성의 순수 문서 데이터 보완은 [구현 기록](2026-10-14-editor-starter-data.md)을 참고합니다. 블록별 편집 코드와 기존 문서 전환은 추가하지 않았습니다.

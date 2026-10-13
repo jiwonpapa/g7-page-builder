@@ -4,7 +4,7 @@
 
 ## 판정
 
-이번 제한된 구현 실행을 종료하고 통합된 결과와 실패 후보를 인계합니다. **전체 정밀 편집 기능 완료라고 선언하지 않습니다.** IP8 미디어·사용자 구성, IP9 새 문서/새 Site Part 리비전 복원은 소스 구현·통합했습니다. IP7의 공통 컨트롤은 통합했으나 동적 게시글/상품 연결 후보는 동일 문제의 허용된 보완 후 재발하여 실패로 보존했습니다.
+이번 제한된 구현 실행의 통합 결과와 과거 실패를 인계합니다. **전체 정밀 편집 기능 완료라고 선언하지 않습니다.** IP8 미디어·사용자 구성, IP9 새 문서/새 Site Part 리비전 복원은 소스 구현·통합했습니다. IP7 공통 컨트롤과 동적 게시글/상품 연결도 통합했습니다. 동적 후보의 DATA02는 최초 허용 보완 후 실패로 보존했으며, 이후 사용자가 해당 문제만 별도 재감사·추가 수정 1회를 승인하여 문자열 ID 검증으로 차단을 해소했습니다. 검색/필터/페이지 실행 UI와 최종 제품 수용은 여전히 미완료입니다.
 
 기존 v1/v2·기존 Site Part 문서 전환/처리는 실행하지 않았습니다. 기존 변환 도우미 제출 2건은 별도 프로세스로 분리 보존했습니다. 새로운 E2E/UI·UX/접근성/성능/전체 제품 감사는 추가 실행하지 않았습니다. 검사를 생략한 사실을 성공으로 기록하지 않습니다.
 
@@ -21,6 +21,7 @@
 | G7 고정 실행 컨트롤 | 288d76ad649583680030f1d9275ee64601084760 | 19ad920c59a8ee609077cdbb0a0016629b513d4a | 공통 컨테이너의 검색/계정/알림/장바구니/화면/언어/통화; 인증 실행·live DOM 외부 소유 |
 | 새 Header·Footer 리비전 | a570d746f178f995700bf8d65ed94506383183c5 | 728e0e1fc800dfa27ab9277d43debb5e8fdf5c51 | 기존 revision read/CAS save 재사용, 복원 대상만 새 세션 |
 | 실패·별도 프로세스 보존 | b3d5be0abf217acd858674b4b5f788bd8ec63257 | 9b1298887a8ae8a787397dd738c00b75ac82b3cb | 실패/보류 SHA·branch·worktree 보존; 성공/릴리스 기준 유지 |
+| DATA02 승인된 추가 수정·동적 연결 | 3cb8a20d0e53a17b60392e5924f62d1b6b5fb236 | c8baed6cc4fbd2df1a1b735b916aa1665ff0cb9b | 후보 대비 ID 검증 3줄만 수정; 공통 data 명령/원형 복제; 기존 관련 검사 통과·수용 보류 |
 
 새 구성마다 편집기를 등록하지 않습니다. 기본 11종 요소·typed 스타일·공통 명령·Puck 이력을 재사용합니다. 시작 구성은 버전이 있는 문서 데이터이며 사용자 구성도 같은 paste 경로입니다. 과거 블록별 도우미를 현재 정밀 편집기 번들에 연결하지 않습니다.
 
@@ -36,19 +37,19 @@
 | SYSPLAN01 | 공유 schema/policy 변경의 명시 scope 플래그 누락 | FULL=1 분류 명시, IMPLEMENTATION=1 유지 | 해결, 제품 재구현 아님; runtime/full-product 미실행 |
 | ENV02 | Local 통합을 Node 24 PATH 없이 실행하여 localStorage 6건 실패 | 승인된 Node 24 PATH로 환경만 보완 | 해결; 실패/downstream만 처리, 성공 입력 재사용 |
 | DATA01 | 새 DataInspector JSX 닫기 괄호 오류로 기존 시험 수집 실패 | 괄호 한 곳 보완 | 해결 1/1, 해당 기존 unit 통과 |
-| DATA02 | DataBindings ID 인덱스의 by-ref 타입 계약과 PHPStan 추론 불일치 | 정확한 param-out 선언 한 번 보완 | **동일 인덱스 문제가 paramOut.type으로 재발: 실패 확정, 추가 수정/검사 금지** |
+| DATA02 | DataBindings ID 인덱스의 by-ref 타입 계약과 PHPStan 추론 불일치 | 최초 param-out 보완 후 실패 보존; 이후 별도 재감사와 추가 수정 1회 명시 승인 | 기존 Bindings와 동일한 문자열 ID 검증 3줄로 해소·통합; PHPStan 통과, 과거 실패는 보존 |
 | INT01 | 이전 batch의 270건 이후 후속 실행을 사용자 지시에 따라 중단, Git 후보 원복 영향 | 공식 transaction/EXIT 복구 | 의도된 중단, 이후 폼 오류·미실행을 제품 성공/실패로 확대하지 않음 |
 | LIMIT01 | 마지막 integration-verify에 FULL=1을 지정해 오래된 신뢰 기준부터 315개 변경/247개 gate로 비런타임 확인 범위를 확대함 | 범위 확대를 확인하고 coordinator PID 56791에 SIGINT | 확인 중단(exit 130), 동일 확인 재시도 금지; 사용자 범위 지시 위반을 기록 |
 
-DATA02 후보: **e0c34b2e81317284a2d455c350a1635879e73fad**, branch `codex/editor-dynamic-elements-20261013`, worktree `/Users/neojins/.codex/worktrees/editor-implementation-handoff/g7-page-builder`. 실패 상태 `failed-implementation`으로 보존했으며 **main에 통합하지 않았습니다**. 첫 실패 `DataBindings.php:63 parameterByRef.type`, 보완 뒤 `:65 paramOut.type`. 관련 v3 unit/TS/구조 검사는 성공했지만 task 제출은 PHPStan에서 실패했습니다. 테스트/타입 기준은 완화하지 않았습니다.
+DATA02 원래 후보: **e0c34b2e81317284a2d455c350a1635879e73fad**, branch `codex/editor-dynamic-elements-20261013`, worktree `/Users/neojins/.codex/worktrees/editor-implementation-handoff/g7-page-builder`. 당시 실패 상태 `failed-implementation`과 원본 worktree를 그대로 보존하며 이 실패 커밋 자체를 main에 merge하지 않았습니다. 첫 실패 `DataBindings.php:63 parameterByRef.type`, 보완 뒤 `:65 paramOut.type`. 후속 명시 승인으로 새 기준·task에서 복원하고 문자열 검증 한 곳을 수정한 제출/통합은 위 표와 [별도 재감사](2026-10-14-data02-reaudit.md)에 기록합니다. 테스트/타입 기준은 완화하지 않았습니다.
 
 최종 실패 보고서: `.git/g7pb-coordination-v1/python-checks/implementation-handoffs/editor-dynamic-elements-20261013/submission-8ad583bbdc524df291cadfb9d18df384.json`. 최초 타입 실패는 `submission-8a8990c888514cb486836e38ef0f5190.json`, JSX 실패는 `submission-947befc4da294a8ca7f59c6e3f9e44f4.json`입니다. 해당 실패 문맥 문서는 후보 커밋의 `docs/audits/2026-10-13-ip7-dynamic-elements-implementation.md`에 있습니다.
 
-미통합 영향: 게시글 목록·아카이브·상세 및 상품 목록·쇼케이스·상세 **6종의 일반 원형 데이터 연결은 이번 최종 빌드에 없습니다.** 기존 모드의 고정 데이터 위젯은 보존됩니다. 아카이브 검색/필터/페이지 실행 컨트롤 동등성도 완료하지 않았습니다. 이를 공통 편집기가 지원한다는 이유만으로 숨기거나 완료로 계산하지 않습니다.
+후속 통합 영향: 게시글 목록·아카이브·상세 및 상품 목록·쇼케이스·상세 **6종의 일반 원형 데이터 연결 소스와 빌드는 이제 포함됩니다.** 원형은 일반 컨테이너/하위 요소로 작성하여 필드를 연결하며 전용 시작 구성 6개를 추가한 것은 아닙니다. 기존 모드의 고정 데이터 위젯은 보존됩니다. **아카이브 검색/필터/페이지 실행 컨트롤은 아직 구현하지 않았고 실제 동적 데이터 수용도 미확인입니다.** 공통 편집기가 있다는 이유로 이를 완료로 계산하지 않습니다.
 
 ## 재감사 필요성 및 순서 (이번에 실행하지 않음)
 
-1. DATA02 보존 후보를 읽기 전용으로 먼저 감사합니다. 실제 UUID/key 인덱스 반환·참조 타입과 오류 위치를 확인하고 새 소유 task에서 복구하십시오. 이번 구현 중 같은 실패를 재수정하지 않습니다. 그 뒤 동적 6종의 필드/참조/CAS/권한/빈·실패 응답/반복 ID 및 페이지·필터 UX를 완료합니다.
+1. DATA02의 별도 승인 수정·통합·PHPStan 통과 기록을 확인합니다. 이 타입 차단은 다시 수정할 항목이 아닙니다. 남은 것은 동적 6종의 실제 필드/참조/CAS/권한/빈·실패 응답/반복 ID 수용, 아직 없는 페이지·검색/필터 UI 구현과 그 UX 수용입니다.
 2. 통합본의 빈 페이지 → 첫 이미지/제목/본문/버튼 → 중첩/레이어/치수/간격/다중 선택/모바일 override → Undo/Redo → 저장/재열기/미리보기/발행을 감사합니다. 기존 270건 성공은 새로운 미디어/구성/복원/컨트롤의 최종 수용을 대신하지 않습니다.
 3. 미디어 업로드/취소/지연 응답/선택·문서·잠금·readonly 전환과 자산 중복/파일 보존, 사용자 구성의 사용자별 권한/저장/검색/새 ID·내부 참조/독립 사본/삭제를 감사합니다.
 4. 새 페이지와 새 Header/Footer의 revision 조회·명시 복원·409 충돌·문맥 전환·다른 영역 미저장 입력/Undo·마지막 발행본·쌍 발행·사이트 적용을 감사합니다. 기존 버전 변환과 혼합하지 않습니다.
@@ -86,3 +87,9 @@ DATA02 후보: **e0c34b2e81317284a2d455c350a1635879e73fad**, branch `codex/edito
 추가 데이터 제출은 4c13071a44b65974955d0e7da2bfc2eff75c4650, 통합은 e235b399abc8219f2772d3dc45e6a2934c400ef4입니다. 기존 reference 범위 보존은 2b54b65532c9f8de7b6a71844a333e27179ac32b / 3a043291eef19be0e3f0ca6b889b741a49609ff4로 분리 커밋했습니다. 빌드 fingerprint는 6374d857100138bde0e7c8bf0ec94215c9a5e72ce37f1c2b806a1cf9cee18f03입니다. 관련 기존 18건은 같은 입력 성공을 재사용했고 기존 2건/6건과 타입 검사도 성공했습니다. 실제 브라우저/runtime는 deferred로 남깁니다.
 
 최종 scoped 인계의 계획을 먼저 읽어 base 9da030f50fb8b81c018a06471d59fbcbf58ab606부터의 실제 delta와 7개 선택 gate·full=false·미분류 없음만 확인했습니다. 이전의 FULL 범위 확대를 다시 실행하지 않으며 runtime 및 브라우저 2개 gate는 IMPLEMENTATION=1로 미실행 인계합니다. 이는 전체 제품 VERIFIED나 DATA02 복구를 뜻하지 않습니다.
+
+## DATA02 후속 승인 결과 (2026-10-14)
+
+이전 동결 뒤 사용자가 DATA02만 별도 재감사·추가 수정 1회를 허용했습니다. 새 task는 원래 실패 source를 현재 기준에 보존 복원하고 동적 ID를 문자열로 검증하는 3줄만 보완했습니다. 제출 `3cb8a20d0e53a17b60392e5924f62d1b6b5fb236`, 통합 `c8baed6cc4fbd2df1a1b735b916aa1665ff0cb9b`입니다. 기존 선택 145개 gate 중 제출은 40통과/91재사용/14보류, 통합은 32통과/99재사용/14보류입니다. PHPStan·타입·구조·관련 기존 시험은 통과했고 acceptance=false를 유지합니다.
+
+변경 입력에 대한 자산 빌드는 한 번 성공했으며 fingerprint는 `d1a627bad10409fa9eee2654aa378959c5e2908cb53392072eee7cd82e108541`입니다. 추가 E2E/UX·전체 감사·기존 문서 전환·테마/코어 수정·배포는 하지 않았습니다. 상세 원인·소유 범위·원본 실패·검사 보고서·잔여 한계는 [DATA02 재감사](2026-10-14-data02-reaudit.md)에 인계합니다. 과거 FULL 검증 확대는 재개하지 않으며 이 후속도 전체 제품 완료/VERIFIED를 뜻하지 않습니다.

@@ -17,8 +17,19 @@
 
 ## 검사 경계와 결과
 
-현재 상태는 수정 적용·공식 제출 검사 전입니다. 합격·통합·제품 수용으로 보고하지 않습니다.
+DATA02 타입 차단은 해소했습니다. 제출 `3cb8a20d0e53a17b60392e5924f62d1b6b5fb236`, main 통합 `c8baed6cc4fbd2df1a1b735b916aa1665ff0cb9b`입니다. 실패 후보 대비 15개 제품 파일을 비교한 실제 차이는 `DataBindings::collect`의 문자열 검사 3줄뿐입니다. 85개 시작 구성과 다른 구현은 그대로 보존했습니다.
+
+- 제출: 기존 선택 gate 145개 중 40개 통과·91개 동일 입력 성공 재사용·14개 runtime/수용 보류, returncode=0, acceptance=false.
+- 통합: 같은 145개 중 32개 통과·99개 성공 재사용·14개 보류, returncode=0, acceptance=false. 입력 계약을 확정할 수 없는 기존 검사는 재사용하지 않았으며 검사 대상을 확대하지 않았습니다.
+- 기존 실패 gate `phpstan:core`는 오류 없이 통과했습니다. 관련 unit/PHP·타입·구조·Pint도 통과 또는 정당한 성공 입력을 재사용했습니다. 신규 제품 시험은 추가하지 않았으므로 새 동적 기능의 모든 행위를 시험했다는 뜻이 아닙니다.
+- 제출 보고서: `.git/g7pb-coordination-v1/python-checks/implementation-handoffs/editor-data02-repair-20261014/submission-a4791a81a79f413eb2a6d2a3e959b358.json`.
+- 통합 보고서: `.git/g7pb-coordination-v1/python-checks/implementation-handoffs/integration-data02-repair-20261014/integration-1306df6eaedf4ab4be6876ad385493bf.json`.
+- main 통합 후 runtime lease 아래 `make dev-build-assets TASK=integration-data02-repair-20261014`를 변경 입력에 한 번 실행하여 production build에 성공했습니다. fingerprint `d1a627bad10409fa9eee2654aa378959c5e2908cb53392072eee7cd82e108541`입니다. 실제 브라우저/UX 확인이나 운영 배포가 아닙니다.
+
+이번 승인 범위의 추가 수정은 성공했으며 재발·추가 재구현은 없습니다. 과거 실패 SHA·보고서는 삭제하거나 성공 기록으로 바꾸지 않습니다.
 
 기존 실패 후보의 선택 검사만 공식 planner로 확인하며 동일 명령/대상/의존 입력의 성공은 재사용합니다. 공유 v3 schema/policy의 기존 FULL 분류 사유만 명시하고 IMPLEMENTATION=1로 browser/runtime/full-product와 downstream 수용을 보류합니다. 새 테스트·fixture·시나리오·coverage 확대는 없습니다. 검증 계획이 이 범위를 넘으면 실행하지 않습니다.
 
 동적 6종 실제 응답·권한·실패/빈 상태·복제 ID·저장 재열기·Undo·출력/UX 수용과 아직 구현하지 않은 검색/필터/페이지 실행 컨트롤 동등성은 기존 재감사 인계 항목입니다. 이 타입 문제 해소를 전체 편집기 완성이나 해당 컨트롤 완성으로 바꾸지 않습니다.
+
+최종 종합 verification에서 FULL=1로 오래된 release 신뢰 기준부터 범위를 넓히는 실행은 재개하지 않습니다. 공유 schema/policy 때문에 scoped 종합 계획이 분류를 요구하더라도 검사 하네스 수정이나 전체 재검증으로 확대하지 않습니다. 이번 제출/통합의 정확한 18개 변경과 기록 후속의 문서 범위만 처리하며 전체 VERIFIED/릴리스 수용은 남깁니다.

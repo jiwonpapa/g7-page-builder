@@ -7,6 +7,8 @@ use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocumentCompiler;
 use Modules\Jiwonpapa\PageBuilder\Contracts\DocumentCompilerPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SectionPatternRepository;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\V3\ValidatedDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\V3\Validator as StructureValidator;
 use Modules\Jiwonpapa\PageBuilder\Domain\Patterns\SectionPattern;
 
 final class SectionPatternService
@@ -15,6 +17,7 @@ final class SectionPatternService
         private readonly SectionPatternRepository $patterns,
         private readonly DocumentCompilerPort $compiler,
         private readonly BlockRegistry $blocks,
+        private readonly ?StructureValidator $structure = null,
     ) {}
 
     /** @return list<array<string, mixed>> */
@@ -24,7 +27,69 @@ final class SectionPatternService
             $error = $this->compatibilityError($pattern);
 
             return $pattern->toArray($error === null, $error);
-        }, $this->patterns->allFor($actorId));
+        }, array_values(array_filter($this->patterns->allFor($actorId),
+            fn (SectionPattern $pattern): bool => $pattern->sourceDocumentSchema !== 'g7-page-builder/v3')));
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function allCompositions(int $actorId): array
+    {
+        $items = [];
+        foreach ($this->patterns->allFor($actorId) as $pattern) {
+            if ($pattern->sourceDocumentSchema !== 'g7-page-builder/v3') {
+                continue;
+            }
+            $error = null;
+            try {
+                $this->compositionDocument($pattern->section['document_json'] ?? null);
+            } catch (\InvalidArgumentException $exception) {
+                $error = $exception->getMessage();
+            }
+            $items[] = $pattern->toArray($error === null, $error);
+        }
+
+        return $items;
+    }
+
+    public function createComposition(int $actorId, string $title, string $sourceJson): SectionPattern
+    {
+        $title = trim($title);
+        if ($actorId < 1 || $title === '' || mb_strlen($title) > 120) {
+            throw new \InvalidArgumentException('구성 이름과 사용자 문맥을 확인해 주세요.');
+        }
+        $document = $this->compositionDocument($sourceJson);
+        $references = [];
+        $assets = $document->toArray()['assets'] ?? [];
+        if (is_array($assets)) {
+            foreach ($assets as $asset) {
+                if ($asset instanceof \stdClass && is_string($asset->url ?? null)) {
+                    $references[] = $asset->url;
+                }
+            }
+        }
+        $now = new \DateTimeImmutable;
+
+        return $this->patterns->create(new SectionPattern(
+            patternId: $this->uuidV4(), actorId: $actorId, title: $title, category: 'user-composition',
+            sourceDocumentSchema: 'g7-page-builder/v3',
+            section: ['document_json' => $document->toJson()], requiredBlocks: [],
+            assetReferences: array_values(array_unique($references)),
+            preview: ['kind' => 'element-composition', 'block_count' => $document->rootCount()],
+            createdAt: $now, updatedAt: $now,
+        ));
+    }
+
+    private function compositionDocument(mixed $json): ValidatedDocument
+    {
+        if (! is_string($json) || $this->structure === null) {
+            throw new \InvalidArgumentException('정밀 구성 원본을 검증할 수 없습니다.');
+        }
+        $document = ValidatedDocument::fromJson($json, $this->structure);
+        if ($document->rootCount() < 1 || $document->shellMode !== 'none' || $document->seo !== null) {
+            throw new \InvalidArgumentException('선택한 요소만 포함하는 독립 구성을 저장해 주세요.');
+        }
+
+        return $document;
     }
 
     /** @param array<string, mixed> $section */

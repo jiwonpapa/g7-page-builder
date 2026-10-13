@@ -16,6 +16,8 @@ import { StructureSitePartHost } from './StructureSitePartHost';
 import { sitePartDraftPort, type SitePartHostPorts } from './sitePartPorts';
 import { sitePartEditorUrl } from '../sitePartEditorRouting';
 import { createApiMediaPort } from './apiMediaPort';
+import { ElementCompositionApi } from '../../api/elementCompositionApi';
+import { createApiCompositionPort } from './apiCompositionPort';
 
 export function mountStructureDocument(element: HTMLElement): () => void {
   return mount(element, false);
@@ -32,8 +34,9 @@ function mount(element: HTMLElement, siteParts: boolean): () => void {
   }
   const api = new PageDocumentApiClient();
   const media = createApiMediaPort(new PageBuilderApiClient());
+  const library = createApiCompositionPort(new ElementCompositionApi());
   const ports: StructureHostPorts = {
-    media,
+    media, library,
     async load(id) {
       const resource = await api.getDocument(id);
       if (resource.document.document_id !== id) throw new Error('불러온 문서가 요청한 문서와 일치하지 않습니다.');
@@ -53,7 +56,7 @@ function mount(element: HTMLElement, siteParts: boolean): () => void {
   const locale = element.dataset.locale || 'ko';
   const initialSetId = new URLSearchParams(window.location.search).get('set_id') || undefined;
   const partPorts: SitePartHostPorts = {
-    media,
+    media, library,
     list: locale => siteApi.list(locale), create: (title, locale) => siteApi.create(title, locale),
     load: set => siteApi.load(set), draft: (source, saved) => sitePartDraftPort(siteApi, source, saved),
     publish: pair => siteApi.publish(pair), activate: set => siteApi.activate(set),

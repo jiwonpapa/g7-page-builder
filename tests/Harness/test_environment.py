@@ -163,6 +163,43 @@ class EnvironmentTests(unittest.TestCase):
                 self.write(artifact, "fixture build")
                 self.assertEqual(env.build(self.runtime)["build"], "reused")
 
+    def test_structure_catalog_and_schema_edits_invalidate_build_without_reinstall(self):
+        inputs = (
+            "resources/compositions/builtin-v3.json",
+            "schemas/page-builder-document-v3.schema.json",
+            "schemas/design-policy-v3.json",
+            "schemas/site-part-v2.schema.json",
+        )
+        for name in inputs:
+            self.write(name, {"fixture": 1})
+        env.build(self.runtime, True)
+        for name in inputs:
+            with self.subTest(source=name):
+                self.assertIn(name, env.build_inputs(self.root))
+                self.assertEqual(env.build(self.runtime)["build"], "reused")
+                self.write(name, {"fixture": 2})
+                self.assertEqual(env.build(self.runtime)["build"], "required")
+                self.assertEqual(env.build(self.runtime, True)["build"], "built")
+                self.assertEqual(env.build(self.runtime)["build"], "reused")
+                (self.root / name).unlink()
+                self.assertEqual(env.build(self.runtime)["build"], "required")
+                env.build(self.runtime, True)
+        self.assertEqual(self.runtime.commands.count(env.INSTALL["npm"]), 1)
+
+    def test_structure_editor_outputs_are_required_nonempty_build_artifacts(self):
+        expected = {"dist/js/page-builder-structure.iife.js", "dist/css/page-builder-structure.css",
+                    "dist/meta/structure-editor-modules.json"}
+        self.assertTrue(expected.issubset(env.BUILD_OUTPUTS))
+        env.build(self.runtime, True)
+        for name in expected:
+            with self.subTest(artifact=name):
+                (self.root / name).unlink()
+                self.assertEqual(env.build(self.runtime)["build"], "required")
+                self.write(name, "")
+                self.assertEqual(env.build(self.runtime)["build"], "required")
+                self.write(name, "fixture build")
+                self.assertEqual(env.build(self.runtime)["build"], "reused")
+
     def test_native_companion_outputs_are_part_of_build_integrity(self):
         env.build(self.runtime, True)
         for artifact in ("dist/js/page-builder-native-compositions.iife.js", "dist/meta/native-compositions-modules.json",

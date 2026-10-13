@@ -38,6 +38,8 @@ BUILD_OUTPUTS = [
     "dist/js/page-builder-native-compositions.iife.js", "dist/meta/native-compositions-modules.json",
     "dist/js/page-builder-native.iife.js", "dist/css/page-builder-native.css", "dist/meta/native-editor-modules.json",
     "dist/js/page-builder-editor.iife.js", "dist/js/page-builder-manager.iife.js",
+    "dist/js/page-builder-structure.iife.js", "dist/css/page-builder-structure.css",
+    "dist/meta/structure-editor-modules.json",
     "dist/js/page-builder-site-part.iife.js", "dist/js/page-effects.iife.js",
     "dist/js/page-sliders.iife.js",
     "dist/css/page-builder-editor.css", "dist/css/page-builder-manager.css",
@@ -292,8 +294,13 @@ def prepare(runtime: Runtime, kinds: list[str], apply: bool = False) -> list[dic
 def build_inputs(root: Path) -> dict:
     paths = [p for folder in ("resources/js", "resources/css") for p in (root / folder).rglob("*") if p.is_file()]
     paths += [p for pattern in ("vite*.ts", "tsconfig*.json", "index.html") for p in root.glob(pattern) if p.is_file()]
-    # These JSON files are imported by layoutPolicy.ts and builtinCatalog.ts.
-    paths += [root / p for p in ("schemas/layout-policy-v1.json", "resources/block-packs/builtin-core/manifest.json") if (root / p).is_file()]
+    # Runtime JSON imports live outside resources/js. The composition catalog is
+    # emitted as a content-versioned asset, so data-only edits must rebuild too.
+    paths += [root / p for p in (
+        "schemas/layout-policy-v1.json", "resources/block-packs/builtin-core/manifest.json",
+        "schemas/page-builder-document-v3.schema.json", "schemas/design-policy-v3.json",
+        "schemas/site-part-v2.schema.json", "resources/compositions/builtin-v3.json",
+    ) if (root / p).is_file()]
     paths += [root / p for p in (".env", ".env.local", ".env.production", ".env.production.local") if (root / p).is_file()]
     return {str(path.relative_to(root)): file_digest(path) for path in sorted(set(paths))}
 

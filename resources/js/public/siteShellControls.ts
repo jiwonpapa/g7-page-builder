@@ -1,3 +1,5 @@
+import { decorateSystemMarkup } from './systemElementProjection';
+
 /** Module-owned UI for the public G7 state/dispatch contract. Never stores auth in documents. */
 export type ShellOptions = Record<'search' | 'account' | 'cart' | 'notifications' | 'theme' | 'locale' | 'currency', boolean>;
 export type ShellRecord = Record<string, unknown>;
@@ -62,7 +64,8 @@ export function mountShellControls(root: ParentNode): void {
     try {
       const options = shellRecord(JSON.parse(host.dataset.g7pbShellOptions ?? '{}'));
       const normalized = Object.fromEntries(['search', 'account', 'cart', 'notifications', 'theme', 'locale', 'currency'].map((key) => [key, options[key] === true])) as ShellOptions;
-      host.innerHTML = shellControlsMarkup(normalized, host.dataset.g7pbShellLocale?.startsWith('en'));
+      const markup = shellControlsMarkup(normalized, host.dataset.g7pbShellLocale?.startsWith('en'));
+      host.innerHTML = host.hasAttribute('data-v3-system') ? decorateSystemMarkup(markup) : markup;
       host.dataset.g7pbShellMounted = 'true';
     } catch { /* Malformed optional controls retain the compiled fallback. */ }
   });

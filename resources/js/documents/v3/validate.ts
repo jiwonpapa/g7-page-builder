@@ -50,6 +50,9 @@ export function validateDocumentV3(value: unknown): DocumentV3 {
       if (Object.keys(node.props).length !== required.length || required.some(key => !Object.hasOwn(node.props, key))) reject('props_type', '$');
       if (!policy.containers.includes(node.type) && Object.keys(node.slots).length) reject('leaf_slots', '$');
       validateNodeSemantics(node, parent);
+      if (node.system && (!policy.systems.host_types.includes(node.type) || !('tag' in node.props)
+        || !policy.systems.host_tags.includes(node.props.tag) || (node.slots.content ?? []).length
+        || node.behavior || node.binding)) reject('system_host', node.instance_id);
       if (node.type === 'media.image' && !assets.has(node.props.asset_id)) reject('asset_reference', '$');
       if (node.type === 'media.icon' && !node.props.decorative && !/[^\p{Z}\p{C}]/u.test(node.props.label)) reject('icon_label', '$');
       for (const viewport of ['base', 'tablet', 'mobile'] as const) styleSemantics(effectiveStyle(node, viewport), parent && effectiveStyle(parent, viewport), assets);

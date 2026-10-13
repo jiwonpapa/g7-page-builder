@@ -1502,6 +1502,11 @@
         }
       ]
     },
+    "system_control": {
+      "type": "object", "properties": {
+        "kind": { "enum": ["search", "account", "cart", "notifications", "theme", "locale", "currency"] }
+      }, "required": ["kind"], "additionalProperties": false
+    },
     "node": {
       "type": "object",
       "properties": {
@@ -1535,6 +1540,7 @@
         },
         "behavior": { "$ref": "#/$defs/behavior" },
         "binding": { "$ref": "#/$defs/service_binding" },
+        "system": { "$ref": "#/$defs/system_control" },
         "props": {
           "anyOf": [
             {

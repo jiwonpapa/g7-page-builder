@@ -79,6 +79,7 @@
     "layout_tags": ["section", "article", "aside", "div", "nav", "header", "footer", "li", "dd", "figure", "td", "th"],
     "trigger_types": ["action.button"]
   },
+  "systems": { "host_types": ["layout.container"], "host_tags": ["div", "nav"] },
   "bindings": {
     "host_types": ["layout.section", "layout.container"],
     "host_tags": ["section", "article", "aside", "div", "nav", "header", "footer", "li", "dd", "figure", "td", "th"],

@@ -73,6 +73,11 @@ final readonly class Validator
                 Schema::reject('leaf_slots');
             }
             Semantics::validate($node, $parent, $this->policy['semantics']);
+            if (isset($node->system) && (! in_array($node->type, $this->policy['systems']['host_types'], true)
+                || ! in_array($node->props->tag ?? '', $this->policy['systems']['host_tags'], true)
+                || ($node->slots->content ?? []) !== [] || isset($node->behavior) || isset($node->binding))) {
+                Schema::reject('system_host', $node->instance_id);
+            }
             if ($node->type === 'media.image' && ! isset($assets[$node->props->asset_id])) {
                 Schema::reject('asset_reference');
             }

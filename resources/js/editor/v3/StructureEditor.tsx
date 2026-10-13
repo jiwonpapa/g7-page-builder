@@ -31,6 +31,8 @@ import { PublicationControls } from './PublicationControls';
 import type { PublicationPort, PublishedPage } from '../../editor-application/v3/publication';
 import type { MediaPort } from '../../editor-application/v3/media';
 import { ImageInspector } from './ImageInspector';
+import type { CompositionLibraryPort } from '../../editor-application/v3/compositionLibrary';
+import { UserCompositionPanel } from './UserCompositionPanel';
 
 export interface StructureEditorProps {
   document: DocumentV3;
@@ -42,6 +44,7 @@ export interface StructureEditorProps {
   drafts: DraftPort;
   publication?: PublicationPort;
   media?: MediaPort;
+  library?: CompositionLibraryPort;
   onPublished?: (page: PublishedPage) => void;
   nextId: () => string;
   onChange?: (document: DocumentV3) => void;
@@ -265,6 +268,10 @@ function EditorSession(props: StructureEditorProps) {
             <CompositionPanel sources={props.compositions} disabled={Boolean(props.readonly || preview)}
               insert={choice => run(() => bridge.execute({ kind: 'paste', destination: destination(),
                 clipboard: compositionClipboard(choice) }))} />
+            <UserCompositionPanel port={props.library} disabled={Boolean(props.readonly || preview)} nextId={props.nextId}
+              read={() => ({ context: { ...bridge.context(), readonly: Boolean(props.readonly || preview || bridge.context().readonly) },
+                document: bridge.read(), ids: bridge.selection() })}
+              insert={choice => run(() => bridge.execute({ kind: 'paste', destination: destination(), clipboard: compositionClipboard(choice) }))} />
             <h2 style={{ fontSize: 15, marginTop: 24 }}>선택 {selected.length}개</h2>
             {focus && <RenameControl key={`${focus.node.instance_id}:${focus.node.name}`} node={focus.node} disabled={props.readonly}
               rename={name => command({ kind: 'rename', id: focus.node.instance_id, name })} />}

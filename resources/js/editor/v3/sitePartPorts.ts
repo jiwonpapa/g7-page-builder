@@ -3,9 +3,11 @@ import type { ElementPartPair, ElementPartResource } from '../../api/elementSite
 import type { SitePartSetResource } from '../../api/resources';
 import { reopenDraft, type DraftPort } from '../../editor-application/v3/session';
 import type { MediaPort } from '../../editor-application/v3/media';
+import type { CompositionLibraryPort } from '../../editor-application/v3/compositionLibrary';
 
 export interface SitePartHostPorts {
   media?: MediaPort;
+  library?: CompositionLibraryPort;
   list: (locale: string) => Promise<SitePartSetResource[]>;
   create: (title: string, locale: string) => Promise<SitePartSetResource>;
   load: (set: SitePartSetResource) => Promise<ElementPartPair | { legacy: true }>;

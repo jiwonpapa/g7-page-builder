@@ -4,6 +4,7 @@ import type { DraftPort } from '../../editor-application/v3/session';
 import type { PublicationPort } from '../../editor-application/v3/publication';
 import { StructureEditor } from './StructureEditor';
 import type { MediaPort } from '../../editor-application/v3/media';
+import type { CompositionLibraryPort } from '../../editor-application/v3/compositionLibrary';
 
 export interface StructureHostPorts {
   load: (documentId: string) => Promise<V3DocumentResource | { legacyUrl: string }>;
@@ -11,6 +12,7 @@ export interface StructureHostPorts {
   drafts: DraftPort;
   publication?: PublicationPort;
   media?: MediaPort;
+  library?: CompositionLibraryPort;
   navigate: (url: string) => void;
   created: (documentId: string) => void;
   confirmLeave: () => boolean;
@@ -88,7 +90,7 @@ export function StructureDocumentHost({ documentId, locale = 'ko', ports, compos
     {resource ? <div className="g7pb-structure-host__workspace">
       <StructureEditor document={resource.document} sessionId={`${resource.document.document_id}:${resource.lock_version}`}
         serverRevision={resource.lock_version} drafts={ports.drafts} compositions={compositions} nextId={ports.nextId}
-        media={ports.media} publication={ports.publication} onPublished={page => setResource(current => current ? { ...current,
+        media={ports.media} library={ports.library} publication={ports.publication} onPublished={page => setResource(current => current ? { ...current,
           active_artifact_sha256: page.hash, public_url: page.url, published_at: page.publishedAt } : current)}
         readonly={resource.status === 'archived'} onChange={() => markDirty(true)}
         onSaved={(_revision, status) => markDirty(status !== 'saved')} />

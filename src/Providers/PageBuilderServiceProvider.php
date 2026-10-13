@@ -126,7 +126,10 @@ final class PageBuilderServiceProvider extends ServiceProvider
         ));
         $this->app->bind(SectionPatternRepository::class, EloquentSectionPatternRepository::class);
         $this->app->bind(NativeCompositionRepository::class, EloquentNativeCompositionRepository::class);
-        $this->app->bind(SectionPatternService::class);
+        $this->app->bind(SectionPatternService::class, fn (): SectionPatternService => new SectionPatternService(
+            $this->app->make(SectionPatternRepository::class), $this->app->make(DocumentCompilerPort::class),
+            $this->app->make(BlockRegistry::class), $this->app->make(StructureValidator::class),
+        ));
         $this->app->bind(RouteCatalogPort::class, G7RouteCatalogAdapter::class);
         $this->app->singleton(G7TemplateRouteBridge::class);
         $this->app->singleton(UserTemplateSiteShellDecorator::class);

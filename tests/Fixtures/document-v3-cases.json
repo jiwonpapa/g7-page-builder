@@ -1,4 +1,835 @@
 {
+"form_binding": {
+  "blocks": [
+    {
+      "instance_id": "00000000-0000-4000-8000-000000000001",
+      "type": "layout.section",
+      "block_version": 1,
+      "name": "layout.section",
+      "locked": false,
+      "props": {
+        "tag": "section"
+      },
+      "slots": {
+        "content": [
+          {
+            "instance_id": "00000000-0000-4000-8000-000000000002",
+            "type": "form.label",
+            "block_version": 1,
+            "name": "form.label",
+            "locked": false,
+            "props": {
+              "label": "name"
+            },
+            "slots": {},
+            "style": {},
+            "responsive": {}
+          },
+          {
+            "instance_id": "00000000-0000-4000-8000-000000000003",
+            "type": "form.control",
+            "block_version": 1,
+            "name": "form.control",
+            "locked": false,
+            "props": {
+              "kind": "text",
+              "label": "name",
+              "placeholder": ""
+            },
+            "slots": {},
+            "style": {},
+            "responsive": {}
+          },
+          {
+            "instance_id": "00000000-0000-4000-8000-000000000004",
+            "type": "form.label",
+            "block_version": 1,
+            "name": "form.label",
+            "locked": false,
+            "props": {
+              "label": "email"
+            },
+            "slots": {},
+            "style": {},
+            "responsive": {}
+          },
+          {
+            "instance_id": "00000000-0000-4000-8000-000000000005",
+            "type": "form.control",
+            "block_version": 1,
+            "name": "form.control",
+            "locked": false,
+            "props": {
+              "kind": "email",
+              "label": "email",
+              "placeholder": ""
+            },
+            "slots": {},
+            "style": {},
+            "responsive": {}
+          },
+          {
+            "instance_id": "00000000-0000-4000-8000-000000000006",
+            "type": "form.label",
+            "block_version": 1,
+            "name": "form.label",
+            "locked": false,
+            "props": {
+              "label": "phone"
+            },
+            "slots": {},
+            "style": {},
+            "responsive": {}
+          },
+          {
+            "instance_id": "00000000-0000-4000-8000-000000000007",
+            "type": "form.control",
+            "block_version": 1,
+            "name": "form.control",
+            "locked": false,
+            "props": {
+              "kind": "tel",
+              "label": "phone",
+              "placeholder": ""
+            },
+            "slots": {},
+            "style": {},
+            "responsive": {}
+          },
+          {
+            "instance_id": "00000000-0000-4000-8000-000000000008",
+            "type": "form.label",
+            "block_version": 1,
+            "name": "form.label",
+            "locked": false,
+            "props": {
+              "label": "subject"
+            },
+            "slots": {},
+            "style": {},
+            "responsive": {}
+          },
+          {
+            "instance_id": "00000000-0000-4000-8000-000000000009",
+            "type": "form.control",
+            "block_version": 1,
+            "name": "form.control",
+            "locked": false,
+            "props": {
+              "kind": "text",
+              "label": "subject",
+              "placeholder": ""
+            },
+            "slots": {},
+            "style": {},
+            "responsive": {}
+          },
+          {
+            "instance_id": "00000000-0000-4000-8000-000000000010",
+            "type": "form.label",
+            "block_version": 1,
+            "name": "form.label",
+            "locked": false,
+            "props": {
+              "label": "message"
+            },
+            "slots": {},
+            "style": {},
+            "responsive": {}
+          },
+          {
+            "instance_id": "00000000-0000-4000-8000-000000000011",
+            "type": "form.control",
+            "block_version": 1,
+            "name": "form.control",
+            "locked": false,
+            "props": {
+              "kind": "textarea",
+              "label": "message",
+              "placeholder": ""
+            },
+            "slots": {},
+            "style": {},
+            "responsive": {}
+          },
+          {
+            "instance_id": "00000000-0000-4000-8000-000000000012",
+            "type": "form.label",
+            "block_version": 1,
+            "name": "form.label",
+            "locked": false,
+            "props": {
+              "label": "privacy"
+            },
+            "slots": {},
+            "style": {},
+            "responsive": {}
+          },
+          {
+            "instance_id": "00000000-0000-4000-8000-000000000013",
+            "type": "form.control",
+            "block_version": 1,
+            "name": "form.control",
+            "locked": false,
+            "props": {
+              "kind": "checkbox",
+              "label": "privacy",
+              "placeholder": ""
+            },
+            "slots": {},
+            "style": {},
+            "responsive": {}
+          },
+          {
+            "instance_id": "00000000-0000-4000-8000-000000000014",
+            "type": "action.button",
+            "block_version": 1,
+            "name": "action.button",
+            "locked": false,
+            "props": {
+              "label": "문의 보내기"
+            },
+            "slots": {},
+            "style": {},
+            "responsive": {}
+          },
+          {
+            "instance_id": "00000000-0000-4000-8000-000000000015",
+            "type": "content.text",
+            "block_version": 1,
+            "name": "content.text",
+            "locked": false,
+            "props": {
+              "paragraphs": [
+                [
+                  {
+                    "text": "문의 내용을 입력해 주세요."
+                  }
+                ]
+              ]
+            },
+            "slots": {},
+            "style": {},
+            "responsive": {}
+          }
+        ]
+      },
+      "style": {},
+      "responsive": {},
+      "binding": {
+        "kind": "inquiry",
+        "form_kind": "inquiry",
+        "success_message": "문의가 접수되었습니다.",
+        "fields": [
+          {
+            "name": "name",
+            "label_id": "00000000-0000-4000-8000-000000000002",
+            "input_id": "00000000-0000-4000-8000-000000000003"
+          },
+          {
+            "name": "email",
+            "label_id": "00000000-0000-4000-8000-000000000004",
+            "input_id": "00000000-0000-4000-8000-000000000005"
+          },
+          {
+            "name": "phone",
+            "label_id": "00000000-0000-4000-8000-000000000006",
+            "input_id": "00000000-0000-4000-8000-000000000007"
+          },
+          {
+            "name": "subject",
+            "label_id": "00000000-0000-4000-8000-000000000008",
+            "input_id": "00000000-0000-4000-8000-000000000009"
+          },
+          {
+            "name": "message",
+            "label_id": "00000000-0000-4000-8000-000000000010",
+            "input_id": "00000000-0000-4000-8000-000000000011"
+          },
+          {
+            "name": "privacy",
+            "label_id": "00000000-0000-4000-8000-000000000012",
+            "input_id": "00000000-0000-4000-8000-000000000013"
+          }
+        ],
+        "submit_id": "00000000-0000-4000-8000-000000000014",
+        "status_id": "00000000-0000-4000-8000-000000000015"
+      }
+    }
+  ],
+  "cases": [
+{"name":"independent disclosure inside a form","changes":[{"path":[0,"slots","content",14],"value":{"instance_id":"00000000-0000-4000-8000-000000000020","type":"layout.container","block_version":1,"name":"layout.container","locked":false,"props":{"tag":"div"},"slots":{"content":[{"instance_id":"00000000-0000-4000-8000-000000000021","type":"layout.container","block_version":1,"name":"layout.container","locked":false,"props":{"tag":"div"},"slots":{"content":[{"instance_id":"00000000-0000-4000-8000-000000000023","type":"action.button","block_version":1,"name":"action.button","locked":false,"props":{"label":"동작"},"slots":{},"style":{},"responsive":{}},{"instance_id":"00000000-0000-4000-8000-000000000022","type":"layout.container","block_version":1,"name":"layout.container","locked":false,"props":{"tag":"div"},"slots":{"content":[]},"style":{},"responsive":{}}]},"style":{},"responsive":{}}]},"style":{},"responsive":{},"behavior":{"kind":"disclosure","mode":"single","pairs":[{"item_id":"00000000-0000-4000-8000-000000000021","trigger_id":"00000000-0000-4000-8000-000000000023","panel_id":"00000000-0000-4000-8000-000000000022","expanded":true}]}}}],"valid":true},
+{"name":"submit cannot be a disclosure trigger","changes":[{"path":[0,"slots","content",12],"value":{"instance_id":"00000000-0000-4000-8000-000000000020","type":"layout.container","block_version":1,"name":"layout.container","locked":false,"props":{"tag":"div"},"slots":{"content":[{"instance_id":"00000000-0000-4000-8000-000000000021","type":"layout.container","block_version":1,"name":"layout.container","locked":false,"props":{"tag":"div"},"slots":{"content":[{"instance_id":"00000000-0000-4000-8000-000000000014","type":"action.button","block_version":1,"name":"action.button","locked":false,"props":{"label":"동작"},"slots":{},"style":{},"responsive":{}},{"instance_id":"00000000-0000-4000-8000-000000000022","type":"layout.container","block_version":1,"name":"layout.container","locked":false,"props":{"tag":"div"},"slots":{"content":[]},"style":{},"responsive":{}}]},"style":{},"responsive":{}}]},"style":{},"responsive":{},"behavior":{"kind":"disclosure","mode":"single","pairs":[{"item_id":"00000000-0000-4000-8000-000000000021","trigger_id":"00000000-0000-4000-8000-000000000014","panel_id":"00000000-0000-4000-8000-000000000022","expanded":true}]}}}],"valid":false,"error":"binding_action"},
+{"name":"service host cannot own interaction","changes":[{"path":[0,"slots","content",14],"value":{"instance_id":"00000000-0000-4000-8000-000000000020","type":"layout.container","block_version":1,"name":"layout.container","locked":false,"props":{"tag":"div"},"slots":{"content":[{"instance_id":"00000000-0000-4000-8000-000000000021","type":"layout.container","block_version":1,"name":"layout.container","locked":false,"props":{"tag":"div"},"slots":{"content":[{"instance_id":"00000000-0000-4000-8000-000000000023","type":"action.button","block_version":1,"name":"action.button","locked":false,"props":{"label":"동작"},"slots":{},"style":{},"responsive":{}},{"instance_id":"00000000-0000-4000-8000-000000000022","type":"layout.container","block_version":1,"name":"layout.container","locked":false,"props":{"tag":"div"},"slots":{"content":[]},"style":{},"responsive":{}}]},"style":{},"responsive":{}}]},"style":{},"responsive":{}}},{"path":[0,"behavior"],"value":{"kind":"disclosure","mode":"single","pairs":[{"item_id":"00000000-0000-4000-8000-000000000021","trigger_id":"00000000-0000-4000-8000-000000000023","panel_id":"00000000-0000-4000-8000-000000000022","expanded":true}]}}],"valid":false,"error":"binding_owner"},
+{"name":"independent carousel inside form","changes":[{"path":[0,"slots","content",14],"value":{"instance_id":"00000000-0000-4000-8000-000000000030","type":"layout.container","block_version":1,"name":"layout.container","locked":false,"props":{"tag":"div"},"slots":{"content":[{"instance_id":"00000000-0000-4000-8000-000000000036","type":"action.button","block_version":1,"name":"action.button","locked":false,"props":{"label":"동작"},"slots":{},"style":{},"responsive":{}},{"instance_id":"00000000-0000-4000-8000-000000000034","type":"action.button","block_version":1,"name":"action.button","locked":false,"props":{"label":"동작"},"slots":{},"style":{},"responsive":{}},{"instance_id":"00000000-0000-4000-8000-000000000035","type":"action.button","block_version":1,"name":"action.button","locked":false,"props":{"label":"동작"},"slots":{},"style":{},"responsive":{}},{"instance_id":"00000000-0000-4000-8000-000000000031","type":"layout.container","block_version":1,"name":"layout.container","locked":false,"props":{"tag":"div"},"slots":{"content":[{"instance_id":"00000000-0000-4000-8000-000000000032","type":"layout.container","block_version":1,"name":"layout.container","locked":false,"props":{"tag":"div"},"slots":{"content":[{"instance_id":"00000000-0000-4000-8000-000000000033","type":"layout.container","block_version":1,"name":"layout.container","locked":false,"props":{"tag":"div"},"slots":{"content":[]},"style":{},"responsive":{}}]},"style":{},"responsive":{}}]},"style":{},"responsive":{}}]},"style":{},"responsive":{},"behavior":{"kind":"carousel","label":"예시","viewport_id":"00000000-0000-4000-8000-000000000031","track_id":"00000000-0000-4000-8000-000000000032","active_slide_id":"00000000-0000-4000-8000-000000000033","previous_id":"00000000-0000-4000-8000-000000000034","next_id":"00000000-0000-4000-8000-000000000035","rotation_id":"00000000-0000-4000-8000-000000000036","autoplay":true,"loop":true,"interval_ms":3000}}}],"valid":true},
+{"name":"independent carousel without rotation","changes":[{"path":[0,"slots","content",14],"value":{"instance_id":"00000000-0000-4000-8000-000000000030","type":"layout.container","block_version":1,"name":"layout.container","locked":false,"props":{"tag":"div"},"slots":{"content":[{"instance_id":"00000000-0000-4000-8000-000000000034","type":"action.button","block_version":1,"name":"action.button","locked":false,"props":{"label":"동작"},"slots":{},"style":{},"responsive":{}},{"instance_id":"00000000-0000-4000-8000-000000000035","type":"action.button","block_version":1,"name":"action.button","locked":false,"props":{"label":"동작"},"slots":{},"style":{},"responsive":{}},{"instance_id":"00000000-0000-4000-8000-000000000031","type":"layout.container","block_version":1,"name":"layout.container","locked":false,"props":{"tag":"div"},"slots":{"content":[{"instance_id":"00000000-0000-4000-8000-000000000032","type":"layout.container","block_version":1,"name":"layout.container","locked":false,"props":{"tag":"div"},"slots":{"content":[{"instance_id":"00000000-0000-4000-8000-000000000033","type":"layout.container","block_version":1,"name":"layout.container","locked":false,"props":{"tag":"div"},"slots":{"content":[]},"style":{},"responsive":{}}]},"style":{},"responsive":{}}]},"style":{},"responsive":{}}]},"style":{},"responsive":{},"behavior":{"kind":"carousel","label":"예시","viewport_id":"00000000-0000-4000-8000-000000000031","track_id":"00000000-0000-4000-8000-000000000032","active_slide_id":"00000000-0000-4000-8000-000000000033","previous_id":"00000000-0000-4000-8000-000000000034","next_id":"00000000-0000-4000-8000-000000000035","autoplay":false,"loop":false,"interval_ms":3000}}}],"valid":true},
+    {
+      "name": "all fixed fields",
+      "changes": [],
+      "valid": true
+    },
+    {
+      "name": "required fields only",
+      "changes": [
+        {
+          "path": [
+            0,
+            "binding",
+            "fields"
+          ],
+          "value": [
+            {
+              "name": "name",
+              "label_id": "00000000-0000-4000-8000-000000000002",
+              "input_id": "00000000-0000-4000-8000-000000000003"
+            },
+            {
+              "name": "email",
+              "label_id": "00000000-0000-4000-8000-000000000004",
+              "input_id": "00000000-0000-4000-8000-000000000005"
+            },
+            {
+              "name": "message",
+              "label_id": "00000000-0000-4000-8000-000000000010",
+              "input_id": "00000000-0000-4000-8000-000000000011"
+            },
+            {
+              "name": "privacy",
+              "label_id": "00000000-0000-4000-8000-000000000012",
+              "input_id": "00000000-0000-4000-8000-000000000013"
+            }
+          ]
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "quote",
+      "changes": [
+        {
+          "path": [
+            0,
+            "binding",
+            "form_kind"
+          ],
+          "value": "quote"
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "reservation",
+      "changes": [
+        {
+          "path": [
+            0,
+            "binding",
+            "form_kind"
+          ],
+          "value": "reservation"
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "application",
+      "changes": [
+        {
+          "path": [
+            0,
+            "binding",
+            "form_kind"
+          ],
+          "value": "application"
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "newsletter",
+      "changes": [
+        {
+          "path": [
+            0,
+            "binding",
+            "form_kind"
+          ],
+          "value": "newsletter"
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "no arbitrary endpoint",
+      "changes": [
+        {
+          "path": [
+            0,
+            "binding",
+            "endpoint"
+          ],
+          "value": "https://evil.test"
+        }
+      ],
+      "valid": false,
+      "error": "unknown_field"
+    },
+    {
+      "name": "no arbitrary service",
+      "changes": [
+        {
+          "path": [
+            0,
+            "binding",
+            "kind"
+          ],
+          "value": "payment"
+        }
+      ],
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "no arbitrary field",
+      "changes": [
+        {
+          "path": [
+            0,
+            "binding",
+            "fields",
+            0,
+            "name"
+          ],
+          "value": "password"
+        }
+      ],
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "no live input values",
+      "changes": [
+        {
+          "path": [
+            0,
+            "slots",
+            "content",
+            1,
+            "props",
+            "value"
+          ],
+          "value": "private"
+        }
+      ],
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "no raw input markup",
+      "changes": [
+        {
+          "path": [
+            0,
+            "slots",
+            "content",
+            1,
+            "props",
+            "html"
+          ],
+          "value": "<input>"
+        }
+      ],
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "no blank accessible input label",
+      "changes": [
+        {
+          "path": [
+            0,
+            "slots",
+            "content",
+            1,
+            "props",
+            "label"
+          ],
+          "value": "　​\n"
+        }
+      ],
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "no blank visible label",
+      "changes": [
+        {
+          "path": [
+            0,
+            "slots",
+            "content",
+            0,
+            "props",
+            "label"
+          ],
+          "value": "　​\n"
+        }
+      ],
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "no blank success message",
+      "changes": [
+        {
+          "path": [
+            0,
+            "binding",
+            "success_message"
+          ],
+          "value": "　​\n"
+        }
+      ],
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "dangling input",
+      "changes": [
+        {
+          "path": [
+            0,
+            "binding",
+            "fields",
+            0,
+            "input_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000091"
+        }
+      ],
+      "valid": false,
+      "error": "binding_reference"
+    },
+    {
+      "name": "host cannot be a target",
+      "changes": [
+        {
+          "path": [
+            0,
+            "binding",
+            "submit_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000001"
+        }
+      ],
+      "valid": false,
+      "error": "binding_reference"
+    },
+    {
+      "name": "wrong label role",
+      "changes": [
+        {
+          "path": [
+            0,
+            "binding",
+            "fields",
+            0,
+            "label_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000014"
+        }
+      ],
+      "valid": false,
+      "error": "binding_role"
+    },
+    {
+      "name": "input kind must match field",
+      "changes": [
+        {
+          "path": [
+            0,
+            "slots",
+            "content",
+            3,
+            "props",
+            "kind"
+          ],
+          "value": "text"
+        }
+      ],
+      "valid": false,
+      "error": "binding_control"
+    },
+    {
+      "name": "duplicate field name",
+      "changes": [
+        {
+          "path": [
+            0,
+            "binding",
+            "fields",
+            2,
+            "name"
+          ],
+          "value": "name"
+        }
+      ],
+      "valid": false,
+      "error": "binding_duplicate"
+    },
+    {
+      "name": "duplicate element reference",
+      "changes": [
+        {
+          "path": [
+            0,
+            "binding",
+            "fields",
+            1,
+            "input_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000003"
+        }
+      ],
+      "valid": false,
+      "error": "binding_duplicate"
+    },
+    {
+      "name": "missing required field",
+      "changes": [
+        {
+          "path": [
+            0,
+            "binding",
+            "fields"
+          ],
+          "value": [
+            {
+              "name": "name",
+              "label_id": "00000000-0000-4000-8000-000000000002",
+              "input_id": "00000000-0000-4000-8000-000000000003"
+            },
+            {
+              "name": "email",
+              "label_id": "00000000-0000-4000-8000-000000000004",
+              "input_id": "00000000-0000-4000-8000-000000000005"
+            },
+            {
+              "name": "phone",
+              "label_id": "00000000-0000-4000-8000-000000000006",
+              "input_id": "00000000-0000-4000-8000-000000000007"
+            },
+            {
+              "name": "subject",
+              "label_id": "00000000-0000-4000-8000-000000000008",
+              "input_id": "00000000-0000-4000-8000-000000000009"
+            },
+            {
+              "name": "message",
+              "label_id": "00000000-0000-4000-8000-000000000010",
+              "input_id": "00000000-0000-4000-8000-000000000011"
+            }
+          ]
+        }
+      ],
+      "valid": false,
+      "error": "binding_required"
+    },
+    {
+      "name": "wrong status role",
+      "changes": [
+        {
+          "path": [
+            0,
+            "binding",
+            "status_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000014"
+        }
+      ],
+      "valid": false,
+      "error": "binding_duplicate"
+    },
+    {
+      "name": "leaf cannot own form",
+      "changes": [
+        {
+          "path": [
+            0,
+            "slots",
+            "content",
+            0,
+            "binding"
+          ],
+          "value": {
+            "kind": "inquiry",
+            "form_kind": "inquiry",
+            "success_message": "문의가 접수되었습니다.",
+            "fields": [
+              {
+                "name": "name",
+                "label_id": "00000000-0000-4000-8000-000000000002",
+                "input_id": "00000000-0000-4000-8000-000000000003"
+              },
+              {
+                "name": "email",
+                "label_id": "00000000-0000-4000-8000-000000000004",
+                "input_id": "00000000-0000-4000-8000-000000000005"
+              },
+              {
+                "name": "phone",
+                "label_id": "00000000-0000-4000-8000-000000000006",
+                "input_id": "00000000-0000-4000-8000-000000000007"
+              },
+              {
+                "name": "subject",
+                "label_id": "00000000-0000-4000-8000-000000000008",
+                "input_id": "00000000-0000-4000-8000-000000000009"
+              },
+              {
+                "name": "message",
+                "label_id": "00000000-0000-4000-8000-000000000010",
+                "input_id": "00000000-0000-4000-8000-000000000011"
+              },
+              {
+                "name": "privacy",
+                "label_id": "00000000-0000-4000-8000-000000000012",
+                "input_id": "00000000-0000-4000-8000-000000000013"
+              }
+            ],
+            "submit_id": "00000000-0000-4000-8000-000000000014",
+            "status_id": "00000000-0000-4000-8000-000000000015"
+          }
+        }
+      ],
+      "valid": false,
+      "error": "binding_host"
+    },
+    {
+      "name": "nested forms forbidden",
+      "changes": [
+        {
+          "path": [
+            0,
+            "slots",
+            "content",
+            14
+          ],
+          "value": {
+            "instance_id": "00000000-0000-4000-8000-000000000016",
+            "type": "layout.container",
+            "block_version": 1,
+            "name": "layout.container",
+            "locked": false,
+            "props": {
+              "tag": "div"
+            },
+            "slots": {},
+            "style": {},
+            "responsive": {},
+            "binding": {
+              "kind": "inquiry",
+              "form_kind": "inquiry",
+              "success_message": "문의가 접수되었습니다.",
+              "fields": [
+                {
+                  "name": "name",
+                  "label_id": "00000000-0000-4000-8000-000000000002",
+                  "input_id": "00000000-0000-4000-8000-000000000003"
+                },
+                {
+                  "name": "email",
+                  "label_id": "00000000-0000-4000-8000-000000000004",
+                  "input_id": "00000000-0000-4000-8000-000000000005"
+                },
+                {
+                  "name": "phone",
+                  "label_id": "00000000-0000-4000-8000-000000000006",
+                  "input_id": "00000000-0000-4000-8000-000000000007"
+                },
+                {
+                  "name": "subject",
+                  "label_id": "00000000-0000-4000-8000-000000000008",
+                  "input_id": "00000000-0000-4000-8000-000000000009"
+                },
+                {
+                  "name": "message",
+                  "label_id": "00000000-0000-4000-8000-000000000010",
+                  "input_id": "00000000-0000-4000-8000-000000000011"
+                },
+                {
+                  "name": "privacy",
+                  "label_id": "00000000-0000-4000-8000-000000000012",
+                  "input_id": "00000000-0000-4000-8000-000000000013"
+                }
+              ],
+              "submit_id": "00000000-0000-4000-8000-000000000014",
+              "status_id": "00000000-0000-4000-8000-000000000015"
+            }
+          }
+        }
+      ],
+      "valid": false,
+      "error": "binding_owner"
+    },
+    {
+      "name": "label leaves reject children",
+      "changes": [
+        {
+          "path": [
+            0,
+            "slots",
+            "content",
+            0,
+            "slots"
+          ],
+          "value": {
+            "content": []
+          }
+        }
+      ],
+      "valid": false,
+      "error": "leaf_slots"
+    },
+    {
+      "name": "sibling form is not an owner",
+      "changes": [
+        {
+          "path": [
+            1
+          ],
+          "value": {
+            "instance_id": "00000000-0000-4000-8000-000000000092",
+            "type": "form.control",
+            "block_version": 1,
+            "name": "form.control",
+            "locked": false,
+            "props": {
+              "kind": "text",
+              "label": "다른 요소",
+              "placeholder": ""
+            },
+            "slots": {},
+            "style": {},
+            "responsive": {}
+          }
+        },
+        {
+          "path": [
+            0,
+            "binding",
+            "fields",
+            0,
+            "input_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000092"
+        }
+      ],
+      "valid": false,
+      "error": "binding_reference"
+    }
+  ]
+},
 "embeds": [
   {"name":"unconfigured placeholder", "props":{"title":"영상·지도", "source":{"provider":"none"}}, "valid":true, "target":null},
   {"name":"youtube", "props":{"title":"영상 <안내>", "source":{"provider":"youtube","video_id":"dQw4w9WgXcQ"}}, "valid":true, "target":{"kind":"video-youtube","src":"https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0","video":true}},

@@ -99,7 +99,7 @@ describe('published page effects runtime', () => {
   it.each(['identity', 'storage'] as const)('refreshes only data on %s while keeping a pending inquiry and ordinary boot stable', async reason => {
     // This test owns a pending POST across identity changes; session bootstrap
     // is covered separately by the inquiry runtime tests.
-    document.head.innerHTML = '<meta name="csrf-token" content="pending-inquiry-session">';
+    vi.spyOn(document, 'cookie', 'get').mockReturnValue('XSRF-TOKEN=pending-inquiry-session');
     const view: ShellWindow = window;
     let user = { uuid: 'A' }; let listener: (() => void) | undefined;
     view.G7Core = { state: { get: () => ({ currentUser: user }), subscribe: callback => { listener = callback; return () => {}; } } };
@@ -113,6 +113,7 @@ describe('published page effects runtime', () => {
     const form = document.querySelector<HTMLFormElement>('form')!; const submit = form.querySelector('button')!;
     form.querySelector<HTMLInputElement>('input')!.value = 'Keep this request';
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); expect(submit.disabled).toBe(true);
+    await vi.waitFor(() => expect(fetcher.mock.calls.filter(([, options]) => options?.method === 'POST')).toHaveLength(1));
     if (reason === 'identity') { user = { uuid: 'B' }; listener?.(); }
     else view.dispatchEvent(new StorageEvent('storage', { key: 'auth_token', newValue: 'B' }));
     bootPageEffects(document, view);
@@ -389,7 +390,7 @@ describe('published page effects runtime', () => {
   });
 
   it('submits a typed inquiry with CSRF and restores a reusable success state', async () => {
-    document.head.innerHTML = '<meta name="csrf-token" content="csrf-test">';
+    vi.spyOn(document, 'cookie', 'get').mockReturnValue('XSRF-TOKEN=csrf-test');
     document.body.innerHTML = `
       <section data-block-id="123e4567-e89b-42d3-a456-426614174099">
         <form action="/pages/contact/inquiries" data-g7pb-inquiry-form data-g7pb-success-message="접수 완료">
@@ -408,9 +409,9 @@ describe('published page effects runtime', () => {
     bootInquiryForms(document, fetcher as typeof fetch);
     const form = document.querySelector<HTMLFormElement>('form')!;
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
-    const [, init] = fetcher.mock.calls[0]!;
-    expect(init?.headers).toMatchObject({ Accept: 'application/json', 'X-CSRF-TOKEN': 'csrf-test' });
+    await vi.waitFor(() => expect(fetcher.mock.calls.filter(([, init]) => init?.method === 'POST')).toHaveLength(1));
+    const [, init] = fetcher.mock.calls.find(([, init]) => init?.method === 'POST')!;
+    expect(init?.headers).toMatchObject({ Accept: 'application/json', 'X-XSRF-TOKEN': 'csrf-test' });
     expect((init?.body as FormData).get('block_instance_id')).toBe('123e4567-e89b-42d3-a456-426614174099');
     await vi.waitFor(() => expect(document.querySelector('[data-g7pb-form-status]')?.textContent).toBe('접수 완료'));
     expect(document.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(false);

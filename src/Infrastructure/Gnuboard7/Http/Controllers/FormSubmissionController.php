@@ -33,15 +33,17 @@ final class FormSubmissionController
         if ($validator->fails()) {
             return response()->json(['success' => false, 'message' => '입력 내용을 확인해 주세요.', 'data' => ['errors' => $validator->errors()]], 422);
         }
-        if (time() - (int) $request->input('started_at') < max(1, (int) config('g7-page-builder.forms.minimum_fill_seconds', 2))) {
+        if (now()->getTimestamp() - (int) $request->input('started_at') < max(1, (int) config('g7-page-builder.forms.minimum_fill_seconds', 2))) {
             return response()->json(['success' => false, 'message' => '잠시 후 다시 제출해 주세요.', 'data' => []], 422);
         }
 
         $page = $this->pages->findPublished($slug);
         $blockId = (string) $request->input('block_instance_id');
         $encodedBlockId = preg_quote(htmlspecialchars($blockId, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), '/');
+        $encodedKind = preg_quote((string) $request->input('form_kind'), '/');
         if ($page === null
-            || preg_match('/<section\s+data-block-id="'.$encodedBlockId.'"[^>]*data-block-type="inquiry-form"/', $page->artifact) !== 1) {
+            || (preg_match('/<section\s+data-block-id="'.$encodedBlockId.'"[^>]*data-block-type="inquiry-form"/', $page->artifact) !== 1
+                && preg_match('/<div\s[^>]*data-g7pb-v3-inquiry=""\s+data-block-id="'.$encodedBlockId.'"\s+data-g7pb-form-kind="'.$encodedKind.'"/', $page->artifact) !== 1)) {
             abort(404);
         }
 

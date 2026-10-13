@@ -99,9 +99,9 @@ EXTRACTED_PUBLIC_SCOPES = {
     "publicDataRendering.ts": {PUBLIC, PUBLIC_DATA},
     "publicArchiveControls.ts": {PUBLIC, PUBLIC_DATA},
     "publicDataRuntime.ts": {PUBLIC, PUBLIC_DATA},
-    "publicHydration.ts": {PUBLIC, public_roles(PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_SHELL)},
+    "publicHydration.ts": {PUBLIC, public_roles(PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_SHELL), V3_PRODUCT},
     "publicContentControls.ts": {PUBLIC, PUBLIC_CONTROLS},
-    "publicInquiryForms.ts": {PUBLIC, PUBLIC_CONTROLS, SITE_KIT_INQUIRY},
+    "publicInquiryForms.ts": {PUBLIC, PUBLIC_CONTROLS, SITE_KIT_INQUIRY, V3_PRODUCT},
     "publicMotion.ts": {PUBLIC, PUBLIC_MOTION},
     "publicSliders.ts": {PUBLIC, PUBLIC_MOTION},
     "publicSliderEntry.ts": {PUBLIC, PUBLIC_MOTION},
@@ -117,13 +117,26 @@ class BrowserRequirementsTests(unittest.TestCase):
         for path in ("resources/js/editor/v3/PublicationControls.tsx", "resources/js/editor/v3/apiPublicationPort.ts",
                      "resources/js/editor-application/v3/publication.ts"):
             self.assertEqual(scenarios_for([path]), (V3_PRODUCT,))
-        self.assertEqual(len(V3_PRODUCT.titles), 10)
+        self.assertEqual(len(V3_PRODUCT.titles), 13)
         self.assertIn("creates an empty page in the installed generic editor and preserves nested edits through authenticated save and reload", V3_PRODUCT.titles)
         for shell in ("none", "template", "builder"):
             self.assertIn("publishes generic elements through the installed UI with explicit confirmation and preserves the live version " + shell,
                           V3_PRODUCT.titles)
             self.assertIn("publishes common icons with authored sizing meaning and safe hydration " + shell, V3_PRODUCT.titles)
             self.assertIn("publishes common embeds with safe providers responsive sizing and persisted settings " + shell, V3_PRODUCT.titles)
+            self.assertIn("publishes common form elements with persisted edits preview isolation and real inquiry storage " + shell, V3_PRODUCT.titles)
+
+    def test_common_form_owners_keep_independent_product_and_legacy_submission_proof(self):
+        title = "v3 common form controls labels binding history and PHP parity without a catalog"
+        self.assertEqual(V3_STRUCTURE.titles.count(title), 1)
+        for path in ("resources/js/editor/v3/FormInspector.tsx", "resources/js/editor/v3/BindingInspector.tsx",
+                     "resources/js/documents/v3/bindings.ts", "resources/js/documents/v3/formPresentation.ts",
+                     "src/Domain/Documents/V3/Bindings.php", "src/Application/Compilation/V3/FormMarkup.php"):
+            self.assertEqual(set(scenarios_for([path])), {V3_STRUCTURE, V3_PRODUCT})
+        self.assertEqual(set(scenarios_for(["src/Infrastructure/Gnuboard7/Http/Controllers/FormSubmissionController.php"])),
+                         {V3_PRODUCT, SITE_KIT_INQUIRY})
+        self.assertEqual(set(scenarios_for(["resources/js/public/publicInquiryForms.ts"])),
+                         {PUBLIC, PUBLIC_CONTROLS, SITE_KIT_INQUIRY, V3_PRODUCT})
 
     def test_common_icon_owners_require_independent_and_installed_output(self):
         title = "v3 common icon insertion meaning history responsive styles and PHP parity without a catalog"
@@ -136,7 +149,7 @@ class BrowserRequirementsTests(unittest.TestCase):
             self.assertIn("--retries=0", scenario.arguments())
         # The shared icon recovery change still requires every existing public role.
         self.assertEqual(set(scenarios_for(["resources/js/public/publicHydration.ts"])),
-                         {PUBLIC, public_roles(PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_SHELL)})
+                         {PUBLIC, public_roles(PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_SHELL), V3_PRODUCT})
 
     def test_installed_structure_entry_requires_real_authenticated_product_flow(self):
         for path in ("resources/js/editor/v3/StructureDocumentHost.tsx", "vite.structure.config.ts"):
@@ -167,7 +180,7 @@ class BrowserRequirementsTests(unittest.TestCase):
                      "src/Application/Compilation/V3/Presentation.php", "src/Application/Compilation/V3/DraftRenderer.php"):
             self.assertEqual(scenarios_for([path]), (V3_STRUCTURE,))
         self.assertEqual(V3_STRUCTURE.projects, ("desktop",))
-        self.assertEqual(len(V3_STRUCTURE.titles), 89)
+        self.assertEqual(len(V3_STRUCTURE.titles), 90)
         self.assertIn("v3 common embed insertion settings history responsive sizing and PHP parity without a catalog", V3_STRUCTURE.titles)
         for path in ("resources/js/editor/v3/EmbedInspector.tsx", "resources/js/documents/v3/embeds.ts",
                      "src/Application/Compilation/V3/EmbedMarkup.php"):
@@ -330,7 +343,7 @@ class BrowserRequirementsTests(unittest.TestCase):
         self.assertEqual(scenarios_for(["resources/js/public/mobileNavigation.ts"]), (MOBILE_NAV,))
         self.assertEqual(set(scenarios_for(["resources/js/public/mobileNavigation.css"])), {MOBILE_NAV, PUBLIC_SHELL})
         sources = ["resources/js/public/" + name for name in EXTRACTED_PUBLIC_SCOPES]
-        self.assertEqual(set(scenarios_for(sources)), {PUBLIC, SITE_SHELL, PUBLIC_ALL, SITE_KIT_INQUIRY})
+        self.assertEqual(set(scenarios_for(sources)), {PUBLIC, SITE_SHELL, PUBLIC_ALL, SITE_KIT_INQUIRY, V3_PRODUCT})
         self.assertEqual(scenarios_for([*sources, *reversed(sources)]), scenarios_for(sources))
 
     def test_content_runtime_keeps_legacy_and_stable_nested_control_proof(self):

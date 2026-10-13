@@ -1,3 +1,5 @@
+import { inquiryIdentity, restoreInquiry, snapshotInquiry, type InquiryDraft } from './inquiryContinuity';
+
 interface InquiryMount {
   form: HTMLFormElement;
   fetcher: typeof fetch;
@@ -6,19 +8,22 @@ interface InquiryMount {
   blockId: string;
   status: HTMLElement | null;
   submit: HTMLButtonElement | null;
+  identity: string;
+  draft: () => InquiryDraft | null;
   dispose: () => void;
 }
 interface InquiryRuntime {
   root: Document;
   mounts: Map<HTMLFormElement, InquiryMount>;
   observer: MutationObserver;
+  retired: Map<string, InquiryDraft | null>;
+  expiry?: ReturnType<typeof setTimeout>;
 }
 const runtimes = new WeakMap<Document, InquiryRuntime>();
 
 function inputs(form: HTMLFormElement): Element[] { return Array.from(form.elements); }
-function matches(mount: InquiryMount): boolean {
-  return mount.form.isConnected && mount.form.ownerDocument.contains(mount.form)
-    && mount.form.matches('[data-g7pb-inquiry-form]')
+function ownsControls(mount: InquiryMount): boolean {
+  return mount.form.matches('[data-g7pb-inquiry-form]')
     && mount.form.action === mount.action
     && (mount.form.closest<HTMLElement>('[data-block-id]')?.dataset.blockId ?? '') === mount.blockId
     && mount.form.querySelector('[data-g7pb-form-status]') === mount.status
@@ -26,9 +31,23 @@ function matches(mount: InquiryMount): boolean {
     && inputs(mount.form).length === mount.inputs.length
     && inputs(mount.form).every((input, index) => input === mount.inputs[index]);
 }
+function matches(mount: InquiryMount): boolean {
+  return mount.form.isConnected && mount.form.ownerDocument.contains(mount.form) && ownsControls(mount);
+}
+function clearRetired(runtime: InquiryRuntime): void {
+  clearTimeout(runtime.expiry); runtime.expiry = undefined; runtime.retired.clear();
+}
 function reconcile(runtime: InquiryRuntime, records: MutationRecord[]): void {
   for (const [form, mount] of runtime.mounts) {
-    if (!matches(mount) || records.some(record => Array.from(record.removedNodes).some(node => node.contains(form)))) {
+    const removed = records.some(record => Array.from(record.removedNodes).some(node => node.contains(form)));
+    if (!matches(mount) || removed) {
+      // Transfer only across this DOM replacement checkpoint. Do not retain
+      // drafts for navigation, a later mount, altered controls or pending POSTs.
+      if (removed && !form.isConnected && ownsControls(mount)) {
+        const draft = mount.draft();
+        runtime.retired.set(mount.identity, runtime.retired.has(mount.identity) ? null : draft);
+        runtime.expiry ??= setTimeout(() => clearRetired(runtime), 0);
+      }
       runtime.mounts.delete(form); mount.dispose();
     }
   }
@@ -37,7 +56,7 @@ function runtimeFor(root: Document): InquiryRuntime {
   const existing = runtimes.get(root);
   if (existing) { reconcile(existing, existing.observer.takeRecords()); return existing; }
   const observer = new MutationObserver(records => reconcile(runtime, records));
-  const runtime: InquiryRuntime = { root, mounts: new Map(), observer };
+  const runtime: InquiryRuntime = { root, mounts: new Map(), observer, retired: new Map() };
   observer.observe(root, { subtree: true, childList: true, attributes: true,
     attributeFilter: ['data-g7pb-inquiry-form', 'data-block-id', 'action', 'type'] }); runtimes.set(root, runtime);
   return runtime;
@@ -46,6 +65,7 @@ function runtimeFor(root: Document): InquiryRuntime {
 export function disposeInquiryForms(root: Document = document): void {
   const runtime = runtimes.get(root); if (!runtime) return;
   runtimes.delete(root); runtime.observer.disconnect();
+  clearRetired(runtime);
   for (const mount of runtime.mounts.values()) mount.dispose();
   runtime.mounts.clear();
 }
@@ -61,8 +81,6 @@ function sameSubmission(before: FormData, after: FormData): boolean {
 }
 
 function csrfHeaders(root: Document): Record<string, string> | null {
-  const token = root.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content;
-  if (token) return { 'X-CSRF-TOKEN': token };
   const cookie = root.cookie.split(';').map(value => value.trim()).find(value => value.startsWith('XSRF-TOKEN='));
   if (!cookie) return null;
   try {
@@ -73,10 +91,15 @@ function csrfHeaders(root: Document): Record<string, string> | null {
 
 export function bootInquiryForms(root: Document = document, fetcher: typeof fetch = fetch): void {
   const runtime = runtimeFor(root);
-  for (const form of root.querySelectorAll<HTMLFormElement>('[data-g7pb-inquiry-form]')) {
+  const forms = [...root.querySelectorAll<HTMLFormElement>('form[data-g7pb-inquiry-form]')];
+  const identities = new Map(forms.map(form => [form, runtime.mounts.get(form)?.identity ?? inquiryIdentity(form)]));
+  for (const form of forms) {
     const previous = runtime.mounts.get(form);
     if (previous?.fetcher === fetcher) continue;
     previous?.dispose();
+    const identity = identities.get(form)!;
+    const draft = runtime.retired.get(identity);
+    if (draft && [...identities.values()].filter(value => value === identity).length === 1) restoreInquiry(form, draft);
     const blockId = form.closest<HTMLElement>('[data-block-id]')?.dataset.blockId ?? '';
     const blockInput = form.elements.namedItem('block_instance_id');
     const startedInput = form.elements.namedItem('started_at');
@@ -101,15 +124,13 @@ export function bootInquiryForms(root: Document = document, fetcher: typeof fetc
       if (submit) submit.disabled = true;
       void (async () => {
         try {
-          let csrf = csrfHeaders(root);
-          if (!csrf) {
-            // G7 template pages may omit a session token. Use its public Laravel
-            // session endpoint; never exempt the inquiry POST from CSRF checks.
-            const session = await fetcher('/sanctum/csrf-cookie', { credentials: 'same-origin', headers: { Accept: 'application/json' } });
-            if (!current()) return;
-            csrf = csrfHeaders(root);
-            if (!session.ok || !csrf) throw new Error('상담 접수 준비에 실패했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
-          }
+          // Anonymous account checks can retire the session after this page's
+          // meta token was rendered. Refresh through the official endpoint and
+          // use its cookie, never stale markup or an automatic POST retry.
+          const session = await fetcher('/sanctum/csrf-cookie', { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+          if (!current()) return;
+          const csrf = csrfHeaders(root);
+          if (!session.ok || !csrf) throw new Error('상담 접수 준비에 실패했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
           const response = await fetcher(form.action, { method: 'POST', credentials: 'same-origin', body: snapshot,
             headers: { Accept: 'application/json', ...csrf } });
           if (!current()) return;
@@ -126,9 +147,11 @@ export function bootInquiryForms(root: Document = document, fetcher: typeof fetc
         }
       })();
     };
-    const mount: InquiryMount = { form, fetcher, blockId, action: form.action, inputs: inputs(form), status, submit,
+    const mount: InquiryMount = { form, fetcher, blockId, action: form.action, inputs: inputs(form), status, submit, identity,
+      draft: () => pending ? null : snapshotInquiry(form, identity),
       dispose: () => { active = false; form.removeEventListener('submit', handler); if (pending && submit) submit.disabled = false; delete form.dataset.g7pbFormReady; } };
     runtime.mounts.set(form, mount);
     form.addEventListener('submit', handler); form.dataset.g7pbFormReady = 'true';
   }
+  clearRetired(runtime);
 }

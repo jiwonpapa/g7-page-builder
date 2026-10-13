@@ -13,6 +13,14 @@ export type Background = { kind: 'solid'; color: Color } | { kind: 'linear'; ang
 type Side = 'top' | 'right' | 'bottom' | 'left';
 type Corner = 'top_left' | 'top_right' | 'bottom_left' | 'bottom_right';
 export interface ControlPair { trigger_id: string; panel_id: string }
+export type FormControlKind = 'text' | 'email' | 'tel' | 'textarea' | 'checkbox';
+export type InquiryField = 'name' | 'email' | 'phone' | 'subject' | 'message' | 'privacy';
+/** A fixed service capability and stable element references, never an endpoint or runtime value. */
+export interface ServiceBinding {
+  kind: 'inquiry'; form_kind: 'inquiry' | 'quote' | 'reservation' | 'application' | 'newsletter';
+  success_message: string; fields: { name: InquiryField; input_id: string; label_id: string }[];
+  submit_id: string; status_id: string;
+}
 export type EmbedSource = { provider: 'none' }
   | { provider: 'youtube' | 'vimeo'; video_id: string }
   | { provider: 'openstreetmap' | 'google'; latitude: number; longitude: number; zoom: 12 | 14 | 16 | 18 };
@@ -42,6 +50,7 @@ interface NodeBase {
   instance_id: string; block_version: 1; name: string; locked: boolean;
   slots: { content?: Node[] }; style: Style; responsive: { tablet?: Style; mobile?: Style };
   behavior?: Behavior;
+  binding?: ServiceBinding;
 }
 export type LayoutTag = 'section' | 'article' | 'aside' | 'div' | 'nav' | 'header' | 'footer'
   | 'ul' | 'ol' | 'li' | 'dl' | 'dt' | 'dd' | 'blockquote' | 'figure' | 'figcaption'
@@ -54,6 +63,8 @@ export type Node = NodeBase & (
   { type: 'media.icon'; props: { icon: IconName; label: string; decorative: boolean } } |
   { type: 'media.embed'; props: { title: string; source: EmbedSource } } |
   { type: 'action.button'; props: { label: string } } |
+  { type: 'form.label'; props: { label: string } } |
+  { type: 'form.control'; props: { kind: FormControlKind; label: string; placeholder: string } } |
   { type: 'action.link'; props: { label: string; link: Link } }
 );
 export interface DocumentV3 {

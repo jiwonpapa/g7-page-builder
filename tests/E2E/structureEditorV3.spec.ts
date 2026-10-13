@@ -27,6 +27,7 @@ const fixture = JSON.parse(readFileSync(new URL('../Contract/document-v3.fixture
 const builtinCompositions = JSON.parse(readFileSync(new URL('../../resources/compositions/builtin-v3.json', import.meta.url), 'utf8')) as DocumentV3[];
 const embedCases = JSON.parse(readFileSync(new URL('../Fixtures/document-v3-cases.json', import.meta.url), 'utf8')) as {
   embeds: { valid: boolean; target: unknown; props: unknown }[];
+  form_binding: { blocks: Node[] };
 };
 let sizes = { javascript: 0, stylesheet: 0 };
 test.beforeAll(async () => {
@@ -148,6 +149,111 @@ async function connectBehavior(page: Page, behavior: Behavior) {
 }
 test.describe(() => {
   test.use({ isMobile: false, hasTouch: false, userAgent: devices['Desktop Chrome'].userAgent });
+  test('v3 common form controls labels binding history and PHP parity without a catalog', async ({ page, context }, info) => {
+    const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+    await open(page, undefined, false, []); await insert(page, '입력 요소');
+    const inserted = await read(page), standaloneId = inserted.blocks[0].instance_id;
+    await layer(page, standaloneId).click();
+    await page.getByLabel('입력 종류', { exact: true }).selectOption('email');
+    await page.getByLabel('입력 안내', { exact: true }).fill('name@example.invalid'); await click(page, '입력 설정 적용');
+    const configured = await read(page);
+    expect(configured.blocks[0].props).toEqual({ kind: 'email', label: '입력 항목', placeholder: 'name@example.invalid' });
+    await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(inserted);
+    await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(configured);
+    await page.getByLabel('삽입 위치', { exact: true }).selectOption('root'); await insert(page, '입력 라벨');
+    expect((await read(page)).blocks[1].type).toBe('form.label');
+
+    // Shared canonical elements are fixture data, not a form-specific editor or
+    // a claim that this entire tree was inserted through the UI.
+    const source = structuredClone({ ...fixture, blocks: embedCases.form_binding.blocks });
+    const host = source.blocks[0], binding = structuredClone(host.binding!);
+    host.style = { display: 'grid', row_gap: { value: 8, unit: 'px' }, padding_top: { value: 16, unit: 'px' },
+      padding_right: { value: 16, unit: 'px' }, padding_bottom: { value: 16, unit: 'px' }, padding_left: { value: 16, unit: 'px' } };
+    delete host.binding;
+    await open(page, source, false, []); await layer(page, host.instance_id).click();
+    await page.getByLabel('제출 서비스', { exact: true }).selectOption('inquiry');
+    const labels = { name: '이름', email: '이메일', phone: '전화번호', subject: '문의 제목', message: '문의 내용', privacy: '개인정보 동의' };
+    for (const field of binding.fields) {
+      if (field.name === 'phone' || field.name === 'subject') await page.getByLabel(labels[field.name] + ' 포함', { exact: true }).check();
+      await page.getByLabel(labels[field.name] + ' 입력', { exact: true }).selectOption(field.input_id);
+      await page.getByLabel(labels[field.name] + ' 라벨', { exact: true }).selectOption(field.label_id);
+    }
+    await page.getByLabel('제출 버튼', { exact: true }).selectOption(binding.submit_id);
+    await page.getByLabel('전송 상태 문구', { exact: true }).selectOption(binding.status_id);
+    await page.getByLabel('접수 완료 문구', { exact: true }).fill(binding.success_message); await click(page, '제출 연결 적용');
+    const connected = await read(page);
+    expect(connected.blocks[0].binding).toEqual({ ...binding, fields: [...binding.fields].sort((a, b) => {
+      const order = ['name', 'email', 'message', 'privacy', 'phone', 'subject']; return order.indexOf(a.name) - order.indexOf(b.name);
+    }) });
+    await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(source);
+    await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(connected);
+    const email = binding.fields.find(field => field.name === 'email')!;
+    await layer(page, email.input_id).click();
+    await page.getByLabel('입력 종류', { exact: true }).selectOption('text'); await click(page, '입력 설정 적용');
+    await expect(page.getByRole('alert')).toContainText('binding_control'); expect(await read(page)).toEqual(connected);
+    await click(page, '입력 설정 취소'); await expect(page.getByLabel('입력 종류', { exact: true })).toHaveValue('email');
+    await page.getByLabel('입력 안내', { exact: true }).fill('name@example.invalid'); await click(page, '입력 설정 적용');
+    await length(page, '높이', 48); await click(page, '디자인 적용');
+    await canvasWidth(page, 360); await layer(page, email.input_id).click();
+    await length(page, '높이', 56); await length(page, '글자 크기', 20); await click(page, '디자인 적용');
+    const beforeText = await read(page), selector = '[data-v3-node="' + email.label_id + '"]';
+    await layer(page, email.label_id).click(); await click(page, '본문 입력');
+    const editable = page.frameLocator('iframe').locator(selector + ' [contenteditable]');
+    await editable.hover(); await editable.click(); await expect(editable).toHaveAttribute('contenteditable', 'plaintext-only');
+    await editable.fill('이메일 <안내>');
+    await expect.poll(async () => allNodes((await read(page)).blocks).find(node => node.instance_id === email.label_id)?.props).toEqual({ label: '이메일 <안내>' });
+    const authored = await read(page);
+    await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(beforeText);
+    await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(authored); await click(page, '구조 선택');
+    await click(page, '저장'); await expect(page.getByRole('status', { name: '편집 상태' })).toHaveText('저장됨');
+    const saved = await page.evaluate(() => JSON.parse(window.v3Proof.saved!) as DocumentV3); expect(saved).toEqual(authored);
+    const measure = (element: Element) => {
+      const origin = element.getBoundingClientRect();
+      return [...element.querySelectorAll<HTMLElement>('[data-v3-node]')].map(node => {
+        const box = node.getBoundingClientRect(), css = getComputedStyle(node);
+        return { id: node.dataset.v3Node, text: node.innerText, font: css.fontSize,
+          box: [box.x - origin.x, box.y - origin.y, box.width, box.height] };
+      });
+    };
+    for (const width of [1280, 768, 360]) {
+      await open(page, saved, false, []); await canvasWidth(page, width);
+      const control = page.frameLocator('iframe').locator('[data-v3-node="' + email.input_id + '"]');
+      await expect(control).toHaveAttribute('readonly', ''); await expect(control).toHaveAttribute('tabindex', '-1');
+      // Puck owns pointer selection on the drag root. Verify the user boundary,
+      // not a renderer declaration that the vendor legitimately overrides.
+      await control.click();
+      await expect(page.getByLabel('입력 종류', { exact: true })).toHaveValue('email');
+      await expect(control).toHaveValue('');
+      const privacy = binding.fields.find(field => field.name === 'privacy')!;
+      const checkbox = page.frameLocator('iframe').locator('[data-v3-node="' + privacy.input_id + '"]');
+      await checkbox.click();
+      await expect(page.getByLabel('입력 종류', { exact: true })).toHaveValue('checkbox');
+      await expect(checkbox).not.toBeChecked();
+      expect(await read(page)).toEqual(saved);
+      const canvas = await page.frameLocator('iframe').locator('[data-v3-surface]').evaluate(measure);
+      await click(page, '구조 미리보기');
+      await expect(page.getByTestId('v3-preview').getByLabel('이메일 <안내>', { exact: true })).toHaveAttribute('type', 'email');
+      const preview = await page.getByTestId('v3-preview').evaluate(measure);
+      const output = await context.newPage(); await output.setViewportSize({ width, height: 1000 });
+      await output.setContent('<!doctype html><html lang="ko"><body style="margin:0">' + phpDraft(saved, expectedViewport(width)) + '</body></html>');
+      const php = await output.locator('[data-v3-surface]').evaluate(measure);
+      for (const actual of [preview, php]) {
+        expect(actual.map(({ box: _box, ...node }) => node)).toEqual(canvas.map(({ box: _box, ...node }) => node));
+        for (const [index, node] of actual.entries()) for (let axis = 0; axis < 4; axis++) {
+          expect(Math.abs(node.box[axis] - canvas[index].box[axis]), width + ':' + node.id + ':' + axis).toBeLessThanOrEqual(1);
+        }
+      }
+      await expect(output.locator('form')).toHaveCount(0);
+      await info.attach('common-form-parity-' + width, { body: JSON.stringify({ canvas, preview, php }), contentType: 'application/json' });
+      await info.attach('common-form-preview-' + width, { body: await page.screenshot({ fullPage: true }), contentType: 'image/png' });
+      await info.attach('common-form-php-' + width, { body: await output.screenshot({ fullPage: true }), contentType: 'image/png' });
+      await output.close(); expect(await read(page)).toEqual(saved);
+    }
+    await open(page, saved, true, []); await layer(page, email.input_id).click();
+    await expect(page.getByLabel('입력 종류', { exact: true })).toBeDisabled();
+    await layer(page, host.instance_id).click(); await expect(page.getByLabel('제출 서비스', { exact: true })).toBeDisabled();
+    expect(await read(page)).toEqual(saved); expect(errors).toEqual([]);
+  });
   test('v3 common embed insertion settings history responsive sizing and PHP parity without a catalog', async ({ page, context }, info) => {
     const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
     await open(page, undefined, false, [], true); await insert(page, '영상·지도');

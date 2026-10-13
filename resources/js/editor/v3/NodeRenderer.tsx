@@ -2,7 +2,8 @@ import React from 'react';
 import type { DocumentV3, Node, Run } from '../../documents/v3/types';
 import { nodeAnchor } from '../../documents/v3/tree';
 import { runPresentation, DOCUMENT_SURFACE, PARAGRAPH_STYLE } from '../../documents/v3/presentation';
-import { behaviorPresentation, type BehaviorAttributes } from '../../documents/v3/behaviorPresentation';
+import type { BehaviorAttributes } from '../../documents/v3/behaviorPresentation';
+import { formPresentation } from '../../documents/v3/formPresentation';
 import { reactStyle } from './presentationReact';
 import type { Viewport } from '../../documents/v3/validate';
 import { CatalogIcon } from '../catalogIcon';
@@ -24,13 +25,36 @@ export function NodeRenderer({ node, document, styles, attributes, children, bod
   children?: React.ReactNode; body?: React.ReactNode; editing?: boolean;
   dragRef?: ((element: Element | null) => void) | null;
 }) {
+  const inputRef = React.useCallback((element: Element | null) => {
+    dragRef?.(element);
+    if (!element || !editing) return;
+    // Puck's native selection listener stops bubbling before React receives a
+    // synthetic click. Guard the owned control itself without stopping selection.
+    const prevent = (event: Event) => event.preventDefault();
+    element.addEventListener('mousedown', prevent, true);
+    element.addEventListener('click', prevent, true);
+    return () => {
+      element.removeEventListener('mousedown', prevent, true);
+      element.removeEventListener('click', prevent, true);
+      dragRef?.(null);
+    };
+  }, [dragRef, editing]);
   const declarations = styles.get(node.instance_id) ?? {};
   if (declarations.display === 'none') return null;
-  const { tabindex, ...generated } = attributes?.get(node.instance_id) ?? {};
+  const { tabindex, for: htmlFor, required, maxlength, autocomplete, value, ...generated } = attributes?.get(node.instance_id) ?? {};
   const identity = { ...generated, ...(tabindex === undefined ? {} : { tabIndex: Number(tabindex) }), ref: dragRef,
     id: nodeAnchor(node.instance_id), 'data-v3-node': node.instance_id, style: reactStyle(declarations) };
   switch (node.type) {
-    case 'layout.section': case 'layout.container': return React.createElement(node.props.tag, identity, children);
+    case 'layout.section': case 'layout.container': return React.createElement(node.props.tag, identity, node.binding
+      ? <form style={{ display: 'contents' }} onSubmit={event => event.preventDefault()}>{children}</form> : children);
+    case 'form.label': return <label {...identity} htmlFor={editing ? undefined : htmlFor}>{body ?? node.props.label}</label>;
+    case 'form.control': {
+      const props = { ...identity, 'aria-label': generated['aria-labelledby'] ? undefined : node.props.label,
+        placeholder: node.props.placeholder, required: required !== undefined, maxLength: maxlength === undefined ? undefined : Number(maxlength),
+        autoComplete: autocomplete, defaultValue: value, readOnly: editing, tabIndex: editing ? -1 : undefined,
+        ref: inputRef };
+      return node.props.kind === 'textarea' ? <textarea {...props} rows={6} /> : <input {...props} type={node.props.kind} />;
+    }
     case 'content.heading': return body !== undefined
       ? <div {...identity} role="heading" aria-level={node.props.level} data-v3-rich>{body}</div>
       : React.createElement(`h${node.props.level}`, identity, <Runs runs={node.props.runs} document={document} editing={editing} />);
@@ -56,7 +80,7 @@ export function NodeRenderer({ node, document, styles, attributes, children, bod
   }
 }
 export function StructurePreview({ document, viewport = 'base' }: { document: DocumentV3; viewport?: Viewport }) {
-  const { styles, attributes } = behaviorPresentation(document, viewport);
+  const { styles, attributes } = formPresentation(document, viewport);
   function nodes(items: Node[]): React.ReactNode {
     return items.map(node => <NodeRenderer key={node.instance_id} node={node} document={document} styles={styles} attributes={attributes}>{nodes(node.slots.content ?? [])}</NodeRenderer>);
   }

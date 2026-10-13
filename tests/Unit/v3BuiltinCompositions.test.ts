@@ -12,9 +12,9 @@ describe('declarative built-in starter documents', () => {
   it('preserves the exact 63 existing starter trees as versioned data, not runtime factories', () => {
     const reference = validateDocumentV3(structuredClone(fixture)); reference.blocks = [];
     reference.assets[0].url = '/modules/jiwonpapa-page_builder/store/previews/local-business-hero.webp';
-    expect(documents).toEqual(exportStarterCompositions(reference).map(entry => entry.document));
+    expect(documents.slice(0, 63)).toEqual(exportStarterCompositions(reference).map(entry => entry.document));
     const choices = compositionChoices(documents);
-    expect(choices).toHaveLength(63);
+    expect(choices).toHaveLength(68);
     for (const choice of choices) {
       expect(compositionClipboard(choice).ids).toHaveLength(1);
       for (const asset of choice.source.assets) {

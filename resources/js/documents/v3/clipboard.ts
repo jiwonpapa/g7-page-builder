@@ -4,6 +4,7 @@ import { cloneDocument, indexTree, nodeAnchor, selectionRoots } from './tree';
 import { reject, validateRule, V3Error } from './schema';
 import schema from '../../../../schemas/page-builder-document-v3.schema.json';
 import { remapBehavior } from './behaviors';
+import { remapBinding } from './bindings';
 
 /** Session clipboard, not a new persisted document format or an OS clipboard. */
 export interface TreeClipboard { source: DocumentV3; ids: string[] }
@@ -52,6 +53,7 @@ export function materializeClipboard(target: DocumentV3, clipboard: TreeClipboar
   walk(roots, node => {
     node.instance_id = ids.get(node.instance_id) ?? reject('generated_id', '$');
     if (node.behavior) node.behavior = remapBehavior(node.behavior, ids);
+    if (node.binding) node.binding = remapBinding(node.binding, ids);
     if (node.type === 'media.image') node.props.asset_id = assetId(node.props.asset_id);
     if (node.type === 'action.link') link(node.props.link);
     if (node.type === 'content.heading') node.props.runs.forEach(run);

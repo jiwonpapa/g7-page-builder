@@ -82,3 +82,7 @@ DATA02 후보: **e0c34b2e81317284a2d455c350a1635879e73fad**, branch `codex/edito
 이전 종료 뒤 목표 추진에서 실제 데이터 누락을 확인하여 FAQ·탭·캐러셀·연락처 등 17개 시작 문서를 추가했습니다. 현재 시작 데이터는 85개입니다. 편집기 등록/렌더 코드·schema·vendor·기존 문서 변환은 추가하지 않았습니다. 기존 68개 원본은 그대로 보존합니다. [구현 기록](2026-10-14-editor-starter-data.md)과 업데이트된 [전체 capability 표](2026-10-14-editor-capability-map.md)를 참고합니다.
 
 기존 문의 시험의 대상 선택만 배열 위치에서 binding 보유 문서로 바꾸며 5개 대상과 합격 기준을 유지합니다. 새로운 제품 시험/브라우저 시나리오·최종 종합 확인은 추가하지 않습니다. 데이터 입력이 바뀐 산출물만 한 번 빌드하고 동적 DATA02 후보는 재구현·통합하지 않습니다. 이 보완으로 해당 실패나 최종 UX 수용을 완료로 바꾸지 않습니다.
+
+추가 데이터 제출은 4c13071a44b65974955d0e7da2bfc2eff75c4650, 통합은 e235b399abc8219f2772d3dc45e6a2934c400ef4입니다. 기존 reference 범위 보존은 2b54b65532c9f8de7b6a71844a333e27179ac32b / 3a043291eef19be0e3f0ca6b889b741a49609ff4로 분리 커밋했습니다. 빌드 fingerprint는 6374d857100138bde0e7c8bf0ec94215c9a5e72ce37f1c2b806a1cf9cee18f03입니다. 관련 기존 18건은 같은 입력 성공을 재사용했고 기존 2건/6건과 타입 검사도 성공했습니다. 실제 브라우저/runtime는 deferred로 남깁니다.
+
+최종 scoped 인계의 계획을 먼저 읽어 base 9da030f50fb8b81c018a06471d59fbcbf58ab606부터의 실제 delta와 7개 선택 gate·full=false·미분류 없음만 확인했습니다. 이전의 FULL 범위 확대를 다시 실행하지 않으며 runtime 및 브라우저 2개 gate는 IMPLEMENTATION=1로 미실행 인계합니다. 이는 전체 제품 VERIFIED나 DATA02 복구를 뜻하지 않습니다.

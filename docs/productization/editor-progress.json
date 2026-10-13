@@ -685,8 +685,8 @@
         "IND-07"
       ],
       "owner_task": "integration-ip7-20261012",
-      "implementation_commit": "288d76ad649583680030f1d9275ee64601084760",
-      "integrated_commit": "19ad920c59a8ee609077cdbb0a0016629b513d4a",
+      "implementation_commit": "4c13071a44b65974955d0e7da2bfc2eff75c4650",
+      "integrated_commit": "e235b399abc8219f2772d3dc45e6a2934c400ef4",
       "evidence": [
         {
           "acceptance_id": "IND-07",

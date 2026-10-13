@@ -406,8 +406,9 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
         };
         const changes: Record<string, string | number>[] = [{ block_instance_id: crypto.randomUUID() }, { form_kind: 'inquiry' }, { privacy: '0' }, { website: 'bot' }];
         for (const change of changes) await send(change);
-        // Capture immediately before this request, not before four network trips.
-        await send({ started_at: Math.floor(Date.now() / 1000) });
+        // A future start must fail the elapsed-time guard even when HTTP is slow.
+        // Exact zero/acceptance boundaries use a frozen clock in PublicationPersistenceTest.
+        await send({ started_at: Math.floor(Date.now() / 1000) + 86_400 });
         outcomes.push((await fetch(action, { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify(data) })).status);
         return { outcomes, created };
       }, { action: new URL('/pages/' + slug + '/inquiries', publicUrl).href, blockId: host.instance_id });

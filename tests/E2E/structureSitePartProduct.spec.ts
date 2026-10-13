@@ -1,7 +1,8 @@
 import { expect, test, type APIRequestContext, type Page, type Locator } from '@playwright/test';
 import { authenticateEditorInteractionAdmin, editorInteractionApi } from './support/editorInteractionFixture';
 import { SitePartSetFixture } from './support/sitePartSetFixture';
-import { parseElementPart, parsePartSet, type PartKind } from '../../resources/js/api/elementSitePartResource';
+import type { ElementPartResource, PartKind } from '../../resources/js/api/elementSitePartResource';
+import type { SitePartSetResource } from '../../resources/js/api/resources';
 
 const API = '/api/modules/jiwonpapa-page_builder/admin';
 const EDITOR = '/modules/jiwonpapa-page_builder/admin/site-parts';
@@ -14,7 +15,10 @@ async function create(page: Page, owned: SitePartSetFixture) {
   const creating = page.waitForResponse(response => response.url().endsWith('/site-part-sets') && response.request().method() === 'POST');
   await click(page, '빈 정밀 세트 만들기');
   const response = await creating; expect(response.ok(), await response.text()).toBe(true);
-  const set = parsePartSet((await response.json()).data, owned.locale);
+  const set: SitePartSetResource = (await response.json()).data;
+  expect(set).toMatchObject({ id: expect.any(String), locale: owned.locale,
+    header: { site_part_id: expect.any(String) }, footer: { site_part_id: expect.any(String) } });
+  expect(set.header.site_part_id).not.toBe(set.footer.site_part_id);
   owned.registerProductCreation(set.id);
   expect(set.is_active).toBe(false); expect(set.is_ready).toBe(false);
   await expect(page.getByTestId('structure-site-part-pair')).toBeVisible();
@@ -23,7 +27,11 @@ async function create(page: Page, owned: SitePartSetFixture) {
 async function read(api: APIRequestContext, setId: string, kind: PartKind) {
   const response = await api.get(API + '/site-parts/' + kind + '?' + new URLSearchParams({ set_id: setId, locale: 'ko' }));
   expect(response.ok(), await response.text()).toBe(true);
-  return parseElementPart((await response.json()).data, setId, kind, 'ko');
+  const part: ElementPartResource = (await response.json()).data;
+  expect(part).toMatchObject({ set_id: setId, lock_version: expect.any(Number), revision: expect.any(Number),
+    document: { schema_version: 'g7-page-builder/site-part/v2', kind,
+      content: { schema_version: 'g7-page-builder/v3', locale: 'ko', shell_mode: 'none' } } });
+  return part;
 }
 async function save(page: Page, kind: PartKind) {
   const response = page.waitForResponse(value => value.url().endsWith('/site-parts/' + kind + '/draft') && value.request().method() === 'PUT');

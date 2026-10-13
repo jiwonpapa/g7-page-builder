@@ -8,6 +8,8 @@ import { reactStyle } from './presentationReact';
 import type { Viewport } from '../../documents/v3/validate';
 import { CatalogIcon } from '../catalogIcon';
 import { embedTarget } from '../../documents/v3/embeds';
+import { shellControlsMarkup } from '../../public/siteShellControls';
+import { decorateSystemMarkup, systemControlOptions } from '../../public/systemElementProjection';
 
 function Runs({ runs, document, editing }: { runs: Run[]; document: DocumentV3; editing: boolean }) {
   return <>{runs.map((run, index) => {
@@ -44,6 +46,12 @@ export function NodeRenderer({ node, document, styles, attributes, children, bod
   const { tabindex, for: htmlFor, required, maxlength, autocomplete, value, ...generated } = attributes?.get(node.instance_id) ?? {};
   const identity = { ...generated, ...(tabindex === undefined ? {} : { tabIndex: Number(tabindex) }), ref: dragRef,
     id: nodeAnchor(node.instance_id), 'data-v3-node': node.instance_id, style: reactStyle(declarations) };
+  if (node.system && 'tag' in node.props) {
+    const options = systemControlOptions(node.system.kind);
+    return React.createElement(node.props.tag, { ...identity, 'data-v3-system': node.system.kind,
+      'data-g7pb-system-controls': '', 'data-g7pb-shell-options': JSON.stringify(options), 'data-g7pb-shell-locale': document.locale },
+    <span inert style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: decorateSystemMarkup(shellControlsMarkup(options, document.locale.startsWith('en')), true) }} />);
+  }
   switch (node.type) {
     case 'layout.section': case 'layout.container': return React.createElement(node.props.tag, identity, node.binding
       ? <form style={{ display: 'contents' }} onSubmit={event => event.preventDefault()}>{children}</form> : children);

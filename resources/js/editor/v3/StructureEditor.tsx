@@ -34,6 +34,7 @@ import { ImageInspector } from './ImageInspector';
 import type { CompositionLibraryPort } from '../../editor-application/v3/compositionLibrary';
 import { UserCompositionPanel } from './UserCompositionPanel';
 import { MediaInsertion } from './MediaInsertion';
+import { SystemInspector } from './SystemInspector';
 
 export interface StructureEditorProps {
   document: DocumentV3;
@@ -72,6 +73,7 @@ function CanvasNode({ id, body, Content, dragRef }: { id: string; body: React.Re
   const node = context?.tree.get(id)?.node;
   if (!context || !node) return null;
   if (context.styles.get(id)?.display === 'none') return null;
+  if (node.system) return <NodeRenderer node={node} document={context.document} styles={context.styles} dragRef={dragRef} editing />;
   if (node.type === 'layout.section' || node.type === 'layout.container') {
     // SlotComponent is Puck's public render function. Its closure changes when
     // descendants change; using that closure as a React type remounts the tree
@@ -262,7 +264,7 @@ function EditorSession(props: StructureEditorProps) {
             <h2 style={{ fontSize: 15 }}>삽입 위치</h2>
             <select aria-label="삽입 위치" value={target} onChange={event => setTarget(event.target.value)} style={{ maxWidth: '100%' }}>
               <option value="root">페이지</option>
-              {[...tree.values()].filter(item => item.node.type.startsWith('layout.')).map(item => <option key={item.node.instance_id} value={item.node.instance_id}>{item.node.name}</option>)}
+              {[...tree.values()].filter(item => item.node.type.startsWith('layout.') && !item.node.system).map(item => <option key={item.node.instance_id} value={item.node.instance_id}>{item.node.name}</option>)}
             </select>
             <div style={{ ...control, marginTop: 10 }}>{(Object.keys(primitiveLabels) as Node['type'][]).map(type =>
               <CommandButton key={type} disabled={props.readonly || preview} onClick={() => {
@@ -277,6 +279,12 @@ function EditorSession(props: StructureEditorProps) {
                 return { context: { ...context, readonly: Boolean(context.readonly || preview || parent?.node.locked || parent?.ancestors.some(node => node.locked)) },
                   destination: where, selection: bridge.selection() };
               }} apply={(value, expected) => { bridge.execute(value, expected); }} />}
+            <CommandButton disabled={props.readonly || preview} onClick={() => run(() => {
+              const node = createPrimitive('layout.container', props.nextId(), bridge.read());
+              Object.assign(node, { name: 'G7 계정 컨트롤', system: { kind: 'account' },
+                style: { display: 'flex', width: { value: 42, unit: 'px' }, height: { value: 42, unit: 'px' } } });
+              bridge.execute({ kind: 'insert', destination: destination(), nodes: [node] });
+            })}>G7 컨트롤 삽입</CommandButton>
             <CompositionPanel sources={props.compositions} disabled={Boolean(props.readonly || preview)}
               insert={choice => run(() => bridge.execute({ kind: 'paste', destination: destination(),
                 clipboard: compositionClipboard(choice) }))} />
@@ -313,6 +321,8 @@ function EditorSession(props: StructureEditorProps) {
                   nodeId: item?.node.type === 'media.image' ? item.node.instance_id : null };
               }} apply={(value, expected) => { bridge.execute(value, expected); }} />}
             {focus && <BehaviorInspector key={'behavior:' + focus.node.instance_id + ':' + JSON.stringify(focus.node)} node={focus.node} document={document}
+              disabled={Boolean(preview || props.readonly || focus.node.locked || focus.ancestors.some(node => node.locked))} apply={value => { bridge.execute(value); }} />}
+            {focus && <SystemInspector key={'system:' + focus.node.instance_id + ':' + JSON.stringify(focus.node)} node={focus.node}
               disabled={Boolean(preview || props.readonly || focus.node.locked || focus.ancestors.some(node => node.locked))} apply={value => { bridge.execute(value); }} />}
             {focus && <BindingInspector key={'binding:' + focus.node.instance_id + ':' + JSON.stringify(focus.node)} node={focus.node} document={document}
               disabled={Boolean(preview || props.readonly || focus.node.locked || focus.ancestors.some(node => node.locked))} apply={value => { bridge.execute(value); }} />}

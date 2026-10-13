@@ -137,15 +137,34 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
     await field.check(); await page.getByLabel(label + ' 형식', { exact: true }).selectOption({ label: 'px' });
     await page.getByLabel(label + ' 값', { exact: true }).fill(String(value));
   };
-  const sample = async (surface: Locator) => surface.locator('[data-v3-node]').evaluateAll(nodes => nodes.map(node => {
-    const svg = node.querySelector('svg')!, box = node.getBoundingClientRect(), graphic = svg.getBoundingClientRect();
-    return { id: node.getAttribute('data-v3-node'), role: node.getAttribute('role'), label: node.getAttribute('aria-label'),
-      hidden: node.getAttribute('aria-hidden'), color: getComputedStyle(svg).color, viewBox: svg.getAttribute('viewBox'),
-      stroke: getComputedStyle(svg).stroke, strokeWidth: getComputedStyle(svg).strokeWidth,
-      shapes: [...svg.children].map(child => ({ tag: child.tagName, attributes: Object.fromEntries([...child.attributes]
-        .filter(attribute => attribute.name !== 'class').map(attribute => [attribute.name, attribute.value])) })),
-      size: [box.width, box.height, graphic.width, graphic.height] };
-  }));
+  const sample = async (surface: Locator) => {
+    const measure = () => surface.locator('[data-v3-node]').evaluateAll(async nodes => {
+      const capture = () => {
+        if (nodes.length !== 3 || nodes.some(node => !node.isConnected || !node.querySelector('svg')?.isConnected)) return null;
+        const values = nodes.map(node => {
+          const svg = node.querySelector('svg')!, box = node.getBoundingClientRect(), graphic = svg.getBoundingClientRect();
+          const css = getComputedStyle(svg);
+          return { id: node.getAttribute('data-v3-node'), role: node.getAttribute('role'), label: node.getAttribute('aria-label'),
+            hidden: node.getAttribute('aria-hidden'), color: css.color, viewBox: svg.getAttribute('viewBox'),
+            stroke: css.stroke, strokeWidth: css.strokeWidth,
+            shapes: [...svg.children].map(child => ({ tag: child.tagName, attributes: Object.fromEntries([...child.attributes]
+              .filter(attribute => attribute.name !== 'class').map(attribute => [attribute.name, attribute.value])) })),
+            size: [box.width, box.height, graphic.width, graphic.height] };
+        });
+        return nodes.every(node => node.isConnected) && values.every(value => value.color && value.stroke && value.strokeWidth) ? values : null;
+      };
+      const first = capture();
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      const second = capture();
+      return first && second && JSON.stringify(first) === JSON.stringify(second) ? second : null;
+    });
+    const measured: { value: Awaited<ReturnType<typeof measure>> } = { value: null };
+    // Reacquire detached/unready template output, never retry a parity disagreement.
+    await expect.poll(async () => { measured.value = await measure(); return measured.value !== null; },
+      { message: 'Measure three attached icons with computed styles stable across two frames' }).toBe(true);
+    if (!measured.value) throw new Error('Icon output was not ready for measurement');
+    return measured.value;
+  };
   try {
     await page.setViewportSize({ width: 1440, height: 1000 }); await page.goto(`${editor}?editor=structure`);
     await page.getByLabel('페이지 제목', { exact: true }).fill('공통 아이콘 공개 검증 ' + shell);

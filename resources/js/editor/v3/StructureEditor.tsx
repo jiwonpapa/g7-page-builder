@@ -33,6 +33,7 @@ import type { MediaPort } from '../../editor-application/v3/media';
 import { ImageInspector } from './ImageInspector';
 import type { CompositionLibraryPort } from '../../editor-application/v3/compositionLibrary';
 import { UserCompositionPanel } from './UserCompositionPanel';
+import { MediaInsertion } from './MediaInsertion';
 
 export interface StructureEditorProps {
   document: DocumentV3;
@@ -114,6 +115,7 @@ function EditorSession(props: StructureEditorProps) {
   const [message, setMessage] = useState('구조 편집 · 선택한 화면의 디자인과 공통 본문을 편집합니다.');
   const [clipboard, setClipboard] = useState<TreeClipboard | null>(null);
   const [target, setTarget] = useState('root');
+  const [insertImage, setInsertImage] = useState(false);
   const [preview, setPreview] = useState(false);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -263,8 +265,18 @@ function EditorSession(props: StructureEditorProps) {
               {[...tree.values()].filter(item => item.node.type.startsWith('layout.')).map(item => <option key={item.node.instance_id} value={item.node.instance_id}>{item.node.name}</option>)}
             </select>
             <div style={{ ...control, marginTop: 10 }}>{(Object.keys(primitiveLabels) as Node['type'][]).map(type =>
-              <CommandButton key={type} disabled={props.readonly} onClick={() => run(() => bridge.execute({ kind: 'insert', destination: destination(),
-                nodes: [createPrimitive(type, props.nextId(), bridge.read())] }))}>{primitiveLabels[type]} 삽입</CommandButton>)}</div>
+              <CommandButton key={type} disabled={props.readonly || preview} onClick={() => {
+                if (type === 'media.image' && !bridge.read().assets.length) { setInsertImage(true); return; }
+                run(() => bridge.execute({ kind: 'insert', destination: destination(), nodes: [createPrimitive(type, props.nextId(), bridge.read())] }));
+              }}>{primitiveLabels[type]} 삽입</CommandButton>)}</div>
+            {insertImage && <MediaInsertion port={props.media} nextId={props.nextId} close={() => setInsertImage(false)}
+              read={() => {
+                const where = destination();
+                const parent = where.parentId ? indexTree(bridge.read()).get(where.parentId) : undefined;
+                const context = bridge.context();
+                return { context: { ...context, readonly: Boolean(context.readonly || preview || parent?.node.locked || parent?.ancestors.some(node => node.locked)) },
+                  destination: where, selection: bridge.selection() };
+              }} apply={(value, expected) => { bridge.execute(value, expected); }} />}
             <CompositionPanel sources={props.compositions} disabled={Boolean(props.readonly || preview)}
               insert={choice => run(() => bridge.execute({ kind: 'paste', destination: destination(),
                 clipboard: compositionClipboard(choice) }))} />

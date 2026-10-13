@@ -345,6 +345,8 @@ def markdown(data):
     acceptance = {entry["id"]: entry["required_evidence"] for entry in data["acceptance"]}
     for item in data["items"]:
         proof = "미완료"
+        if item["status"] != "done" and item["implementation_commit"] and item["integrated_commit"]:
+            proof = f"소스 `{item['implementation_commit']}`<br>통합 `{item['integrated_commit']}`<br>수용 미완료·재감사 인계"
         if item["status"] == "done":
             required = {(criterion, kind) for criterion in item["acceptance_ids"] for kind in acceptance[criterion]}
             covered = {(entry["acceptance_id"], entry["kind"]) for entry in item["evidence"]}
@@ -356,6 +358,11 @@ def markdown(data):
     blocked = [item for item in data["items"] if item["status"] == "blocked"]
     lines += [f"- 차단 {item['id']}: {escape(item['blocked_reason'])}" for item in blocked]
     if blocked:
+        lines.append("")
+    handoffs = [item for item in data["items"] if item["status"] != "done" and item["implementation_commit"]]
+    if handoffs:
+        lines += ["## 구현과 수용을 분리한 인계", "", "아래 소스/통합 기록은 제품 수용 완료 수에 합산하지 않습니다.", ""]
+        lines += [f"- {item['id']}: {escape(item['completion'])}" for item in handoffs]
         lines.append("")
     lines += ["조회: `make editor-status` · 정합성 검사: `make editor-plan-check`", "", LIMIT, ""]
     return "\n".join(lines)

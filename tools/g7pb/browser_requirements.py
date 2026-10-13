@@ -50,6 +50,8 @@ NATIVE = BrowserScenario("tests/E2E/nativeEditorContract.spec.ts")
 V3_PRODUCT = BrowserScenario("tests/E2E/structureDocumentProduct.spec.ts", titles=(
     "creates an empty page in the installed generic editor and preserves nested edits through authenticated save and reload",
     *("publishes generic elements through the installed UI with explicit confirmation and preserves the live version " + shell
+      for shell in ("none", "template", "builder")),
+    *("publishes common icons with authored sizing meaning and safe hydration " + shell
       for shell in ("none", "template", "builder"))))
 
 V3_SITE_PART = BrowserScenario("tests/E2E/structureSitePartProduct.spec.ts", titles=(
@@ -59,6 +61,7 @@ V3_SITE_PART = BrowserScenario("tests/E2E/structureSitePartProduct.spec.ts", tit
 # New v3 modules use the independent editor and injected draft-port contract.
 # The v1/v2 installed-entry scenarios retain their existing mappings below.
 V3_STRUCTURE = BrowserScenario("tests/E2E/structureEditorV3.spec.ts", titles=(
+    "v3 common icon insertion meaning history responsive styles and PHP parity without a catalog",
     "v3 empty catalog builds an interactive composition from primitive insertions",
     *("v3 common behavior connections edit save reopen and match PHP output " + kind for kind in (
         "tabs", "disclosure", "carousel", "nested")),
@@ -270,6 +273,8 @@ STYLE_CODE_SCOPES = {
 # Most-specific source rules win. Adding a scenario requires a real registered
 # Playwright test; a missing spec/title must fail instead of claiming acceptance.
 RULES = (
+    (("resources/js/editor/v3/IconInspector.tsx", "resources/js/editor/v3/NodeRenderer.tsx",
+      "src/Application/Compilation/V3/ElementMarkup.php"), (V3_STRUCTURE, V3_PRODUCT)),
     (("resources/js/editor/v3/StructureSitePartHost.tsx", "resources/js/editor/v3/SitePartPairEditor.tsx",
       "resources/js/editor/v3/sitePartPorts.ts", "resources/js/api/elementSitePartApi.ts",
       "resources/js/api/elementSitePartResource.ts"), (V3_SITE_PART,)),

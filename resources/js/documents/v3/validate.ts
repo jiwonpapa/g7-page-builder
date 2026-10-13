@@ -50,6 +50,7 @@ export function validateDocumentV3(value: unknown): DocumentV3 {
       if (!policy.containers.includes(node.type) && Object.keys(node.slots).length) reject('leaf_slots', '$');
       validateNodeSemantics(node, parent);
       if (node.type === 'media.image' && !assets.has(node.props.asset_id)) reject('asset_reference', '$');
+      if (node.type === 'media.icon' && !node.props.decorative && !/[^\p{Z}\p{C}]/u.test(node.props.label)) reject('icon_label', '$');
       for (const viewport of ['base', 'tablet', 'mobile'] as const) styleSemantics(effectiveStyle(node, viewport), parent && effectiveStyle(parent, viewport), assets);
       visit(node.slots.content ?? [], node, depth + 1);
     }

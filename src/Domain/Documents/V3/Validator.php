@@ -75,6 +75,9 @@ final readonly class Validator
             if ($node->type === 'media.image' && ! isset($assets[$node->props->asset_id])) {
                 Schema::reject('asset_reference');
             }
+            if ($node->type === 'media.icon' && ! $node->props->decorative && ! preg_match('/[^\p{Z}\p{C}]/u', $node->props->label)) {
+                Schema::reject('icon_label');
+            }
             foreach (['base', 'tablet', 'mobile'] as $viewport) {
                 $this->style(self::effectiveStyle($node, $viewport), $parent ? self::effectiveStyle($parent, $viewport) : null, $assets);
             }

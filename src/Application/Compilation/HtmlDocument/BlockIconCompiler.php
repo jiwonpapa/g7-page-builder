@@ -49,7 +49,7 @@ final readonly class BlockIconCompiler
         private HtmlEscaper $escaper,
     ) {}
 
-    public function catalogIconSvg(string $name, string $className): string
+    public function catalogIconSvg(string $name, string $className, bool $fillParent = false, bool $inlineSvg = false): string
     {
         $resolved = match ($name) {
             'instagram' => 'camera',
@@ -64,6 +64,11 @@ final readonly class BlockIconCompiler
         };
         $markup = self::CATALOG_ICON_MARKUP[$resolved] ?? self::CATALOG_ICON_MARKUP['check'];
 
-        return '<span class="'.$this->escaper->escapeAttribute($className).'" data-g7pb-runtime-icon data-g7pb-icon-markup="'.$this->escaper->escapeAttribute($markup).'" aria-hidden="true"></span>';
+        // Only the independent draft renderer embeds SVG. Publications must
+        // pass the unchanged template policy and use the trusted marker alone.
+        $size = $fillParent ? ' data-g7pb-icon-sizing="parent" style="display:block;width:100%;height:100%"' : '';
+        $body = $fillParent && $inlineSvg ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="display:block">'.$markup.'</svg>' : '';
+
+        return '<span class="'.$this->escaper->escapeAttribute($className).'" data-g7pb-runtime-icon data-g7pb-icon-markup="'.$this->escaper->escapeAttribute($markup).'" aria-hidden="true"'.$size.'>'.$body.'</span>';
     }
 }

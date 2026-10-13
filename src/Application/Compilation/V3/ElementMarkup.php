@@ -2,6 +2,8 @@
 
 namespace Modules\Jiwonpapa\PageBuilder\Application\Compilation\V3;
 
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BlockIconCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\HtmlEscaper;
 use stdClass;
 
 /** One semantic element renderer for a draft viewport and responsive publication.
@@ -9,7 +11,7 @@ use stdClass;
  */
 final readonly class ElementMarkup
 {
-    public function __construct(private bool $publication = false) {}
+    public function __construct(private bool $publication = false, private BlockIconCompiler $icons = new BlockIconCompiler(new HtmlEscaper)) {}
 
     /** @param array<string, array<string, string>> $styles
      * @param  array<string, array<string, string>>  $attributes
@@ -71,6 +73,7 @@ final readonly class ElementMarkup
                 'layout.section', 'layout.container' => $node->props->tag,
                 'content.heading' => 'h'.$node->props->level,
                 'media.image' => 'img',
+                'media.icon' => 'span',
                 'action.link' => 'a',
                 'action.button' => $this->publication ? 'span' : 'button',
                 default => 'div',
@@ -83,6 +86,9 @@ final readonly class ElementMarkup
             if ($node->type === 'media.image') {
                 $asset = array_find($document->assets, fn (stdClass $asset): bool => $asset->asset_id === $node->props->asset_id);
                 $attrs .= ' src="'.self::escape($asset->url).'" alt="'.self::escape($node->props->alt).'"';
+            } elseif ($node->type === 'media.icon') {
+                $attrs .= $node->props->decorative ? ' aria-hidden="true"' : ' role="img" aria-label="'.self::escape($node->props->label).'"';
+                $body = $this->icons->catalogIconSvg($node->props->icon, '', true, ! $this->publication);
             } elseif ($node->type === 'content.heading') {
                 $body = $this->runs($node->props->runs, $document);
             } elseif ($node->type === 'content.text') {

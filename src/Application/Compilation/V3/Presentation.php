@@ -97,6 +97,10 @@ final class Presentation
             $out['font-size'] = [2, 1.5, 1.17, 1, 0.83, 0.67][$node->props->level - 1].'em';
             $out['font-weight'] = '700';
         }
+        if ($node->type === 'media.icon') {
+            $out['width'] = '24px';
+            $out['height'] = '24px';
+        }
         foreach (['width', 'height', 'basis'] as $key) {
             if (isset($style->{$key})) {
                 self::size($out, $key, $style->{$key}, $parent, $style);

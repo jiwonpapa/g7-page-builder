@@ -1479,6 +1479,7 @@
             "content.heading",
             "content.text",
             "media.image",
+            "media.icon",
             "action.link",
             "action.button"
           ]
@@ -1496,6 +1497,16 @@
         "behavior": { "$ref": "#/$defs/behavior" },
         "props": {
           "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "icon": { "enum": ["bolt", "check", "code", "globe", "heart", "layers", "mobile", "palette", "shield", "sparkles", "star", "trend", "users", "target", "chart", "instagram", "youtube", "facebook", "linkedin", "x", "kakao", "blog", "website"] },
+                "label": { "type": "string", "maxLength": 1000 },
+                "decorative": { "type": "boolean" }
+              },
+              "required": ["icon", "label", "decorative"],
+              "additionalProperties": false
+            },
             {
               "type": "object", "properties": { "label": { "type": "string", "minLength": 1, "maxLength": 1000, "pattern": "[^\\p{Z}\\p{C}]" } },
               "required": ["label"], "additionalProperties": false

@@ -67,8 +67,9 @@ test.beforeAll(async () => {
   stylesheet = output.filter(item => item.type === 'asset').filter(item => item.fileName.endsWith('.css') && !item.fileName.startsWith('fonts/'))
     .map(item => typeof item.source === 'string' ? item.source : new TextDecoder().decode(item.source)).join('\n');
   sizes = { javascript: gzipSync(javascript).length, stylesheet: gzipSync(stylesheet).length };
-  // Do not raise the installed editor's limits or hide its bytes in this host.
-  expect(sizes.javascript).toBeLessThanOrEqual(508_500);
+  // Same 512,000-byte editor limit approved on 2026-10-13 and enforced by
+  // check-frontend-budgets.mjs; this host may not hide its own dependency bytes.
+  expect(sizes.javascript).toBeLessThanOrEqual(512_000);
   expect(sizes.stylesheet).toBeLessThanOrEqual(45_200);
 });
 async function open(page: Page, source?: DocumentV3, readonly = false, compositions?: DocumentV3[]) {
@@ -136,6 +137,109 @@ async function connectBehavior(page: Page, behavior: Behavior) {
 }
 test.describe(() => {
   test.use({ isMobile: false, hasTouch: false, userAgent: devices['Desktop Chrome'].userAgent });
+  test('v3 common icon insertion meaning history responsive styles and PHP parity without a catalog', async ({ page, context }, info) => {
+    const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+    await open(page, undefined, false, []); await insert(page, '아이콘');
+    const inserted = await read(page), id = inserted.blocks[0].instance_id;
+    const selector = '[data-v3-node="' + id + '"]';
+    await layer(page, id).click();
+    await expect(page.frameLocator('iframe').locator(selector)).toHaveCSS('width', '24px');
+    await expect(page.frameLocator('iframe').locator(selector)).toHaveAttribute('role', 'button');
+    await expect(page.frameLocator('iframe').locator(selector)).toHaveAccessibleName('아이콘');
+    await expect(page.frameLocator('iframe').locator(selector)).not.toHaveAttribute('aria-hidden', 'true');
+    await expect(page.getByLabel('아이콘 설명', { exact: true })).toBeDisabled();
+    await page.getByLabel('장식용 아이콘', { exact: true }).uncheck();
+    await click(page, '아이콘 적용');
+    await expect(page.getByRole('alert')).toContainText('icon_label');
+    expect(await read(page)).toEqual(inserted);
+    await page.getByLabel('아이콘 설명', { exact: true }).fill('안내 <문자> "설명"');
+    await page.getByLabel('아이콘 종류', { exact: true }).selectOption('star');
+    await click(page, '아이콘 적용');
+    await expect.poll(async () => (await read(page)).blocks[0].props).toEqual({ icon: 'star', label: '안내 <문자> "설명"', decorative: false });
+    const meaningful = await read(page);
+    await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(inserted);
+    await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(meaningful);
+    await length(page, '너비', 48); await length(page, '높이', 32);
+    await enable(page, '색상');
+    await page.getByLabel('색상 형식', { exact: true }).selectOption({ label: 'hex' });
+    await page.getByLabel('색상 값', { exact: true }).fill('#2255cc');
+    await click(page, '디자인 적용');
+    const styled = await read(page);
+    await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(meaningful);
+    await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(styled);
+    await canvasWidth(page, 360); await layer(page, id).click();
+    await length(page, '너비', 20); await length(page, '높이', 20); await click(page, '디자인 적용');
+    await expect.poll(async () => (await read(page)).blocks[0].responsive.mobile?.width).toEqual({ value: 20, unit: 'px' });
+    expect((await read(page)).blocks[0].style).toEqual(styled.blocks[0].style);
+    const authored = await read(page);
+    await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(styled);
+    await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(authored);
+    await click(page, '저장'); await expect(page.getByRole('status', { name: '편집 상태' })).toHaveText('저장됨');
+    const saved = await page.evaluate(() => JSON.parse(window.v3Proof.saved!) as DocumentV3);
+    expect(saved).toEqual(authored);
+    await open(page, saved, false, []); await layer(page, id).click();
+    const names = await page.getByLabel('아이콘 종류', { exact: true }).locator('option').evaluateAll(options => options.map(option => option.getAttribute('value')));
+    const schema = JSON.parse(readFileSync(new URL('../../schemas/page-builder-document-v3.schema.json', import.meta.url), 'utf8'));
+    expect(names).toEqual(schema.$defs.node.properties.props.anyOf.find((rule: { properties?: { icon?: unknown } }) => rule.properties?.icon).properties.icon.enum);
+    expect(names).toHaveLength(23);
+    // New composition data arrives after the same editor bundle was built.
+    const gallery = structuredClone(saved), original = gallery.blocks[0];
+    if (original.type !== 'media.icon') throw new Error('Missing authored icon');
+    gallery.blocks = names.map((name, index) => ({ ...structuredClone(original),
+      instance_id: '00000000-0000-4000-8000-' + String(900 + index).padStart(12, '0'),
+      props: { ...original.props, icon: name as typeof original.props.icon, decorative: index % 2 === 0 } }));
+    const measure = (element: Element) => [...element.querySelectorAll<HTMLElement>('[data-v3-node]')].map(node => {
+      const box = node.getBoundingClientRect(), svg = node.querySelector('svg')!, graphic = svg.getBoundingClientRect();
+      return { id: node.dataset.v3Node, width: box.width, height: box.height, svgWidth: graphic.width, svgHeight: graphic.height,
+        color: getComputedStyle(svg).color, stroke: getComputedStyle(svg).stroke, strokeWidth: getComputedStyle(svg).strokeWidth,
+        role: node.getAttribute('role'), label: node.getAttribute('aria-label'), hidden: node.getAttribute('aria-hidden'),
+        viewBox: svg.getAttribute('viewBox'), shapes: [...svg.children].map(child => {
+          const shape = child as SVGGeometryElement, bounds = shape.getBBox();
+          return { tag: shape.tagName, fill: getComputedStyle(shape).fill, length: shape.getTotalLength(),
+            x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
+        }) };
+    });
+    for (const width of [1280, 768, 360]) {
+      await open(page, gallery, false, []); await canvasWidth(page, width);
+      const canvas = await page.frameLocator('iframe').locator('[data-v3-surface]').evaluate(measure);
+      await click(page, '구조 미리보기');
+      const preview = await page.getByTestId('v3-preview').evaluate(measure);
+      const output = await context.newPage(); await output.setViewportSize({ width, height: 1000 });
+      await output.route('**/*', route => route.abort());
+      await output.setContent('<!doctype html><html lang="ko"><body style="margin:0">' + phpDraft(gallery, expectedViewport(width)) + '</body></html>');
+      const php = await output.locator('[data-v3-surface]').evaluate(measure);
+      expect(canvas).toHaveLength(23);
+      for (const [index, node] of canvas.entries()) {
+        expect(node.hidden).toBeNull();
+        expect(node.role).toBe(index % 2 === 0 ? 'button' : 'img');
+        expect(node.label).toBe(index % 2 === 0 ? original.name : original.props.label);
+      }
+      for (const other of [preview, php]) for (const [index, node] of other.entries()) {
+        const { width: w, height, svgWidth, svgHeight, shapes, ...meaning } = node;
+        const { width: cw, height: ch, svgWidth: sw, svgHeight: sh, shapes: cs, ...canvasMeaning } = canvas[index];
+        // Editing controls belong to Puck. Authored semantics remain identical
+        // between the non-interactive React preview and PHP output.
+        expect(meaning).toEqual({ ...canvasMeaning, role: index % 2 === 0 ? null : 'img',
+          label: index % 2 === 0 ? null : original.props.label, hidden: index % 2 === 0 ? 'true' : null });
+        for (const delta of [w - cw, height - ch, svgWidth - sw, svgHeight - sh]) expect(Math.abs(delta)).toBeLessThanOrEqual(1);
+        expect(shapes).toHaveLength(cs.length);
+        for (const [n, shape] of shapes.entries()) {
+          expect([shape.tag, shape.fill]).toEqual([cs[n].tag, cs[n].fill]);
+          for (const key of ['length', 'x', 'y', 'width', 'height'] as const) expect(Math.abs(shape[key] - cs[n][key])).toBeLessThanOrEqual(0.01);
+        }
+      }
+      expect(canvas.every(node => node.width === (width === 360 ? 20 : 48) && node.svgWidth === node.width && node.svgHeight === node.height)).toBe(true);
+      expect(await read(page)).toEqual(gallery);
+      await info.attach('common-icons-' + width, { contentType: 'application/json', body: JSON.stringify({ canvas, preview, php }) });
+      await page.screenshot({ path: info.outputPath('common-icons-preview-' + width + '.png'), fullPage: true });
+      await output.screenshot({ path: info.outputPath('common-icons-php-' + width + '.png'), fullPage: true });
+      await output.close();
+    }
+    await open(page, saved, true, []); await layer(page, id).click();
+    await expect(page.getByLabel('아이콘 종류', { exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: '아이콘 적용', exact: true })).toBeDisabled();
+    expect(await read(page)).toEqual(saved); expect(errors).toEqual([]);
+  });
   test('v3 empty catalog builds an interactive composition from primitive insertions', async ({ page }, info) => {
     await open(page, undefined, false, []);
     const add = async (label: string, parent = 'root') => {

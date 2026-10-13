@@ -1,6 +1,6 @@
 # 편집기 개발 진척
 
-원장 갱신: 2026-10-13 · 기준 SHA: `df2aeedbbe016f30999ebeec128757329dd18530`
+원장 갱신: 2026-10-14 · 기준 SHA: `df2aeedbbe016f30999ebeec128757329dd18530`
 
 이 계획의 작업 진척이며 전체 제품 완성률이 아닙니다. 문서 검사와 제품 검증은 다릅니다. 이 명령은 배포를 실행하지 않습니다.
 
@@ -38,12 +38,22 @@
 | 세부 편집 | IP4 · 정밀 Inspector와 자동 배치 | 완료 | IP3 | ip4-richtext-race-20261012 | 구현 `2a2596997a886c19ffa8f752d08f7f43f95c2d94`<br>통합 `9118103d91f2c5674f555e81667b260ec9aa4cb6`<br>필수 증거 3/3<br>[IND-04/unit](<../audits/2026-10-12-ip4-precision-inspector.md>) · [IND-04/browser](<../audits/2026-10-12-ip4-precision-inspector.md>) · [IND-04/parity](<../audits/2026-10-12-ip4-precision-inspector.md>) |
 | 세부 편집 | IP5 · 핸들과 다중 선택 작업면 | 완료 | IP4 | ip5-canvas-ui-20261012 | 구현 `aff9225883b330777807804b4177e16e2b3fcd13`<br>통합 `c58a1e83ba0003015cd63eccdba32a0d063332b2`<br>필수 증거 3/3<br>[IND-05/unit](<../audits/2026-10-12-ip5-canvas-interactions.md>) · [IND-05/browser](<../audits/2026-10-12-ip5-canvas-interactions.md>) · [IND-05/accessibility](<../audits/2026-10-12-ip5-canvas-interactions.md>) |
 | 세부 편집 | IP6 · 반응형 상세 편집 | 완료 | IP5 | ip6-responsive-editor-20261012 | 구현 `b23d204f8183c971b5b093e5736bb30b5da36630`<br>통합 `29f80fdab86058ce2683343e5ff6e056efca1c27`<br>필수 증거 3/3<br>[IND-06/contract](<../audits/2026-10-12-ip6-responsive-editing.md>) · [IND-06/browser](<../audits/2026-10-12-ip6-responsive-editing.md>) · [IND-06/parity](<../audits/2026-10-12-ip6-responsive-editing.md>) |
-| 전체 연결과 수용 | IP7 · 내장 구성 템플릿과 공통영역 | 진행 | IP6 | integration-ip7-20261012 | 미완료 |
-| 전체 연결과 수용 | IP8 · 미디어와 재사용 구성 | 계획 | IP7 | 미배정 | 미완료 |
-| 전체 연결과 수용 | IP9 · 저장 복구와 공개 출력 일치 | 계획 | IP8 | 미배정 | 미완료 |
+| 전체 연결과 수용 | IP7 · 내장 구성 템플릿과 공통영역 | 차단 | IP6 | integration-ip7-20261012 | 소스 `288d76ad649583680030f1d9275ee64601084760`<br>통합 `19ad920c59a8ee609077cdbb0a0016629b513d4a`<br>수용 미완료·재감사 인계 |
+| 전체 연결과 수용 | IP8 · 미디어와 재사용 구성 | 진행 | IP7 | editor-final-handoff-20261014 | 소스 `54b3f3e77402de34cca4401b9c1393555a92ec82`<br>통합 `fc752e9180f4846eed3572b602c1ccc20c9ee539`<br>수용 미완료·재감사 인계 |
+| 전체 연결과 수용 | IP9 · 저장 복구와 공개 출력 일치 | 진행 | IP8 | editor-final-handoff-20261014 | 소스 `a570d746f178f995700bf8d65ed94506383183c5`<br>통합 `728e0e1fc800dfa27ab9277d43debb5e8fdf5c51`<br>수용 미완료·재감사 인계 |
 | 전체 연결과 수용 | IP10 · 독립성 호환성과 제품 수용 | 계획 | IP9 | 미배정 | 미완료 |
 
-다음 진행 가능: IP7
+다음 진행 가능: 없음
+
+- 차단 IP7: 동적 데이터 연결 DATA02의 PHPStan ID 인덱스 타입 문제가 한 번 보완 후 재발했습니다. e0c34b2e81317284a2d455c350a1635879e73fad를 실패 보존하고 추가 수정/검사하지 않습니다. 기존 문서 처리는 별도 프로세스입니다.
+
+## 구현과 수용을 분리한 인계
+
+아래 소스/통합 기록은 제품 수용 완료 수에 합산하지 않습니다.
+
+- IP7: 공통 요소/시작 구성 68개/새 Header·Footer/문의·실행 컨트롤을 부분 구현·통합했습니다. 49 block/99 preset capability 표에서 전용 시작 데이터 미제공과 동적 데이터 실패를 구분합니다. 동적 후보는 e0c34b2e81317284a2d455c350a1635879e73fad로 동결했습니다. docs/audits/2026-10-14-editor-implementation-handoff.md에 실패·추가 감사 필요성을 인계하며 기존 문서 이행은 별도 프로세스입니다. 전체 완료가 아닙니다.
+- IP8: 미디어 업로드/재사용/교체/alt/fit/초점, 빈 문서 첫 이미지 삽입, 사용자 구성 저장/검색/재삽입을 소스 구현·통합했습니다. 기존 단일 Undo/ID/참조/자산 경로를 사용하고 파일을 삭제하지 않습니다. 추가 브라우저·권한·지연 응답 제품 수용은 실행하지 않고 docs/audits/2026-10-14-editor-implementation-handoff.md로 인계합니다. 수용 완료가 아닙니다.
+- IP9: 새 v3 페이지와 새 Site Part v2 리비전의 명시 초안 복원 및 문서함 진입을 소스 구현·통합했습니다. 기존 문서 전환은 실행하지 않았습니다. 최종 통합본의 CAS/지연 응답/발행 유지/다른 영역 Undo/세 출력 1px 비교는 실행하지 않고 docs/audits/2026-10-14-editor-implementation-handoff.md로 인계합니다. 수용 완료가 아닙니다.
 
 조회: `make editor-status` · 정합성 검사: `make editor-plan-check`
 

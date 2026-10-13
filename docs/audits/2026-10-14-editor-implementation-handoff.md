@@ -1,0 +1,75 @@
+# 편집 구현 종료·실패·독립 재감사 인계
+
+2026-10-14 · 제품 수용 미완료 · 운영 미배포
+
+## 판정
+
+이번 제한된 구현 실행을 종료하고 통합된 결과와 실패 후보를 인계합니다. **전체 정밀 편집 기능 완료라고 선언하지 않습니다.** IP8 미디어·사용자 구성, IP9 새 문서/새 Site Part 리비전 복원은 소스 구현·통합했습니다. IP7의 공통 컨트롤은 통합했으나 동적 게시글/상품 연결 후보는 동일 문제의 허용된 보완 후 재발하여 실패로 보존했습니다.
+
+기존 v1/v2·기존 Site Part 문서 전환/처리는 실행하지 않았습니다. 기존 변환 도우미 제출 2건은 별도 프로세스로 분리 보존했습니다. 새로운 E2E/UI·UX/접근성/성능/전체 제품 감사는 추가 실행하지 않았습니다. 검사를 생략한 사실을 성공으로 기록하지 않습니다.
+
+## 실제 통합 범위
+
+| 기능 | 제출 SHA | 통합 SHA | 범위/검증 경계 |
+|---|---|---|---|
+| 구현 인계와 수용 분리 | 9e8fbfe12e2f3c50d05190357221a6ded2814f21 | da1ef5aabcf77151ecaa556ec539b98af22a2b68 | runtime/downstream은 deferred, acceptance=false; 릴리스 사용 금지 |
+| 기존 공통 문의 관련 제출 12건 | 각 task 원장 | a84f371a07ae2878cb826cd916ee5e704ee11805 | 새 문의 연결·공통 입력/라벨과 5개 시작 문서; 추가 실제 제출 검사는 인계 |
+| 이미지·미디어 | e4958b21cd737227c16214c2c38b31d45e990972 | e1acc6d4358a83bd7f2644114064dc1c1bdf1005 | 목록/업로드/교체/alt/fit/초점, atomic 자산+노드 명령 |
+| 사용자 구성 라이브러리 | d2cd5435df4caa93973b0769898fa3560fba82cb | f8250116b088ea5e2bbdb9edd5b9316f371574d0 | 선택 저장/검색/새 ID 재삽입/삭제; 기존 사용자별 저장소 재사용 |
+| 새 페이지 리비전·문서함 | ed07208920f69b3a82b46c3675937d4542a6bbe4 | 3c02566748a0e57877017ac7a14f3ae9f1311acf | v3만 명시 새 초안 복원, CAS/마지막 발행본 보존, 정밀 화면 진입 |
+| 빈 페이지 첫 이미지 | 54b3f3e77402de34cca4401b9c1393555a92ec82 | fc752e9180f4846eed3572b602c1ccc20c9ee539 | 주소/목록/업로드로 첫 자산+이미지 삽입, 한 Undo |
+| G7 고정 실행 컨트롤 | 288d76ad649583680030f1d9275ee64601084760 | 19ad920c59a8ee609077cdbb0a0016629b513d4a | 공통 컨테이너의 검색/계정/알림/장바구니/화면/언어/통화; 인증 실행·live DOM 외부 소유 |
+| 새 Header·Footer 리비전 | a570d746f178f995700bf8d65ed94506383183c5 | 728e0e1fc800dfa27ab9277d43debb5e8fdf5c51 | 기존 revision read/CAS save 재사용, 복원 대상만 새 세션 |
+| 실패·별도 프로세스 보존 | b3d5be0abf217acd858674b4b5f788bd8ec63257 | 9b1298887a8ae8a787397dd738c00b75ac82b3cb | 실패/보류 SHA·branch·worktree 보존; 성공/릴리스 기준 유지 |
+
+새 구성마다 편집기를 등록하지 않습니다. 기본 11종 요소·typed 스타일·공통 명령·Puck 이력을 재사용합니다. 시작 구성은 버전이 있는 문서 데이터이며 사용자 구성도 같은 paste 경로입니다. 과거 블록별 도우미를 현재 정밀 편집기 번들에 연결하지 않습니다.
+
+[IP8 미디어](2026-10-13-ip8-media-implementation.md), [첫 이미지](2026-10-13-ip8-empty-image-insert.md), [사용자 구성](2026-10-13-ip8-user-compositions-implementation.md), [새 페이지 복원](2026-10-13-ip9-revision-recovery-implementation.md), [Site Part 복원](2026-10-13-ip9-site-part-recovery-implementation.md), [고정 컨트롤](2026-10-13-ip7-system-controls-implementation.md)의 소스/범위를 확인합니다. 이 기록은 기능별 추가 제품 수용 증거가 아닙니다.
+
+## 실패 원장과 제한
+
+| ID | 관찰·원인 | 한 번 보완한 내용 | 최종 상태/영향 |
+|---|---|---|---|
+| ENV01 | 새 worktree의 postcss/Node 의존성 부재 | 동일 lock의 기존 node_modules 연결 | 해결, 제품 소스/버전 변경 없음 |
+| COMP01 | API 계층에서 schema JSON 직접 import, 구조 gate 거부 | 기존 도메인 freshId 검증 재사용 | 해결 1/1; 구성 제출·통합 성공, 제품 수용 미실행 |
+| MEDIA02 | 빈 문서는 자산이 없어 이미지 Inspector 진입 불가 | 공통 atomic image-insert와 삽입 화면 | 해결 1/1; 별도 제출·통합 성공 |
+| SYSPLAN01 | 공유 schema/policy 변경의 명시 scope 플래그 누락 | FULL=1 분류 명시, IMPLEMENTATION=1 유지 | 해결, 제품 재구현 아님; runtime/full-product 미실행 |
+| ENV02 | Local 통합을 Node 24 PATH 없이 실행하여 localStorage 6건 실패 | 승인된 Node 24 PATH로 환경만 보완 | 해결; 실패/downstream만 처리, 성공 입력 재사용 |
+| DATA01 | 새 DataInspector JSX 닫기 괄호 오류로 기존 시험 수집 실패 | 괄호 한 곳 보완 | 해결 1/1, 해당 기존 unit 통과 |
+| DATA02 | DataBindings ID 인덱스의 by-ref 타입 계약과 PHPStan 추론 불일치 | 정확한 param-out 선언 한 번 보완 | **동일 인덱스 문제가 paramOut.type으로 재발: 실패 확정, 추가 수정/검사 금지** |
+| INT01 | 이전 batch의 270건 이후 후속 실행을 사용자 지시에 따라 중단, Git 후보 원복 영향 | 공식 transaction/EXIT 복구 | 의도된 중단, 이후 폼 오류·미실행을 제품 성공/실패로 확대하지 않음 |
+
+DATA02 후보: **e0c34b2e81317284a2d455c350a1635879e73fad**, branch `codex/editor-dynamic-elements-20261013`, worktree `/Users/neojins/.codex/worktrees/editor-implementation-handoff/g7-page-builder`. 실패 상태 `failed-implementation`으로 보존했으며 **main에 통합하지 않았습니다**. 첫 실패 `DataBindings.php:63 parameterByRef.type`, 보완 뒤 `:65 paramOut.type`. 관련 v3 unit/TS/구조 검사는 성공했지만 task 제출은 PHPStan에서 실패했습니다. 테스트/타입 기준은 완화하지 않았습니다.
+
+최종 실패 보고서: `.git/g7pb-coordination-v1/python-checks/implementation-handoffs/editor-dynamic-elements-20261013/submission-8ad583bbdc524df291cadfb9d18df384.json`. 최초 타입 실패는 `submission-8a8990c888514cb486836e38ef0f5190.json`, JSX 실패는 `submission-947befc4da294a8ca7f59c6e3f9e44f4.json`입니다. 해당 실패 문맥 문서는 후보 커밋의 `docs/audits/2026-10-13-ip7-dynamic-elements-implementation.md`에 있습니다.
+
+미통합 영향: 게시글 목록·아카이브·상세 및 상품 목록·쇼케이스·상세 **6종의 일반 원형 데이터 연결은 이번 최종 빌드에 없습니다.** 기존 모드의 고정 데이터 위젯은 보존됩니다. 아카이브 검색/필터/페이지 실행 컨트롤 동등성도 완료하지 않았습니다. 이를 공통 편집기가 지원한다는 이유만으로 숨기거나 완료로 계산하지 않습니다.
+
+## 재감사 필요성 및 순서 (이번에 실행하지 않음)
+
+1. DATA02 보존 후보를 읽기 전용으로 먼저 감사합니다. 실제 UUID/key 인덱스 반환·참조 타입과 오류 위치를 확인하고 새 소유 task에서 복구하십시오. 이번 구현 중 같은 실패를 재수정하지 않습니다. 그 뒤 동적 6종의 필드/참조/CAS/권한/빈·실패 응답/반복 ID 및 페이지·필터 UX를 완료합니다.
+2. 통합본의 빈 페이지 → 첫 이미지/제목/본문/버튼 → 중첩/레이어/치수/간격/다중 선택/모바일 override → Undo/Redo → 저장/재열기/미리보기/발행을 감사합니다. 기존 270건 성공은 새로운 미디어/구성/복원/컨트롤의 최종 수용을 대신하지 않습니다.
+3. 미디어 업로드/취소/지연 응답/선택·문서·잠금·readonly 전환과 자산 중복/파일 보존, 사용자 구성의 사용자별 권한/저장/검색/새 ID·내부 참조/독립 사본/삭제를 감사합니다.
+4. 새 페이지와 새 Header/Footer의 revision 조회·명시 복원·409 충돌·문맥 전환·다른 영역 미저장 입력/Undo·마지막 발행본·쌍 발행·사이트 적용을 감사합니다. 기존 버전 변환과 혼합하지 않습니다.
+5. G7 실행 컨트롤의 editor/draft/public 표시·폰트/크기 전달·capability 부재·인증·회원/비회원·키보드/포커스 동작을 감사합니다. editor/구조 preview는 inert 표시이며 실제 서비스 내부를 편집하는 것이 아닙니다.
+6. [전체 capability 표](2026-10-14-editor-capability-map.md)의 전용 시작 데이터 미제공과 보호된 외부 iframe/runtime을 확인합니다. 블록 이름별 코드 추가 없이 새 구성 데이터를 넣고 같은 편집기를 사용하는지 검사합니다.
+7. 동일 font/image 준비 조건의 360/768/1280 및 경계 폭에서 캔버스/서버 preview/public의 구조·줄바꿈·computed style·bounding box를 비교합니다. 1 CSS px 기준·키보드/IME·넘침·가림·대비·100/500노드 예산은 유지합니다.
+8. G7 없는 대체 포트와 실제 지원 G7/테마 조합을 구분하여 독립성/업데이트 회귀를 판정합니다. 운영 배포는 별도 요청·릴리스 검증 이후에만 합니다.
+
+이는 **필요성 인계**이며 새 검사 정의/실행 지시나 성공 증거가 아닙니다. 감사가 검증 지옥으로 변하지 않도록 정확 실패/관련 입력 범위를 먼저 확정하고 성공 입력은 재사용해야 합니다.
+
+## 기존 문서 독립 프로세스
+
+- 이번에 실제 사용자 문서/기존 Site Part를 전환·삭제하지 않았습니다.
+- `ip7-contact-composition-20261012`: 7cb765ca03386b8d0e62b194e847f97f6ae123ea.
+- `ip7-richtext-composition-20261012`: 92d332e213039d8ae816bb1e39d3575583cc67a9.
+- 두 제출은 `deferred-submitted` 보존이며 기존 branch/worktree를 유지합니다. 현재 정밀 편집기 구현/빌드에 merge하지 않았습니다. 이후 문서 처리의 설계·백업·미지원 진단·원본 revision·마지막 발행본·명시 승인 범위를 독립적으로 정해야 합니다.
+- 작업 도중 비차단 임시파일/증거/dirty worktree를 삭제하지 않았습니다. 불필요 정리는 요청 결과의 차단 선행조건으로 만들지 않았습니다.
+
+## 빌드 및 검증 경계
+
+최종 제품 소스 기준 `728e0e1fc800dfa27ab9277d43debb5e8fdf5c51`에서 runtime lease 아래 `make dev-build-assets TASK=integration-ip7-20261012`를 한 번 실행하여 production build에 성공했습니다. 빌드 fingerprint: `4d7c98043dbd3e58da903d3dda9b1a4597e77236e709584021eedfb56297925e`. 이후 변경은 구현 보존 하네스·정책/진척/보고 기록이며 브라우저 제품 소스를 변경하지 않습니다.
+
+선택된 기존 non-runtime unit/PHP/type/structure 및 관련 하네스 검사는 공식 task 제출/통합에서 확인하거나 같은 입력 성공을 재사용했습니다. 브라우저·runtime·full-product gate는 `deferred`, phase별 보고서는 `.git/g7pb-coordination-v1/python-checks/implementation-handoffs`에 있습니다. 실패 후보는 추가 빌드에 포함하지 않았습니다.
+
+공식 통합 확인은 `IMPLEMENTATION=1` 인계 모드로 종료하고 `NO_RELEASE=1`로 lease를 종료합니다. 이는 릴리스 검증 SHA 승격·운영 배포·최종 UX 합격을 의미하지 않습니다. UI/UX가 실제 의도대로 완성됐다는 결론은 이번에 내리지 않습니다.

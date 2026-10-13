@@ -262,7 +262,7 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
   const viewer = await context.newPage(), preview = await context.newPage();
   // Verify our actual iframe/hydration/CSP/geometry, not a remote service's availability.
   await context.route(/^https:\/\/(www\.youtube-nocookie\.com|player\.vimeo\.com|www\.openstreetmap\.org|www\.google\.com)\//,
-    route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><body style="margin:0;background:#e2e8f0;font:16px sans-serif">외부 제공자 검증 대역</body>' }));
+    route => route.fulfill({ contentType: 'text/html; charset=utf-8', body: '<!doctype html><html lang="ko"><meta charset="utf-8"><body style="margin:0;background:#e2e8f0;font:16px sans-serif">외부 제공자 검증 대역</body></html>' }));
   const length = async (label: string, value: number) => {
     const field = page.getByLabel(label + ' 지정', { exact: true }), details = field.locator('xpath=ancestor::details');
     if (await details.getAttribute('open') === null) await details.locator('summary').click();
@@ -331,6 +331,7 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
         await target.setViewportSize({ width, height: 1000 }); expect((await target.goto(url))?.ok()).toBe(true);
         const surface = target.locator('[data-g7pb-v3-public]'); await expect(surface.locator('iframe')).toHaveCount(4);
         await expect(surface.locator('[data-g7pb-embed]')).toHaveCount(0);
+        for (const id of identities) await expect(target.frameLocator('[data-g7pb-v3-public] [data-v3-node="' + id + '"] iframe').locator('body')).toHaveText('외부 제공자 검증 대역');
         const actual = await sample(surface);
         expect(actual.map(({ size: _size, ...node }) => node)).toEqual(expected.map(({ size: _size, ...node }) => node));
         for (const [index, node] of actual.entries()) for (let axis = 0; axis < 4; axis++) expect(Math.abs(node.size[axis] - expected[index].size[axis])).toBeLessThanOrEqual(1);

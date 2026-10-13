@@ -14,3 +14,13 @@
 ## 통합 경계
 
 `ip7-common-embed-element-20261013`의 문서 계약·소스와 `ip7-embed-product-proof-20261013`의 검사·원장을 서로 겹치지 않는 task로 제출한다. 공유 문서 계약과 공개 runtime 변경이므로 공식 batch 통합에 `FULL=1`이 필요하다. IP7은 진행 중이며 동적 데이터·폼·시스템 연결과 명시적 기존 문서 이행, IP8~IP10은 별도 남은 요구다.
+
+## 첫 통합의 실제 결과와 보완
+
+설치형 30개가 실패·skipped·flaky 없이 통과했다. 결과는 `output/playwright/gates/integration-ip7-20261012/f3535a63bda007d1599490430e516ad17cf1f7b8e50583696d45e50bdb549095/b94ee3b8a86e4f909a54c7455f976867/results.json`이다. 그러나 독립 편집기 번들의 gzip 512,084바이트가 승인 상한 512,000을 넘어서 beforeAll에서 실패했고 264개는 실행되지 않았다. 실패 기록은 `output/playwright/gates/integration-ip7-20261012/64144a895daeaa4f5e97d62343d284a72104a8361abd976a04d3f88b83321120/fa84e8c18df541de91a0093dddb21c3d/results.json`이다. Local은 기준 SHA로 원복됐고 `jwsoft-business01` 0.3.1 활성·`sirsoft-basic` 비활성을 확인했다.
+
+Node 24.19.0은 같지만 macOS zlib는 1.2.12, Docker는 1.3.2.1-motley-3246f1b여서 macOS의 509,856바이트 측정만으로 통합 환경의 합격을 보장하지 못했다. Inspector의 반복 옵션/좌표 코드를 공통 입력 컨트롤로 정리하고 관련 테스트는 통과했지만 별도 Linux 사전 측정도 512,060바이트로 종전 상한을 넘었다.
+
+이후 사용자가 편집기 JS를 측정·경고로 전환하도록 명시 승인했다. 독립 시험도 실제 JS의 raw/gzip을 기록하며 종전 512,000바이트 초과는 경고만 남긴다. 비어 있지 않은 실제 번들, 금지 런타임 의존성 부재, 폰트/자산 무결성, 기존 성능·동작·출력 비교는 유지한다. 별도 `editor-js-size-observability-20261013`의 빌드 검사·정책과 함께 통합한다. 수정 후 실제 재실행 결과는 아직 확인 전이다.
+
+모바일 template 공개 PNG의 네 프레임은 렌더됐지만 시험 대역에 charset을 빠뜨려 한글이 깨졌다. 제공자 시험 응답에 UTF-8을 명시하고 공개/미리보기의 네 프레임 본문이 실제 로드됐는지도 검사한다. 제품 문자 인코딩 문제로 확대하거나 이 이미지로 UI 최종 승인을 주장하지 않는다.

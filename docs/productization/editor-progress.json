@@ -677,16 +677,16 @@
       "id": "IP7",
       "phase": "product",
       "title": "내장 구성 템플릿과 공통영역",
-      "status": "blocked",
+      "status": "in_progress",
       "depends_on": [
         "IP6"
       ],
       "acceptance_ids": [
         "IND-07"
       ],
-      "owner_task": "integration-ip7-20261012",
-      "implementation_commit": "4c13071a44b65974955d0e7da2bfc2eff75c4650",
-      "integrated_commit": "e235b399abc8219f2772d3dc45e6a2934c400ef4",
+      "owner_task": "editor-data02-result-20261014",
+      "implementation_commit": "3cb8a20d0e53a17b60392e5924f62d1b6b5fb236",
+      "integrated_commit": "c8baed6cc4fbd2df1a1b735b916aa1665ff0cb9b",
       "evidence": [
         {
           "acceptance_id": "IND-07",
@@ -827,9 +827,16 @@
           "commit": "a7f9d6734bbdfc1510c6f20813f052a61a33d0b8",
           "result": "pass",
           "path": "docs/audits/2026-10-13-ip7-embed-product-proof.md"
+        },
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-common-data-source-reaudit",
+          "commit": "3cb8a20d0e53a17b60392e5924f62d1b6b5fb236",
+          "result": "pass",
+          "path": "docs/audits/2026-10-14-data02-reaudit.md"
         }
       ],
-      "blocked_reason": "동적 데이터 연결 DATA02의 PHPStan ID 인덱스 타입 문제가 한 번 보완 후 재발했습니다. e0c34b2e81317284a2d455c350a1635879e73fad를 실패 보존하고 추가 수정/검사하지 않습니다. 기존 문서 처리는 별도 프로세스입니다.",
+      "blocked_reason": null,
       "scope": [
         "resources/js/blocks",
         "resources/js/editor",
@@ -839,7 +846,7 @@
         "src/Application/Compilation",
         "tests/E2E"
       ],
-      "completion": "공통 요소/시작 구성 85개/새 Header·Footer/문의·실행 컨트롤을 부분 구현·통합했습니다. 49 block/99 preset capability 표에서 누락 시작 데이터 17개 보완과 동적 데이터 실패를 구분합니다. 동적 후보는 e0c34b2e81317284a2d455c350a1635879e73fad로 동결했습니다. docs/audits/2026-10-14-editor-implementation-handoff.md에 실패·추가 감사 필요성을 인계하며 기존 문서 이행은 별도 프로세스입니다. 전체 완료가 아닙니다. 추가 시작 데이터 구현은 docs/audits/2026-10-14-editor-starter-data.md에 기록하며 새 제품 수용은 미실행입니다."
+      "completion": "공통 요소/시작 구성 85개/새 Header·Footer/문의·실행 컨트롤과 동적 6종의 일반 원형 연결을 소스 구현·통합했습니다. DATA02는 별도 재감사와 추가 수정 1회 명시 승인 후 문자열 ID 검증으로 해소했고 PHPStan·관련 기존 검사는 통과했습니다. 원래 실패 e0c34b2e81317284a2d455c350a1635879e73fad는 보존합니다. 동적 전용 시작 구성·검색/필터/페이지 실행 UI는 아직 없으며 실제 데이터/출력/UX 수용은 미실행입니다. docs/audits/2026-10-14-data02-reaudit.md와 최종 인계에 소스·검사 경계·잔여 구현을 구분합니다. 기존 문서 이행은 별도 프로세스이며 전체 완료가 아닙니다."
     },
     {
       "id": "IP8",

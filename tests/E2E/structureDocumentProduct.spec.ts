@@ -263,6 +263,7 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
   const token = await authenticateEditorInteractionAdmin(context), api = await editorInteractionApi(token);
   const slug = `g7pb-form-${shell}-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
   let ownedId: string | undefined, submissionId: string | undefined;
+  const ownedSubmissions = new Set<string>();
   const click = (name: string) => page.getByRole('button', { name, exact: true }).click();
   const visitors = await browser.newContext({ ...devices['Desktop Chrome'], ignoreHTTPSErrors: true, locale: 'ko-KR' });
   const viewer = await visitors.newPage(), preview = await context.newPage();
@@ -377,6 +378,7 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
     await form.locator('button[type="submit"]').click(); const receipt = await posted;
     expect((await session).status()).toBe(204);
     expect(receipt.status(), await receipt.text()).toBe(201); submissionId = (await receipt.json()).data.submission_id;
+    if (submissionId) ownedSubmissions.add(submissionId);
     expect(receipt.request().headers()['x-xsrf-token'] || receipt.request().headers()['x-csrf-token']).toBeTruthy();
     await expect(form.locator('[data-g7pb-form-status]')).toHaveText('공통 요소 문의가 접수되었습니다.');
     await expect(form.getByLabel('이메일 <안내>', { exact: true })).toHaveValue('');
@@ -392,14 +394,25 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
         const headers: Record<string, string> = { Accept: 'application/json', 'Content-Type': 'application/json',
           'X-XSRF-TOKEN': decodeURIComponent(csrf.slice('XSRF-TOKEN='.length)) };
         const data = { block_instance_id: blockId, form_kind: 'quote', name: '검증', email: 'proof@example.invalid', message: '거부 검증', privacy: '1', started_at: Math.floor(Date.now() / 1000) - 5 };
-        const outcomes: number[] = [];
-        for (const change of [{ block_instance_id: crypto.randomUUID() }, { form_kind: 'inquiry' }, { privacy: '0' }, { website: 'bot' }, { started_at: Math.floor(Date.now() / 1000) }]) {
-          outcomes.push((await fetch(action, { method: 'POST', credentials: 'same-origin', headers, body: JSON.stringify({ ...data, ...change }) })).status);
-        }
+        const outcomes: number[] = [], created: string[] = [];
+        const send = async (change: Record<string, string | number>) => {
+          const response = await fetch(action, { method: 'POST', credentials: 'same-origin', headers, body: JSON.stringify({ ...data, ...change }) });
+          outcomes.push(response.status);
+          // Even an unexpected success belongs to this test and must be archived.
+          if (response.ok) {
+            const payload = await response.json();
+            if (typeof payload.data?.submission_id === 'string') created.push(payload.data.submission_id);
+          }
+        };
+        const changes: Record<string, string | number>[] = [{ block_instance_id: crypto.randomUUID() }, { form_kind: 'inquiry' }, { privacy: '0' }, { website: 'bot' }];
+        for (const change of changes) await send(change);
+        // Capture immediately before this request, not before four network trips.
+        await send({ started_at: Math.floor(Date.now() / 1000) });
         outcomes.push((await fetch(action, { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify(data) })).status);
-        return outcomes;
+        return { outcomes, created };
       }, { action: new URL('/pages/' + slug + '/inquiries', publicUrl).href, blockId: host.instance_id });
-      expect(rejected).toEqual([404, 404, 422, 422, 422, 419]);
+      rejected.created.forEach(id => ownedSubmissions.add(id));
+      expect(rejected.outcomes).toEqual([404, 404, 422, 422, 422, 419]);
       await info.attach('common-form-request-rejections', { body: JSON.stringify(rejected), contentType: 'application/json' });
     }
     await page.goto('/modules/jiwonpapa-page_builder/admin'); await click('문의함');
@@ -415,8 +428,8 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes co
     await info.attach('common-form-visitor-trace', { path: tracePath, contentType: 'application/zip' });
     await visitors.close(); await preview.close();
     try {
-      if (submissionId) {
-        const archived = await api.patch('/api/modules/jiwonpapa-page_builder/admin/form-submissions/' + submissionId, { data: { status: 'archived' } });
+      for (const id of ownedSubmissions) {
+        const archived = await api.patch('/api/modules/jiwonpapa-page_builder/admin/form-submissions/' + id, { data: { status: 'archived' } });
         expect(archived.ok(), await archived.text()).toBe(true);
       }
       if (ownedId) {

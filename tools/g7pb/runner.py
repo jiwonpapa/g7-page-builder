@@ -94,7 +94,7 @@ def restore_site_part_fixture(root, task, capability, executor, environment):
     return executor(Runtime(root, "docker", task).command(selected, g7=True, timeout=105), cwd=root, env=environment, check=False, timeout=120)
 
 
-def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None, runtime_observer=None):
+def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None, runtime_observer=None, implementation=False):
     if task:
         task_id(task)
     if plan.unresolved:
@@ -112,7 +112,25 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None, ru
     receipts.mkdir(parents=True, exist_ok=True)
     proof = RuntimeProof(root, task, receipts, runtime_observer)
     results = []
+    def finish(code):
+        if implementation:
+            directory = receipts / "implementation-handoffs" / (task or "local")
+            directory.mkdir(parents=True, exist_ok=True)
+            report = directory / (plan.phase + "-" + uuid.uuid4().hex + ".json")
+            report.write_text(json.dumps({"mode": "implementation-handoff", "acceptance": False,
+                "authorization": "2026-10-13 direct user instruction: no verification expansion; reaudit report",
+                "task": task, "phase": plan.phase, "paths": plan.paths, "returncode": code,
+                "results": results, "reaudit_required": any(item["status"] == "deferred" for item in results)},
+                ensure_ascii=False, indent=2) + "\n")
+            print(f"IMPLEMENTATION_HANDOFF report={report}; acceptance=false", flush=True)
+        return code, results
     for gate in plan.gates:
+        deferred = {item["gate"] for item in results if item["status"] == "deferred"}
+        if implementation and (gate.runtime or gate.name == "full-product" or set(gate.depends_on) & deferred):
+            results.append({"gate": gate.name, "status": "deferred", "executions": 0,
+                "argv": gate.argv, "inputs": gate.inputs, "reason": "User-directed separate reaudit"})
+            print(f"REAUDIT_REQUIRED gate={gate.name}; implementation handoff, NOT acceptance", flush=True)
+            continue
         if gate.deferred:
             if plan.phase != "submission" or not gate.runtime:
                 raise ValueError(f"Only submission runtime gates may be deferred: {gate.name}")
@@ -239,7 +257,7 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None, ru
         results.append(record)
         if returncode:
             print(f"FAILED gate={gate.name}; no retry or escalation", flush=True)
-            return returncode, results
+            return finish(returncode)
         if gate.reusable and not gate.runtime:
             fd, staged = tempfile.mkstemp(prefix="receipt-", dir=receipts)
             try:
@@ -252,4 +270,4 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None, ru
         print(f"PASSED gate={gate.name}", flush=True)
     if not plan.gates:
         print("NO_CHECKS reason=no-executable-input-change (not product acceptance)", flush=True)
-    return 0, results
+    return finish(0)

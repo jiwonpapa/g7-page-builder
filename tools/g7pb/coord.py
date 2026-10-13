@@ -141,7 +141,7 @@ class Coordinator:
 
     def quality(self, phase: str, base: str, *, task: str = "", head: str = "", areas: str = "",
                 profile: str = "scoped", full: bool = False, scoped_hook: bool = False,
-                submitted: str = "", tree: str = "", plan=None) -> None:
+                submitted: str = "", tree: str = "", plan=None, implementation: bool = False) -> None:
         if self.testing:
             if phase == "submission":
                 self.fault("FAIL_SUBMISSION_PROFILE")
@@ -166,6 +166,8 @@ class Coordinator:
                 command += [option, value]
         if full:
             command.append("--full")
+        if implementation:
+            command.append("--implementation")
         if plan is not None:
             from .plan_snapshot import save
             snapshot = self.git.root / ".runtime/harness/plans" / (task + ".json")
@@ -221,7 +223,8 @@ class Coordinator:
         require(not revised or self.git.head() == meta["submitted_sha"], "재제출 전 HEAD가 기존 submitted SHA와 일치해야 합니다.")
         before = self.git.head()
         owned_paths(self.git, meta)
-        self.quality("submission", meta["base_sha"], task=args.task, profile=meta["profile"], full=args.full)
+        self.quality("submission", meta["base_sha"], task=args.task, profile=meta["profile"], full=args.full,
+                     implementation=args.implementation)
         self.store.unchanged(meta)
         require(self.git.head() == before, "제출 검증 중 task branch HEAD가 변경되었습니다.")
         owned_paths(self.git, meta)
@@ -383,7 +386,8 @@ class Coordinator:
             candidate = self.git.text("write-tree")
             # A task's old base must not pull unrelated prior integrations into this gate.
             self.quality("integration", start, task=args.integration_task, areas=areas, profile=label,
-                         full=args.full, scoped_hook=args.command == "integrate-scoped", submitted=tasks[0]["submitted_sha"], tree=candidate)
+                         full=args.full, scoped_hook=args.command == "integrate-scoped", submitted=tasks[0]["submitted_sha"], tree=candidate,
+                         implementation=args.implementation)
             require(self.git.head() == start and self.git.text("write-tree") == candidate
                     and not self.git.text("diff", "--name-only"), "통합 검증 중 Local candidate가 변경되었습니다.")
             self.store.unchanged(owner)
@@ -424,6 +428,7 @@ class Coordinator:
         self.only_task(args.task)
         require(meta["verified_sha"], "integration-verify 기록이 없습니다.")
         require(meta["verified_sha"] == self.git.head(), "검증 이후 HEAD가 바뀌었습니다. integration-verify를 실행하십시오.")
+        require(meta["verified_mode"] != "implementation-handoff", "구현 인계는 제품 수용·릴리스 검증이 아닙니다. 별도 재감사가 필요합니다.")
         require(self.git.clean(), "릴리스 전 worktree가 깨끗해야 합니다.")
         note(f"RELEASE_OK task={args.task} sha={meta['verified_sha']} mode={meta['verified_mode'] or 'legacy-full'}")
         return meta
@@ -436,6 +441,8 @@ class Coordinator:
     def latest_verified(self, head: str) -> dict[str, str] | None:
         candidates = []
         for _, meta in self.store.entries() + self.store.entries(True):
+            if meta["verified_mode"] == "implementation-handoff":
+                continue
             sha = meta["verified_sha"]
             if not sha:
                 continue
@@ -466,14 +473,15 @@ class Coordinator:
             from .planner import build_plan
             plan = build_plan(self.git.root, paths, base=base or head, phase="verification", full=full)
             policy_full = plan.full
-        mode = "full" if policy_full else "scoped"
+        mode = "implementation-handoff" if args.implementation else "full" if policy_full else "scoped"
         if previous and not paths and not full:
-            mode = "reuse"
+            mode = "implementation-handoff" if args.implementation else "reuse"
             note(f"VERIFY_REUSED task={args.task} sha={head} source_mode={previous['verified_mode'] or 'full'}")
         else:
             reason = " trigger=explicit-full" if args.full else " reason=no-trusted-baseline" if previous is None else ""
             note(f"VERIFY_SELECTED task={args.task} mode={mode} base={base or 'none'} head={head} changed={len(paths) if previous else 'unknown'}{reason}")
-            self.quality("verification", base or head, task=args.task, head=head, areas=meta["areas"], full=full, plan=plan)
+            self.quality("verification", base or head, task=args.task, head=head, areas=meta["areas"], full=full, plan=plan,
+                         implementation=args.implementation)
         require(self.git.head() == head and self.git.clean(), "검증 중 통합 worktree가 변경되었습니다.")
         with self.store.mutex():
             self.store.unchanged(meta)
@@ -527,6 +535,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--base-ref", default="HEAD")
     result.add_argument("--history", action="store_true")
     result.add_argument("--full", action="store_true")
+    result.add_argument("--implementation", action="store_true")
     result.add_argument("--without-release", action="store_true")
     return result
 

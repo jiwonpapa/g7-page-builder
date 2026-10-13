@@ -22,6 +22,7 @@ def main(argv=None):
     parser.add_argument("--task", default="")
     parser.add_argument("--paths")
     parser.add_argument("--full", action="store_true")
+    parser.add_argument("--implementation", action="store_true", help="Defer runtime acceptance to a recorded reaudit handoff; never release acceptance")
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--save-plan", type=Path)
     parser.add_argument("--plan", type=Path)
@@ -40,7 +41,7 @@ def main(argv=None):
         return 2 if plan.unresolved else 0
     print(f"PLAN phase={args.phase} changed={len(paths)} gates={len(plan.gates)} full={plan.full}", flush=True)
     try:
-        return execute(root, plan, task=args.task)[0]
+        return execute(root, plan, task=args.task, implementation=args.implementation)[0]
     except (ValueError, OSError, subprocess.CalledProcessError) as error:
         print(f"g7pb: {error}", file=sys.stderr)
         return 2

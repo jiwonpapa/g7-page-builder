@@ -8,7 +8,7 @@ import { executeDocumentCommand } from '../../resources/js/documents/v3/designCo
 import { indexTree } from '../../resources/js/documents/v3/tree';
 
 const presets = manifest.presets.filter(preset => preset.block_id === 'form.inquiry-01');
-const forms = compositionChoices(documents.slice(63));
+const forms = compositionChoices(documents).filter(choice => [...indexTree(choice.source).values()].some(item => item.node.binding));
 const uuid = (n: number) => '30000000-0000-4000-8000-' + String(n).padStart(12, '0');
 
 it('maps every existing inquiry preset to a declarative document without editing the legacy catalog', () => {

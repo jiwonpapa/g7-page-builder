@@ -51,7 +51,7 @@
 
 아래 소스/통합 기록은 제품 수용 완료 수에 합산하지 않습니다.
 
-- IP7: 공통 요소/시작 구성 68개/새 Header·Footer/문의·실행 컨트롤을 부분 구현·통합했습니다. 49 block/99 preset capability 표에서 전용 시작 데이터 미제공과 동적 데이터 실패를 구분합니다. 동적 후보는 e0c34b2e81317284a2d455c350a1635879e73fad로 동결했습니다. docs/audits/2026-10-14-editor-implementation-handoff.md에 실패·추가 감사 필요성을 인계하며 기존 문서 이행은 별도 프로세스입니다. 전체 완료가 아닙니다.
+- IP7: 공통 요소/시작 구성 85개/새 Header·Footer/문의·실행 컨트롤을 부분 구현·통합했습니다. 49 block/99 preset capability 표에서 누락 시작 데이터 17개 보완과 동적 데이터 실패를 구분합니다. 동적 후보는 e0c34b2e81317284a2d455c350a1635879e73fad로 동결했습니다. docs/audits/2026-10-14-editor-implementation-handoff.md에 실패·추가 감사 필요성을 인계하며 기존 문서 이행은 별도 프로세스입니다. 전체 완료가 아닙니다. 추가 시작 데이터 구현은 docs/audits/2026-10-14-editor-starter-data.md에 기록하며 새 제품 수용은 미실행입니다.
 - IP8: 미디어 업로드/재사용/교체/alt/fit/초점, 빈 문서 첫 이미지 삽입, 사용자 구성 저장/검색/재삽입을 소스 구현·통합했습니다. 기존 단일 Undo/ID/참조/자산 경로를 사용하고 파일을 삭제하지 않습니다. 추가 브라우저·권한·지연 응답 제품 수용은 실행하지 않고 docs/audits/2026-10-14-editor-implementation-handoff.md로 인계합니다. 수용 완료가 아닙니다.
 - IP9: 새 v3 페이지와 새 Site Part v2 리비전의 명시 초안 복원 및 문서함 진입을 소스 구현·통합했습니다. 기존 문서 전환은 실행하지 않았습니다. 최종 통합본의 CAS/지연 응답/발행 유지/다른 영역 Undo/세 출력 1px 비교는 실행하지 않고 docs/audits/2026-10-14-editor-implementation-handoff.md로 인계합니다. 수용 완료가 아닙니다.
 

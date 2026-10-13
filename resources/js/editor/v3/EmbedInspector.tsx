@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import type { EmbedSource, Node } from '../../documents/v3/types';
 import type { DesignCommand } from '../../documents/v3/designCommands';
-import { InputButton } from './TypedInput';
+import { InputButton, TypedInput } from './TypedInput';
+const zoomLevels = [12, 14, 16, 18] as const;
 
 /** Shared element settings; compositions add data, not another editor implementation. */
 export function EmbedInspector({ node, disabled, apply }: {
@@ -13,7 +14,7 @@ export function EmbedInspector({ node, disabled, apply }: {
   return <form aria-label="영상·지도 설정" onSubmit={event => {
     event.preventDefault(); if (disabled) return;
     try { apply({ kind: 'content', id: node.instance_id, props: draft }); setError(''); }
-    catch (value) { setError(value instanceof Error ? value.message : '영상·지도 설정을 확인해 주세요.'); }
+    catch (value) { setError(value instanceof Error ? value.message : '값을 확인해 주세요.'); }
   }}><fieldset disabled={disabled} style={{ border: 0, padding: '12px 0', margin: 0 }}>
     <label>임베드 설명<input aria-label="임베드 설명" value={draft.title} maxLength={300}
       onChange={event => setDraft({ ...draft, title: event.target.value })} /></label>
@@ -23,21 +24,20 @@ export function EmbedInspector({ node, disabled, apply }: {
       if (provider === 'youtube' || provider === 'vimeo') changeSource({ provider, video_id: '' });
       if (provider === 'google' || provider === 'openstreetmap') changeSource({ provider, latitude: 0, longitude: 0, zoom: 14 });
     }}>
-      <option value="none">미설정</option><option value="youtube">YouTube</option><option value="vimeo">Vimeo</option>
-      <option value="openstreetmap">OpenStreetMap</option><option value="google">Google 지도</option>
+      {Object.entries({ none: '미설정', youtube: 'YouTube', vimeo: 'Vimeo', openstreetmap: 'OpenStreetMap', google: 'Google 지도' })
+        .map(([value, label]) => <option key={value} value={value}>{label}</option>)}
     </select></label>
     {'video_id' in source && <label>영상 ID<input aria-label="영상 ID" value={source.video_id}
       onChange={event => changeSource({ ...source, video_id: event.target.value })} /></label>}
     {'latitude' in source && <>
-      {(['latitude', 'longitude'] as const).map(key => <label key={key}>{key === 'latitude' ? '위도' : '경도'}<input
-        aria-label={key === 'latitude' ? '위도' : '경도'} type="number" step="0.000001" value={Number.isFinite(source[key]) ? source[key] : ''}
-        min={key === 'latitude' ? -90 : -180} max={key === 'latitude' ? 90 : 180}
-        onChange={event => changeSource({ ...source, [key]: event.target.valueAsNumber })} /></label>)}
+      {([['latitude', '위도', 90], ['longitude', '경도', 180]] as const).map(([key, label, bound]) => <TypedInput key={key} label={label}
+        rule={{ type: 'number', multipleOf: 0.000001, minimum: -bound, maximum: bound }} value={Number.isFinite(source[key]) ? source[key] : ''}
+        change={value => changeSource({ ...source, [key]: typeof value === 'number' ? value : NaN })} />)}
       <label>지도 확대<select aria-label="지도 확대" value={source.zoom} onChange={event => {
-        const zoom = Number(event.target.value); if (zoom === 12 || zoom === 14 || zoom === 16 || zoom === 18) changeSource({ ...source, zoom });
-      }}>{[12, 14, 16, 18].map(zoom => <option key={zoom} value={zoom}>{zoom}</option>)}</select></label>
+        const zoom = zoomLevels.find(value => value === Number(event.target.value)); if (zoom !== undefined) changeSource({ ...source, zoom });
+      }}>{zoomLevels.map(zoom => <option key={zoom} value={zoom}>{zoom}</option>)}</select></label>
     </>}
-    <p>캔버스에서는 요소의 위치와 크기를 편집합니다. 외부 콘텐츠 조작은 미리보기에서 확인합니다.</p>
+    <p>영상·지도는 미리보기에서 조작합니다.</p>
     <InputButton type="submit">임베드 적용</InputButton>
     <InputButton onClick={() => { setDraft(node.props); setError(''); }}>입력 취소</InputButton>
   </fieldset>{error && <p role="alert">{error}</p>}</form>;

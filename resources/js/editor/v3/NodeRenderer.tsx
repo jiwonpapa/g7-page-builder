@@ -6,7 +6,7 @@ import { behaviorPresentation, type BehaviorAttributes } from '../../documents/v
 import { reactStyle } from './presentationReact';
 import type { Viewport } from '../../documents/v3/validate';
 import { CatalogIcon } from '../catalogIcon';
-import { embedTarget, EMBED_FRAME_STYLE } from '../../documents/v3/embeds';
+import { embedTarget } from '../../documents/v3/embeds';
 
 function Runs({ runs, document, editing }: { runs: Run[]; document: DocumentV3; editing: boolean }) {
   return <>{runs.map((run, index) => {
@@ -41,7 +41,7 @@ export function NodeRenderer({ node, document, styles, attributes, children, bod
       const target = embedTarget(node.props.source);
       return <div {...identity}>{target ? <iframe src={target.src} title={node.props.title} loading="lazy" referrerPolicy="no-referrer"
         allowFullScreen={target.video} tabIndex={editing ? -1 : undefined} aria-hidden={editing || undefined}
-        style={{ ...reactStyle(EMBED_FRAME_STYLE), ...(editing ? { pointerEvents: 'none' } : {}) }} />
+        style={{ display: 'block', width: '100%', height: '100%', border: 0, minWidth: 0, minHeight: 0, pointerEvents: editing ? 'none' : undefined }} />
         : <span>{node.props.title} · 제공자를 설정해 주세요.</span>}</div>;
     }
     case 'media.icon': return <span {...identity} role={node.props.decorative ? undefined : 'img'}

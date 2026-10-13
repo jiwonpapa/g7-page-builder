@@ -5,6 +5,58 @@ declare(strict_types=1);
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
 
+/** Same full-row multiset digest, bounded by resources rather than row count.
+ * No table or row is omitted. Budget failure makes reuse unavailable.
+ * The optional resource sampler exists only for deterministic harness tests.
+ */
+function runtimeDatabaseFingerprint(array $tables, callable $readRows, ?callable $resources = null): string
+{
+    $resources ??= static fn (): array => [hrtime(true), memory_get_usage(true)];
+    [$start, $memory] = $resources();
+    $check = static function () use ($resources, $start, $memory): void {
+        [$now, $used] = $resources();
+        if ($now - $start > 25000000000) {
+            throw new RuntimeException('Runtime snapshot time budget exceeded; reuse unavailable.');
+        }
+        if ($used - $memory > 64 * 1024 * 1024) {
+            throw new RuntimeException('Runtime snapshot memory budget exceeded; reuse unavailable.');
+        }
+    };
+    sort($tables, SORT_STRING);
+    $state = hash_init('sha256');
+    $count = 0;
+    foreach ($tables as $table) {
+        $check();
+        if (! is_string($table) || ! preg_match('/^[A-Za-z0-9_]+$/D', $table)) {
+            throw new RuntimeException('Unexpected runtime table identifier.');
+        }
+        $rows = [];
+        foreach ($readRows($table) as $row) {
+            if (++$count % 1024 === 0) {
+                $check();
+            }
+            ksort($row);
+            $rows[] = hash('sha256', serialize($row));
+        }
+        $check();
+        sort($rows, SORT_STRING);
+        hash_update($state, $table."\0");
+        // Streaming the sorted hashes preserves the previous digest exactly,
+        // without constructing a second concatenated copy of a large table.
+        foreach ($rows as $rowHash) {
+            hash_update($state, $rowHash);
+        }
+        unset($rows);
+    }
+    $check();
+    return hash_final($state);
+}
+
+// Including the pure fingerprint in a harness must never bootstrap G7 or query DB.
+if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') !== __FILE__) {
+    return;
+}
+
 $root = getenv('G7PB_G7_ROOT') ?: '/var/www/g7';
 require $root.'/vendor/autoload.php';
 $app = require $root.'/bootstrap/app.php';
@@ -17,25 +69,16 @@ $pdo->exec('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
 $pdo->beginTransaction();
 try {
     $tables = $pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);
-    sort($tables, SORT_STRING);
-    $state = hash_init('sha256');
-    $count = 0;
-    foreach ($tables as $table) {
-        if (! preg_match('/^[A-Za-z0-9_]+$/D', $table)) {
-            throw new RuntimeException('Unexpected runtime table identifier.');
-        }
-        $rows = [];
+    $state = runtimeDatabaseFingerprint($tables, static function (string $table) use ($pdo): iterable {
         $query = $pdo->query('SELECT * FROM `'.$table.'`');
-        while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
-            if (++$count > 200000) {
-                throw new RuntimeException('Runtime snapshot row budget exceeded; reuse unavailable.');
+        try {
+            while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
+                yield $row;
             }
-            ksort($row);
-            $rows[] = hash('sha256', serialize($row));
+        } finally {
+            $query->closeCursor();
         }
-        sort($rows, SORT_STRING);
-        hash_update($state, $table."\0".implode('', $rows));
-    }
+    });
     $pdo->rollBack();
 } catch (Throwable $error) {
     if ($pdo->inTransaction()) {
@@ -67,4 +110,4 @@ hash_update($environment, PHP_VERSION);
 foreach ($files as $file) {
     hash_update($environment, substr($file, strlen($root))."\0".hash_file('sha256', $file));
 }
-echo json_encode(['database' => hash_final($state), 'application' => hash_final($environment)], JSON_THROW_ON_ERROR)."\n";
+echo json_encode(['database' => $state, 'application' => hash_final($environment)], JSON_THROW_ON_ERROR)."\n";

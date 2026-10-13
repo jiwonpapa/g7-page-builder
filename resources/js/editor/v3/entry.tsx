@@ -62,6 +62,8 @@ function mount(element: HTMLElement, siteParts: boolean): () => void {
     media, library,
     list: locale => siteApi.list(locale), create: (title, locale) => siteApi.create(title, locale),
     load: set => siteApi.load(set), draft: (source, saved) => sitePartDraftPort(siteApi, source, saved),
+    revisions: source => siteApi.revisions(source), restore: (source, document, lock) => siteApi.save(source, document.content, lock),
+    confirmRestore: (kind, revision) => window.confirm(kind + ' 리비전 #' + revision + '을 새 초안으로 복원할까요? 발행 중인 공통영역은 유지됩니다.'),
     publish: pair => siteApi.publish(pair), activate: set => siteApi.activate(set),
     navigate: ports.navigate, nextId: ports.nextId,
     selected: id => window.history.replaceState(null, '', sitePartEditorUrl(id, locale, true)),

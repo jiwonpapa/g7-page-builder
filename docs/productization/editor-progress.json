@@ -753,6 +753,13 @@
           "commit": "00af0d6970212a81a5ed19562004f6558cc747f2",
           "result": "pass",
           "path": "docs/audits/2026-10-13-ip7-generated-assets.md"
+        },
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-common-element-site-part-contract",
+          "commit": "c4e31a6008fcafb5a7563af68655d9b0f5fa5d8b",
+          "result": "pass",
+          "path": "docs/audits/2026-10-13-ip7-site-part-elements.md"
         }
       ],
       "blocked_reason": null,

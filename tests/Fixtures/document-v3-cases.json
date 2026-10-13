@@ -1,4 +1,23 @@
 {
+"embeds": [
+  {"name":"unconfigured placeholder", "props":{"title":"영상·지도", "source":{"provider":"none"}}, "valid":true, "target":null},
+  {"name":"youtube", "props":{"title":"영상 <안내>", "source":{"provider":"youtube","video_id":"dQw4w9WgXcQ"}}, "valid":true, "target":{"kind":"video-youtube","src":"https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0","video":true}},
+  {"name":"vimeo", "props":{"title":"영상 안내", "source":{"provider":"vimeo","video_id":"123456789"}}, "valid":true, "target":{"kind":"video-vimeo","src":"https://player.vimeo.com/video/123456789","video":true}},
+  {"name":"google map", "props":{"title":"오시는 길", "source":{"provider":"google","latitude":37.566535,"longitude":126.977969,"zoom":16}}, "valid":true, "target":{"kind":"map-google","src":"https://www.google.com/maps?q=37.566535%2C126.977969&z=16&output=embed","video":false}},
+  {"name":"openstreetmap", "props":{"title":"오시는 길", "source":{"provider":"openstreetmap","latitude":37.566535,"longitude":126.977969,"zoom":18}}, "valid":true, "target":{"kind":"map-openstreetmap","src":"https://www.openstreetmap.org/export/embed.html?bbox=126.975969%2C37.564535%2C126.979969%2C37.568535&marker=37.566535%2C126.977969","video":false}},
+  {"name":"map world boundary", "props":{"title":"경계", "source":{"provider":"openstreetmap","latitude":-90,"longitude":180,"zoom":12}}, "valid":true, "target":{"kind":"map-openstreetmap","src":"https://www.openstreetmap.org/export/embed.html?bbox=179.88%2C-90%2C180%2C-89.88&marker=-90%2C180","video":false}},
+  {"name":"negative micro coordinate", "props":{"title":"좌표", "source":{"provider":"openstreetmap","latitude":-0.000001,"longitude":0,"zoom":14}}, "valid":true, "target":{"kind":"map-openstreetmap","src":"https://www.openstreetmap.org/export/embed.html?bbox=-0.03%2C-0.030001%2C0.03%2C0.029999&marker=-0.000001%2C0","video":false}},
+  {"name":"no raw endpoint", "props":{"title":"금지", "source":{"provider":"none","src":"https://example.com"}}, "valid":false,"error":"value"},
+  {"name":"no raw html", "props":{"title":"금지", "source":{"provider":"none"},"html":"<iframe></iframe>"}, "valid":false,"error":"value"},
+  {"name":"unknown provider", "props":{"title":"금지", "source":{"provider":"evil"}}, "valid":false,"error":"value"},
+  {"name":"url is not video id", "props":{"title":"금지", "source":{"provider":"youtube","video_id":"https://example.com"}}, "valid":false,"error":"value"},
+  {"name":"numeric vimeo id", "props":{"title":"금지", "source":{"provider":"vimeo","video_id":"abc123456"}}, "valid":false,"error":"value"},
+  {"name":"blank accessible title", "props":{"title":"　\u200b\n", "source":{"provider":"none"}}, "valid":false,"error":"value"},
+  {"name":"latitude range", "props":{"title":"금지", "source":{"provider":"google","latitude":90.000001,"longitude":0,"zoom":14}}, "valid":false,"error":"value"},
+  {"name":"longitude range", "props":{"title":"금지", "source":{"provider":"google","latitude":0,"longitude":-180.000001,"zoom":14}}, "valid":false,"error":"value"},
+  {"name":"coordinate precision", "props":{"title":"금지", "source":{"provider":"google","latitude":0.0000001,"longitude":0,"zoom":14}}, "valid":false,"error":"value"},
+  {"name":"zoom contract", "props":{"title":"금지", "source":{"provider":"google","latitude":0,"longitude":0,"zoom":15}}, "valid":false,"error":"value"}
+],
 "icons": [
   {"name":"decorative icon", "props":{"icon":"check","label":"","decorative":true}, "valid":true},
   {"name":"meaningful icon", "props":{"icon":"shield","label":"보안 안내 <문자>","decorative":false}, "valid":true},

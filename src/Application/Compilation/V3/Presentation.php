@@ -101,6 +101,10 @@ final class Presentation
             $out['width'] = '24px';
             $out['height'] = '24px';
         }
+        if ($node->type === 'media.embed') {
+            $out['width'] = '100%';
+            $out['aspect-ratio'] = '16 / 9';
+        }
         foreach (['width', 'height', 'basis'] as $key) {
             if (isset($style->{$key})) {
                 self::size($out, $key, $style->{$key}, $parent, $style);

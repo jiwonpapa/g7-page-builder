@@ -6,6 +6,7 @@ import { behaviorPresentation, type BehaviorAttributes } from '../../documents/v
 import { reactStyle } from './presentationReact';
 import type { Viewport } from '../../documents/v3/validate';
 import { CatalogIcon } from '../catalogIcon';
+import { embedTarget } from '../../documents/v3/embeds';
 
 function Runs({ runs, document, editing }: { runs: Run[]; document: DocumentV3; editing: boolean }) {
   return <>{runs.map((run, index) => {
@@ -36,6 +37,13 @@ export function NodeRenderer({ node, document, styles, attributes, children, bod
     case 'content.text': return <div {...identity} data-v3-rich>{body ?? node.props.paragraphs.map((runs, index) =>
       <p key={index} style={reactStyle(PARAGRAPH_STYLE)}><Runs runs={runs} document={document} editing={editing} /></p>)}</div>;
     case 'media.image': return <img {...identity} src={document.assets.find(asset => asset.asset_id === node.props.asset_id)?.url} alt={node.props.alt} />;
+    case 'media.embed': {
+      const target = embedTarget(node.props.source);
+      return <div {...identity}>{target ? <iframe src={target.src} title={node.props.title} loading="lazy" referrerPolicy="no-referrer"
+        allowFullScreen={target.video} tabIndex={editing ? -1 : undefined} aria-hidden={editing || undefined}
+        style={{ display: 'block', width: '100%', height: '100%', border: 0, minWidth: 0, minHeight: 0, pointerEvents: editing ? 'none' : undefined }} />
+        : <span>{node.props.title} · 제공자를 설정해 주세요.</span>}</div>;
+    }
     case 'media.icon': return <span {...identity} role={node.props.decorative ? undefined : 'img'}
       aria-hidden={node.props.decorative && !editing ? true : undefined}
       aria-label={node.props.decorative ? editing ? node.name : undefined : node.props.label}>

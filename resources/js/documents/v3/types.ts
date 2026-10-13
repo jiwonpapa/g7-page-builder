@@ -13,6 +13,9 @@ export type Background = { kind: 'solid'; color: Color } | { kind: 'linear'; ang
 type Side = 'top' | 'right' | 'bottom' | 'left';
 type Corner = 'top_left' | 'top_right' | 'bottom_left' | 'bottom_right';
 export interface ControlPair { trigger_id: string; panel_id: string }
+export type EmbedSource = { provider: 'none' }
+  | { provider: 'youtube' | 'vimeo'; video_id: string }
+  | { provider: 'openstreetmap' | 'google'; latitude: number; longitude: number; zoom: 12 | 14 | 16 | 18 };
 export type IconName = 'bolt' | 'check' | 'code' | 'globe' | 'heart' | 'layers' | 'mobile' | 'palette' | 'shield' | 'sparkles' | 'star'
   | 'trend' | 'users' | 'target' | 'chart' | 'instagram' | 'youtube' | 'facebook' | 'linkedin' | 'x' | 'kakao' | 'blog' | 'website';
 /** Authored defaults and stable references only; live interaction state is not persisted. */
@@ -49,6 +52,7 @@ export type Node = NodeBase & (
   { type: 'content.text'; props: { paragraphs: Run[][] } } |
   { type: 'media.image'; props: { asset_id: string; alt: string } } |
   { type: 'media.icon'; props: { icon: IconName; label: string; decorative: boolean } } |
+  { type: 'media.embed'; props: { title: string; source: EmbedSource } } |
   { type: 'action.button'; props: { label: string } } |
   { type: 'action.link'; props: { label: string; link: Link } }
 );

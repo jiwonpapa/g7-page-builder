@@ -39,10 +39,12 @@ it('renders all providers in preview; editing frames cannot capture pointer or k
     let frame = document.querySelector('iframe');
     if (!value.target) { expect(frame).toBeNull(); expect(document.body.textContent).toContain('제공자를 설정'); continue; }
     expect(frame?.getAttribute('src')).toBe(value.target.src);
+    expect(frame?.getAttribute('referrerpolicy')).toBe(value.target.kind === 'video-youtube' ? 'strict-origin-when-cross-origin' : 'no-referrer');
     expect(frame?.title).toBe(node.props.title); expect(frame?.hasAttribute('allowfullscreen')).toBe(value.target.video);
     expect(frame?.style.width).toBe('100%'); expect(frame?.getAttribute('tabindex')).toBeNull();
     document.body.innerHTML = renderToStaticMarkup(<NodeRenderer node={node} document={canonical} editing styles={documentPresentation(canonical)} />);
     frame = document.querySelector('iframe'); expect(frame?.tabIndex).toBe(-1);
+    expect(frame?.getAttribute('referrerpolicy')).toBe(value.target.kind === 'video-youtube' ? 'strict-origin-when-cross-origin' : 'no-referrer');
     expect(frame?.getAttribute('aria-hidden')).toBe('true'); expect(frame?.style.pointerEvents).toBe('none');
     expect(JSON.stringify(canonical)).toBe(before);
   }
@@ -57,7 +59,8 @@ it('hydrates only existing trusted providers, preserves legacy sizing, and is id
     expect(document.querySelectorAll('iframe')).toHaveLength(1);
     const frame = document.querySelector('iframe')!;
     expect(frame.src).toBe(target.src); expect(frame.title).toBe(node.props.title); expect(frame.allowFullscreen).toBe(target.video);
-    expect(frame.style.height).toBe('100%'); expect(frame.style.borderWidth).toBe('0px'); expect(frame.referrerPolicy).toBe('no-referrer');
+    expect(frame.style.height).toBe('100%'); expect(frame.style.borderWidth).toBe('0px');
+    expect(frame.referrerPolicy).toBe(target.kind === 'video-youtube' ? 'strict-origin-when-cross-origin' : 'no-referrer');
   }
   document.body.innerHTML = '<span data-g7pb-embed data-g7pb-embed-kind="video-youtube" data-g7pb-embed-src="https://evil.test/"></span>';
   hydrateTemplateRuntime(document); expect(document.querySelector('iframe')).toBeNull();

@@ -71,7 +71,8 @@ export function NodeRenderer({ node, document, styles, attributes, children, bod
     case 'media.image': return <img {...identity} src={document.assets.find(asset => asset.asset_id === node.props.asset_id)?.url} alt={node.props.alt} />;
     case 'media.embed': {
       const target = embedTarget(node.props.source);
-      return <div {...identity}>{target ? <iframe src={target.src} title={node.props.title} loading="lazy" referrerPolicy="no-referrer"
+      return <div {...identity}>{target ? <iframe src={target.src} title={node.props.title} loading="lazy"
+        referrerPolicy={target.kind === 'video-youtube' ? 'strict-origin-when-cross-origin' : 'no-referrer'}
         allowFullScreen={target.video} tabIndex={editing ? -1 : undefined} aria-hidden={editing || undefined}
         style={{ display: 'block', width: '100%', height: '100%', border: 0, minWidth: 0, minHeight: 0, pointerEvents: editing ? 'none' : undefined }} />
         : <span>{node.props.title} · 제공자를 설정해 주세요.</span>}</div>;

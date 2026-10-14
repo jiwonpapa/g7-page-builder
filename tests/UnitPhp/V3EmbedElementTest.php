@@ -90,6 +90,9 @@ final class V3EmbedElementTest extends TestCase
                     self::assertSame($case->target->video ? 1 : 0, substr_count($draft, 'allowfullscreen'));
                     $src = htmlspecialchars($case->target->src, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
                     self::assertStringContainsString('src="'.$src.'"', $draft);
+                    $referrerPolicy = $case->target->kind === 'video-youtube' ? 'strict-origin-when-cross-origin' : 'no-referrer';
+                    self::assertStringContainsString('referrerpolicy="'.$referrerPolicy.'"', $draft);
+                    self::assertStringContainsString('referrerpolicy="'.$referrerPolicy.'"', $mobile);
                     self::assertStringContainsString('data-g7pb-embed-src="'.$src.'"', $result->artifact);
                 }
                 self::assertSame($before, $source->toJson());

@@ -156,7 +156,7 @@ describe('published page effects runtime', () => {
     expect(root.querySelector('[data-g7pb-embed-kind="unknown"]')).toBe(unsupported);
     const frames = Array.from(root.querySelectorAll('iframe'));
     expect(frames.map(frame => [frame.title, frame.loading, frame.referrerPolicy, frame.allowFullscreen]))
-      .toEqual([['Map', 'lazy', 'no-referrer', false], ['Video', 'lazy', 'no-referrer', true], ['Other video', 'lazy', 'no-referrer', true]]);
+      .toEqual([['Map', 'lazy', 'no-referrer', false], ['Video', 'lazy', 'strict-origin-when-cross-origin', true], ['Other video', 'lazy', 'no-referrer', true]]);
   });
   it('keeps the published entry boot functions as the data owner bindings', () => {
     expect(bootBlockVisibility).toBe(dataVisibility);

@@ -24,6 +24,18 @@ async function click(host: HTMLElement, label: string) {
   if (!button) throw new Error(label); await act(async () => button.click());
 }
 describe('precision Inspector', () => {
+  it('prioritizes text and size for text-capable elements without dropping other style controls', async () => {
+    const doc = cloneDocument(validateDocumentV3(fixture)), apply = vi.fn();
+    const node = createPrimitive('content.heading', '00000000-0000-4000-8000-000000009902', doc);
+    const host = await mount(<Inspector node={node} document={doc} disabled={false} apply={apply} />);
+    expect([...host.querySelectorAll('details > summary')].slice(0, 3).map(item => item.textContent)).toEqual(['글자', '크기', '자동 배치']);
+    expect(host.querySelector('[aria-label="방향 지정"]')).not.toBeNull();
+    expect(host.querySelector('[aria-label="너비 지정"]')).not.toBeNull();
+    expect(host.querySelector('[aria-label="글자 크기 지정"]')).not.toBeNull();
+    expect(host.querySelector('[aria-label="방향 지정"]')!.closest('details')!.open).toBe(false);
+    expect(apply).not.toHaveBeenCalled();
+  });
+
   it('edits link semantics through the link property without changing layout or other nodes', async () => {
     const doc = cloneDocument(validateDocumentV3(fixture));
     const node = createPrimitive('action.link', '00000000-0000-4000-8000-000000009901', doc);

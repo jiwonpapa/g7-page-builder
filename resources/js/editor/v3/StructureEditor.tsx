@@ -1,7 +1,7 @@
 import React, { createContext, forwardRef, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ActionBar, Puck, type Overrides, type ComponentConfig, type Field, type SlotComponent } from '@puckeditor/core';
-import { Layers3, MousePointer2, Plus, Redo2, SlidersHorizontal, Undo2 } from 'lucide-react';
+import { ArrowDown, ArrowRightToLine, ArrowUp, Copy, CopyPlus, Eye, EyeOff, Group, Layers3, LockKeyhole, MousePointer2, Plus, Redo2, SlidersHorizontal, Trash2, Undo2, Ungroup, UnlockKeyhole, ClipboardPaste, type LucideIcon } from 'lucide-react';
 import type { DocumentV3, Node } from '../../documents/v3/types';
 import { effectiveStyle, validateDocumentV3, viewportAt } from '../../documents/v3/validate';
 import { indexTree, type Location } from '../../documents/v3/tree';
@@ -91,6 +91,9 @@ function CanvasNode({ id, body, Content, dragRef }: { id: string; body: React.Re
 }
 function CommandButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return <button type="button" className="g7pb-button g7pb-button--quiet" {...props}>{children}</button>;
+}
+function LayerAction({ icon: Icon, children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { icon: LucideIcon; children: string }) {
+  return <CommandButton title={children} {...props}><Icon size={15} aria-hidden /><span className="g7pb-v3-sr-only">{children}</span></CommandButton>;
 }
 /** Preserve Puck's public click boundary when the action bar is portaled into the Inspector. */
 export function ContextActionBar({ target, children }: { target: HTMLElement | null; children: React.ReactNode }) {
@@ -314,17 +317,17 @@ function EditorSession(props: StructureEditorProps) {
             {focus && <RenameControl key={`${focus.node.instance_id}:${focus.node.name}`} node={focus.node} disabled={props.readonly}
               rename={name => command({ kind: 'rename', id: focus.node.instance_id, name })} />}
             <div className="g7pb-v3-selection-actions">
-              <CommandButton disabled={!focus || props.readonly || focus.index === 0} onClick={() => step(-1)}>위로</CommandButton>
-              <CommandButton disabled={!focus || props.readonly || focus.index === focus.siblings.length - 1} onClick={() => step(1)}>아래로</CommandButton>
-              <CommandButton disabled={!selected.length || props.readonly} onClick={() => command({ kind: 'move', ids: selected, destination: destination() })}>선택 위치로 이동</CommandButton>
-              {(['duplicate', 'delete', 'group', 'ungroup'] as const).map((kind, index) => <CommandButton key={kind}
-                disabled={!selected.length || props.readonly} onClick={() => command({ kind, ids: selected })}>{['복제', '삭제', '그룹', '그룹 해제'][index]}</CommandButton>)}
-              <CommandButton disabled={!selected.length} onClick={() => run(() => { setClipboard(bridge.copy()); setMessage('선택 구조를 복사했습니다.'); })}>복사</CommandButton>
-              <CommandButton disabled={!clipboard || props.readonly} onClick={() => clipboard && command({ kind: 'paste', clipboard, destination: destination() })}>붙여넣기</CommandButton>
-              <CommandButton disabled={!selected.length || props.readonly} onClick={() => command({ kind: 'lock', ids: selected, locked: !focus?.node.locked })}>{focus?.node.locked ? '잠금 해제' : '잠금'}</CommandButton>
-              <CommandButton disabled={!selected.length || props.readonly} onClick={() => run(() => bridge.execute({ kind: 'styles', viewport,
+              <LayerAction icon={ArrowUp} disabled={!focus || props.readonly || focus.index === 0} onClick={() => step(-1)}>위로</LayerAction>
+              <LayerAction icon={ArrowDown} disabled={!focus || props.readonly || focus.index === focus.siblings.length - 1} onClick={() => step(1)}>아래로</LayerAction>
+              <LayerAction icon={ArrowRightToLine} disabled={!selected.length || props.readonly} onClick={() => command({ kind: 'move', ids: selected, destination: destination() })}>선택 위치로 이동</LayerAction>
+              {(['duplicate', 'delete', 'group', 'ungroup'] as const).map((kind, index) => <LayerAction key={kind} icon={[CopyPlus, Trash2, Group, Ungroup][index]}
+                disabled={!selected.length || props.readonly} onClick={() => command({ kind, ids: selected })}>{['복제', '삭제', '그룹', '그룹 해제'][index]}</LayerAction>)}
+              <LayerAction icon={Copy} disabled={!selected.length} onClick={() => run(() => { setClipboard(bridge.copy()); setMessage('선택 구조를 복사했습니다.'); })}>복사</LayerAction>
+              <LayerAction icon={ClipboardPaste} disabled={!clipboard || props.readonly} onClick={() => clipboard && command({ kind: 'paste', clipboard, destination: destination() })}>붙여넣기</LayerAction>
+              <LayerAction icon={focus?.node.locked ? UnlockKeyhole : LockKeyhole} disabled={!selected.length || props.readonly} onClick={() => command({ kind: 'lock', ids: selected, locked: !focus?.node.locked })}>{focus?.node.locked ? '잠금 해제' : '잠금'}</LayerAction>
+              <LayerAction icon={focus && effectiveStyle(focus.node, viewport).hidden ? Eye : EyeOff} disabled={!selected.length || props.readonly} onClick={() => run(() => bridge.execute({ kind: 'styles', viewport,
                 updates: selected.map(id => ({ id, set: { hidden: !(focus && effectiveStyle(focus.node, viewport).hidden) } })) }))}>
-                {focus && effectiveStyle(focus.node, viewport).hidden ? '표시' : '숨김'}</CommandButton>
+                {focus && effectiveStyle(focus.node, viewport).hidden ? '표시' : '숨김'}</LayerAction>
             </div>
             {focus && <Inspector key={viewport + ':' + focus.node.instance_id + ':' + JSON.stringify(focus.node)} node={focus.node} document={document} viewport={viewport}
               disabled={Boolean(preview || props.readonly || focus.node.locked || focus.ancestors.some(node => node.locked))} apply={value => { bridge.execute(value); }} />}

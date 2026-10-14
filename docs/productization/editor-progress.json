@@ -8,6 +8,11 @@
   "dashboard_file": "docs/productization/editor-progress.md",
   "documents": [
     {
+      "path": "docs/audits/2026-10-14-remaining-nine-final-audit.md",
+      "role": "current",
+      "required_text": "제품 수용 미완료"
+    },
+    {
       "path": "docs/audits/2026-10-14-editor-starter-data.md",
       "role": "reference",
       "required_text": "문서 데이터 17개"
@@ -909,7 +914,7 @@
         "src/Application/Compilation",
         "tests/E2E"
       ],
-      "completion": "공통 요소와 시작 구성 91개를 같은 편집기/명령/이력으로 구현했습니다. 잔여 1~9 목표에서 DATA05 및 SYSTEM01~03을 각 원인별 한 번 보완했고, 실제 내장 브라우저에서 6종 정상 응답·빈 이미지 0높이·권한/오류/빈/지연 상태와 상품 다중 조작 대역을 확인했습니다. 실제 상품은 1개/분류 없음이므로 대역 결과를 실제 다중 상품 API 수용으로 바꾸지 않습니다. none/template/builder의 실제 6종 출력, 문의 5개 기존 제품 시험, 계정/검색/통화/화면 모드·팝업 3폭·키보드 닫기와 언어 capability 부재를 부분 증거로 기록했습니다. template의 PB 폭은 f7cfe1ed에서 한 번 보완했지만 현재 외부 테마 Header의 모바일 넘침과 실제 외부 임베드 초기 재생 영향 등 전체 수용은 미완료입니다. 실패 이력과 정확한 경계는 docs/audits/2026-10-14-remaining-nine-goal.md에 보존합니다. JS/CSS 용량은 경고이며 온라인은 기존 0.37.0-dev.20261014/a84b8eb4입니다. 기존 문서 전환·테마/코어 수정은 하지 않았습니다."
+      "completion": "공통 요소와 시작 구성 91개를 같은 편집기/명령/이력으로 구현했습니다. 잔여 목표에서 DATA05/SYSTEM01~03/TEMPLATE01을 한 번씩 보완하고 실제 6종 정상/빈 이미지/오류/지연·3셸, 문의 5종, 실행 컨트롤과 popup 3폭을 확인했습니다. 실제 상품은 1개/분류 없음이며 다중 조작 대역을 실제 다중 API 수용으로 바꾸지 않습니다. YouTube 오류 153은 e05db53e에서 한 번 보완해 실제 재생/정지·origin-only Referer를 확인했지만 초기 두 프레임 요청 묶음/Vimeo 표본 없음은 남았습니다. 현재 G7 7.1.0/활성 JWsoft 0.3.1은 Site Shell 지원 밖이고 설치 sirsoft-basic 1.2.0의 현재 적용은 미확보입니다. 외부 테마 모바일 Header 넘침·전체 수용은 미완료입니다. 최종 SPEC 대조와 재감사 경계는 docs/audits/2026-10-14-remaining-nine-final-audit.md, 실행/실패 이력은 목표 원장에 보존합니다. JS/CSS 용량은 경고, 이번 보완은 온라인 미배포입니다. 기존 문서 전환·테마/코어 수정은 없습니다."
     },
     {
       "id": "IP8",
@@ -996,8 +1001,8 @@
         "IND-10"
       ],
       "owner_task": "integration-remaining-nine-20261014",
-      "implementation_commit": null,
-      "integrated_commit": null,
+      "implementation_commit": "dbc0d6c3961dde837d158949e7455e1cd7e91d21",
+      "integrated_commit": "e7c5b2d25ffc85e37bbeceadc857be103e952492",
       "evidence": [
         {
           "acceptance_id": "IND-10",
@@ -1005,6 +1010,20 @@
           "commit": "e9a52bb3933fa22bc9b151cfb5a6be0f2f309d8f",
           "result": "pass",
           "path": "docs/audits/2026-10-14-remaining-nine-goal.md"
+        },
+        {
+          "acceptance_id": "IND-10",
+          "kind": "partial-independent-product-iab",
+          "commit": "d3fe713ba16a25057fc71fd910ccffac89deae38",
+          "result": "pass",
+          "path": "docs/audits/2026-10-14-remaining-nine-final-audit.md"
+        },
+        {
+          "acceptance_id": "IND-10",
+          "kind": "partial-workspace-roles-and-contrast-iab",
+          "commit": "e462ce2cecbb464d8a0ee2a0aae61c38e648e714",
+          "result": "pass",
+          "path": "docs/audits/2026-10-14-remaining-nine-final-audit.md"
         }
       ],
       "blocked_reason": null,
@@ -1014,7 +1033,7 @@
         "docs/productization",
         "docs/audits"
       ],
-      "completion": "사용자 지시의 잔여 1~9 목표로 한정 감사를 시작했습니다. 실제 제품 100/500노드의 로딩 관측 2150/4897.1ms와 단일 선택 278/290ms는 기존 10000/1000ms 예산 안입니다. 최초 500 관측 도구 실패와 한 번의 관측 환경 보완을 보존하며 p95/포인터 성능으로 확대하지 않습니다. IP1~IP6 및 기존 지원 호스트·접근성 증거는 당시 소스 경계로 재사용합니다. 최종 SPEC-01~16/지원 호스트·현재 UI 접근성·네이티브 OS IME·실제 제공자 초기 프레임 영향 판정과 공식 release는 남아 있습니다. 전체 suite/coverage 확대·기존 문서 전환·테마/코어 수정 없이 docs/audits/2026-10-14-remaining-nine-goal.md에서 계속 관리합니다. 제품 수용·운영 배포 완료는 아닙니다."
+      "completion": "잔여 1~9의 제한 감사 판정과 SPEC-01~16/49 block·99 preset 누락 0 대조를 마감했습니다. 실제 G7 없는 현 제품의 삽입/한국어 입력/한 Undo/저장/메모리 포트 재열기와 독립 CSS, ACCESS01 역할·설명 및 ACCESS02 6.81:1 대비를 확인했습니다. 현재 Puck의 Space drag 안내/동작 불일치는 동결했고 OS 네이티브 IME·현재 sirsoft-basic 1.2.0 적용·전체 대상/긴 페이지·후속 소스의 성능 수용은 미확보입니다. 과거 실제 100/500 관측 2150/4897.1ms·선택 278/290ms는 당시 소스로만 보존합니다. 실제 YouTube 오류 153 보완/재생을 확인했지만 초기 프레임 교체·외부 표본/테마 제한은 유지합니다. 정확한 미달/재감사 인계는 docs/audits/2026-10-14-remaining-nine-final-audit.md입니다. 이번 한정 구현·감사 처리와 제품 합격/배포를 구별하며 IP10 완료 수에 합산하지 않습니다. 전체 suite/coverage 확대·기존 문서 전환·테마/코어 수정·릴리스 우회는 없습니다."
     }
   ],
   "history": [

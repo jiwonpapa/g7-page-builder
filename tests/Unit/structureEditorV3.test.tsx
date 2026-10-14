@@ -59,11 +59,26 @@ describe('v3 structural UI and explicit mount', () => {
     expect(host.querySelector<HTMLSelectElement>('[aria-label="작업면 확대"]')!.value).toBe(String(736 / 1280));
     expect(host.querySelector<HTMLElement>('[data-v3-workspace]')!.style.width).toBe('1280px');
     expect(changed).not.toHaveBeenCalled();
+    expect(host.querySelector('[aria-label="편집 이력"]')?.getAttribute('role')).toBe('group');
+    expect(host.querySelector('[aria-label="반응형 작업면"]')?.getAttribute('role')).toBe('group');
+    expect(host.querySelector('[aria-label="스타일 편집 대상"]')?.getAttribute('role')).toBe('note');
+    expect(host.querySelector('[aria-label="읽기 순서 안내"]')?.getAttribute('role')).toBe('note');
     await click(host, '제목 삽입');
     expect(changed).toHaveBeenCalledTimes(1);
     await act(async () => navigation.querySelector<HTMLButtonElement>('[data-testid="layer-' + id(980) + '"]')!.click());
     expect(properties.querySelector('[aria-label="레이어 이름"]')).not.toBeNull();
     expect(properties.querySelector('[aria-label="정밀 Inspector"]')).not.toBeNull();
+  });
+
+  it('keeps authored layout containers as named groups rather than nested buttons', async () => {
+    const doc = source(), host = hostElement(), root = createRoot(host);
+    cleanup.push(() => root.unmount());
+    await act(async () => root.render(<StructureEditor document={doc} sessionId="canvas-groups" serverRevision={1}
+      drafts={{ save: async request => ({ documentId: request.documentId, revision: 2 }) }}
+      nextId={() => id(979)} iframeEnabled={false} />)); await flush();
+    const canvas = host.querySelector('[data-v3-node="' + doc.blocks[0].instance_id + '"]');
+    expect(canvas?.getAttribute('role')).toBe('group'); expect(canvas?.getAttribute('aria-label')).toBe(doc.blocks[0].name);
+    expect(canvas?.querySelector('[data-v3-node]')).not.toBeNull();
   });
 
   it('isolates mirrored frame chrome and scrollbars and restores only the values it owns', async () => {

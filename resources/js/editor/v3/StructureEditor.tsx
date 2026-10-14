@@ -37,6 +37,7 @@ import { UserCompositionPanel } from './UserCompositionPanel';
 import { MediaInsertion } from './MediaInsertion';
 import { SystemInspector } from './SystemInspector';
 import { DataInspector } from './DataInspector';
+import { createCanvasAccessibility } from './canvasAccessibility';
 
 export interface StructureEditorProps {
   document: DocumentV3;
@@ -58,6 +59,11 @@ const CanvasContext = createContext<{ document: DocumentV3; tree: Map<string, Lo
 const InteractionContext = createContext<(Omit<React.ComponentProps<typeof GeometryAdapter>, 'owner'> & { extent: (height: number) => void }) | null>(null);
 function FrameContents({ children, document: frameDocument }: React.ComponentProps<NonNullable<Overrides<V3Config>['iframe']>>) {
   const context = useContext(InteractionContext);
+  useEffect(() => {
+    if (!frameDocument) return;
+    const accessibility = createCanvasAccessibility(frameDocument);
+    return () => accessibility.dispose();
+  }, [frameDocument]);
   return <>{children}{frameDocument && context && <>
     <WorkspaceFrame owner={frameDocument} extent={context.extent} />
     <FrameHistoryBoundary frameDocument={frameDocument} bridge={context.bridge} />
@@ -68,7 +74,8 @@ const SlotContext = createContext<Node | null>(null);
 const SlotElement = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(function SlotElement(props, ref) {
   const node = useContext(SlotContext);
   if (!node || !('tag' in node.props)) return null;
-  return React.createElement(node.props.tag, { ...props, ref, id: nodeAnchor(node.instance_id), 'data-v3-node': node.instance_id });
+  return React.createElement(node.props.tag, { ...props, ref, role: 'group', 'aria-label': node.name,
+    id: nodeAnchor(node.instance_id), 'data-v3-node': node.instance_id });
 });
 function CanvasNode({ id, body, Content, dragRef }: { id: string; body: React.ReactNode; Content: SlotComponent; dragRef: ((element: Element | null) => void) | null }) {
   const context = useContext(CanvasContext);
@@ -109,7 +116,7 @@ function RenameControl({ node, disabled, rename }: { node: Node; disabled?: bool
 }
 function Toolbar({ bridge, disabled, run }: { bridge: PuckBridge; disabled: boolean; run: (action: () => void) => void }) {
   const api = useV3Puck(state => state);
-  return <div className="g7pb-v3-history" aria-label="편집 이력">
+  return <div className="g7pb-v3-history" role="group" aria-label="편집 이력">
     <CommandButton title="실행 취소 (⌘/Ctrl+Z)" disabled={disabled || !api.history.hasPast} onClick={() => run(() => bridge.history('back'))}><Undo2 size={16} aria-hidden /><span className="g7pb-v3-sr-only">실행 취소</span></CommandButton>
     <CommandButton title="다시 실행 (⌘/Ctrl+Shift+Z)" disabled={disabled || !api.history.hasFuture} onClick={() => run(() => bridge.history('forward'))}><Redo2 size={16} aria-hidden /><span className="g7pb-v3-sr-only">다시 실행</span></CommandButton>
   </div>;

@@ -6,6 +6,12 @@ import { describe, expect, it } from 'vitest';
 import config from '../../vite.structure.config';
 
 describe('installed structure entry artifact', () => {
+  it('owns workbench styles in the independent mount as well as the authenticated entry', () => {
+    const stylesheet = "import '../../../css/page-builder-structure.css';";
+    expect(readFileSync('resources/js/editor/v3/mount.tsx', 'utf8')).toContain(stylesheet);
+    expect(readFileSync('resources/js/editor/v3/entry.tsx', 'utf8')).toContain(stylesheet);
+  });
+
   it('selects one fixed bundle without reading private document state in the Blade view', () => {
     const blade = readFileSync('resources/views/editor.blade.php', 'utf8');
     expect(blade).toContain("request()->query('editor') === 'structure'");

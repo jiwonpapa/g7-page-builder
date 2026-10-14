@@ -37,7 +37,7 @@ import { UserCompositionPanel } from './UserCompositionPanel';
 import { MediaInsertion } from './MediaInsertion';
 import { SystemInspector } from './SystemInspector';
 import { DataInspector } from './DataInspector';
-import { createCanvasAccessibility } from './canvasAccessibility';
+import { CANVAS_INPUT_HELP, createCanvasAccessibility } from './canvasAccessibility';
 
 export interface StructureEditorProps {
   document: DocumentV3;
@@ -61,7 +61,7 @@ function FrameContents({ children, document: frameDocument }: React.ComponentPro
   const context = useContext(InteractionContext);
   useEffect(() => {
     if (!frameDocument) return;
-    const accessibility = createCanvasAccessibility(frameDocument);
+    const accessibility = createCanvasAccessibility(frameDocument, CANVAS_INPUT_HELP);
     return () => accessibility.dispose();
   }, [frameDocument]);
   return <>{children}{frameDocument && context && <>

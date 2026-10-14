@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import '@puckeditor/core/puck.css';
 import '../../../css/page-builder-core.css';
+import '../../../css/page-builder-structure.css';
 import { StructureEditor, type StructureEditorProps } from './StructureEditor';
 import builtinCompositions from '../../../compositions/builtin-v3.json';
 

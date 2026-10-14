@@ -97,3 +97,8 @@
 - 500노드: 문서 `bb08ca95-6920-4727-b3e7-171694734fca`, revision 2/lock 2, canonical 117,762 bytes. 최초 관측이 내장 도구의 Runtime.evaluate 3,000ms 제한에 걸렸고, 4.654초 도구 반환의 진단에는 500번째 제목이 존재/visible로 표시됐습니다. 정확한 readiness 값은 확보하지 못했으므로 로딩 합격으로 승격하지 않습니다. 동일 세션의 별도 현재 상태 읽기에서 500요소/초안 저장됨을 확인했고 첫 레이어 실제 선택은 290ms, 이름도 `부하 500 - 1`이었습니다. 로딩을 다시 실행하거나 예산을 완화하지 않았습니다. p95·포인터 드래그·최종 제품 성능 전체의 합격이 아닙니다.
 - 근거 `output/playwright/remaining-product-performance-iab-20261014.json`과 `remaining-product-performance-iab-500-20261014.png`. 100/500 장면의 로딩 실행은 각각 1회입니다. 초안은 보존하며 발행하지 않았습니다.
 - SYSTEM01의 정상적인 viewer 보완을 현행 planner가 `Explicit shared runtime/contract scope required`로 분류하는 것을 소스에서 확인했습니다. 사용자 지시상 전체 검사로 확대하지 않습니다. 정확한 한 줄 runtime predicate 추가만 scoped로 인식하고 다른 viewer 변경의 전체 검사 조건을 유지하도록 `tools/g7pb/planner.py`, `tests/Harness/test_planner.py` 두 파일의 범위 등록 보완을 사용자에게 한 번 요청했습니다. 응답 전 해당 두 파일/제품 viewer를 변경하지 않습니다. 다른 독립 잔여 작업은 계속하며 이 정책 확인을 제품 수정 실패로 세지 않습니다.
+
+### SYSTEM01 한 번 제품 보완
+
+- 사용자 승인 “두 파일의 정확한 범위 등록 보완 승인” 후 harness source `69535c71` / main `4cce2412`를 통합했습니다. 정확한 predicate 1개 추가 외 다른 바이트는 거부하며, 필수 실제 Blade 렌더 회귀와 기존 PAGE/STRUCTURE_THEME 브라우저 gate를 유지합니다. 관련 planner 84개를 포함한 공식 하네스 검사가 통과했고 통합 시 동일 입력 성공을 재사용했습니다. 하네스 성공을 제품 브라우저 성공으로 세지 않습니다.
+- `system-viewer-runtime-20261014`는 viewer 한 줄·새 실제 Blade 렌더 회귀·changelog·이 원장만 소유합니다. 기존 `data-g7pb-system-controls` 생성 표시가 있으면 동일한 고정 public runtime을 로드합니다. 7종별 편집기/새 runtime/의존성이나 무조건 script 로딩은 추가하지 않습니다. 새 회귀는 preview/public root에서 7종 단독 표시에 runtime 1개, 정적 문서 0개, 기존 interactive 표시의 runtime 유지에 한정합니다. 소스 보완 1회이며 실제 내장 브라우저 재확인 전 성공으로 표시하지 않습니다.

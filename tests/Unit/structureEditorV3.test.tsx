@@ -66,16 +66,20 @@ describe('v3 structural UI and explicit mount', () => {
     expect(properties.querySelector('[aria-label="정밀 Inspector"]')).not.toBeNull();
   });
 
-  it('isolates mirrored frame chrome and restores only the background values it owns', async () => {
+  it('isolates mirrored frame chrome and scrollbars and restores only the values it owns', async () => {
     const frame = document.createElement('iframe'); document.body.append(frame);
     cleanup.push(() => frame.remove());
     const owner = frame.contentDocument;
     if (!owner) throw new Error('Expected iframe document');
     owner.body.className = 'g7pb-editor-shell';
     owner.body.style.setProperty('background-color', 'navy', 'important');
+    // jsdom's CSSOM does not retain priority for overflow-y; background above
+    // covers priority restoration through the same property-ownership path.
+    owner.documentElement.style.setProperty('overflow-y', 'auto');
+    owner.body.style.overflowY = 'scroll';
     owner.body.style.color = 'white';
     const authored = owner.createElement('div'); authored.dataset.v3Surface = '';
-    authored.style.backgroundColor = 'red'; owner.body.append(authored);
+    authored.style.backgroundColor = 'red'; authored.style.overflowY = 'auto'; owner.body.append(authored);
     frame.style.height = '123px';
     const host = hostElement(), root = createRoot(host), extent = vi.fn();
     let mounted = true;
@@ -83,16 +87,42 @@ describe('v3 structural UI and explicit mount', () => {
     await act(async () => root.render(<WorkspaceFrame owner={owner} extent={extent} />));
     expect(owner.documentElement.style.backgroundColor).toBe('transparent');
     expect(owner.body.style.backgroundColor).toBe('transparent');
+    expect(owner.documentElement.style.overflowY).toBe('clip');
+    expect(owner.body.style.overflowY).toBe('clip');
+    expect(authored.style.overflowY).toBe('auto');
     expect(owner.body.style.color).toBe('white');
     expect(owner.body.className).toBe('g7pb-editor-shell');
     expect(authored.style.backgroundColor).toBe('red');
     expect(frame.style.height).toBe('800px');
     expect(extent).toHaveBeenCalledWith(800);
+    owner.body.style.overflowY = 'hidden'; // A later owner must not be overwritten on teardown.
     await act(async () => { root.unmount(); mounted = false; });
     expect(owner.documentElement.style.backgroundColor).toBe('');
     expect(owner.body.style.backgroundColor).toBe('navy');
     expect(owner.body.style.getPropertyPriority('background-color')).toBe('important');
+    expect(owner.documentElement.style.overflowY).toBe('auto');
+    expect(owner.documentElement.style.getPropertyPriority('overflow-y')).toBe('');
+    expect(owner.body.style.overflowY).toBe('hidden');
     expect(frame.style.height).toBe('123px');
+  });
+
+  it('remeasures authored overflow after a style change without relying on a root resize', async () => {
+    const frame = document.createElement('iframe'); document.body.append(frame);
+    cleanup.push(() => frame.remove());
+    const owner = frame.contentDocument;
+    if (!owner) throw new Error('Expected iframe document');
+    const surface = owner.createElement('div'); surface.dataset.v3Surface = '';
+    const child = owner.createElement('div'); child.style.position = 'absolute'; surface.append(child);
+    let height = 1000;
+    Object.defineProperty(surface, 'scrollHeight', { get: () => height });
+    owner.body.append(surface);
+    const host = hostElement(), root = createRoot(host), extent = vi.fn();
+    cleanup.push(() => root.unmount());
+    await act(async () => root.render(<WorkspaceFrame owner={owner} extent={extent} />));
+    expect(frame.style.height).toBe('1000px');
+    height = 1500; child.style.top = '1400px'; await flush();
+    expect(frame.style.height).toBe('1500px');
+    expect(extent).toHaveBeenLastCalledWith(1500);
   });
 
   it('reports a late save as edited so the product host preserves unsaved navigation protection', async () => {

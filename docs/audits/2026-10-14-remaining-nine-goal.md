@@ -72,3 +72,10 @@
 - 실제 readonly UI: 기존 시험 소유·보관 문서 `a63b9060-d8c1-4c9d-a20c-729549bcbc70`를 읽기만 했습니다. 이미지 노드 선택은 가능하고 alt·선택/업로드·맞춤/초점·삽입·저장은 모두 disabled였습니다. 보관 상태/원본은 변경하지 않았습니다. 비동기 문서/세션/revision/readonly 전환은 별도의 22개 session 계약 시험과 연결합니다.
 - 페이지 복원: UI에서 revision #4를 명시 확인해 복원 HTTP 200 / 새 lock 10을 얻었습니다. 응답 원본은 revision #4와 JSON 기준 정확히 같고 draft는 8요소/이미지1, 새 세션 Undo는 비활성입니다. 마지막 공개 artifact `8697fd94b209deeff4d211968071db4ec0dea194ecf787ad7062e47c19c0d9c2`가 유지됐고 실제 공개 GET도 HTTP 200 / 16요소/이미지2를 유지했습니다. 복원은 새 초안이며 재발행하지 않았습니다. CLI의 native confirm 알림이 먼저 반환됐지만 사전 accept handler가 이미 확인해 처리했으므로 중복 restore를 실행하지 않고 기존 HTTP 응답 #202/#203과 현재 UI/공개 결과를 읽어 판정했습니다.
 - 영속 관찰 요약은 `output/playwright/remaining-resource-local-receipt-20261014.json`입니다. 출력 VIEWPORT01은 여전히 미수용이며 1~9 전체 완료·IP8/IP9 수용 완료·온라인 배포를 선언하지 않습니다. 제품 소스/빌드는 이번 회귀 추가로 변경되지 않았습니다. 남은 실제 Site Part 복원, 동적 데이터/고정 컨트롤, 최종 제품 감사와 release는 계속 추진합니다.
+
+### 재부팅 뒤 VIEWPORT01의 한 번 제품 보완
+
+- `structure-frame-viewport-20261014`는 정확 4파일(Workspace, 기존 structure UI 회귀, changelog, 이 원장)만 소유합니다. 편집기 iframe의 html/body만 `overflow-y: clip`으로 격리하고, 바깥 작업면이 측정된 전체 높이를 스크롤합니다. 작성 요소의 overflow·공개 CSS·문서 폭·원본·Undo·테마/코어를 바꾸지 않습니다. 기존 속성/priority는 자신의 값이 유지된 경우에만 복구합니다.
+- 작성 surface 내부의 style/class/hidden 변경도 한 animation frame으로 모아 전체 높이를 재측정합니다. root ResizeObserver만으로 놓치는 absolute 하위 요소의 높이 변화가 대상입니다. 단위 회귀는 이 소유/복구와 root resize 없는 높이 변경에 한정합니다.
+- 재부팅 후 main `f0c7b223`와 깨끗한 해당 task lease, 정상 로컬 runtime을 확인했습니다. 사용자 지시에 따라 이후 실제 브라우저 시험은 내장 웹브라우저로 수행합니다. 이는 VIEWPORT01의 첫 제품 보완 후보이며 실제 세 폭·1px 비교 전에는 성공으로 표시하지 않습니다. 재실패 시 후보와 문맥을 보존하고 추가 구현 반복 없이 독립 항목을 이어갑니다.
+- 첫 단위 제출은 19/20 통과, 실패 1건은 jsdom CSSOM이 `overflow-y` priority를 설정 즉시 버리는 시험 환경 차이였습니다. 최소 재현에서도 초기 `auto !important`의 priority가 빈 값임을 확인했습니다. 해당 사전조건만 일반 `auto`로 수정하며 priority 복구는 같은 공통 경로의 background important 회귀로 계속 검사합니다. 제품 후보는 추가 변경하지 않았습니다.

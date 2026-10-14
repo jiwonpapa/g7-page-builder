@@ -7,15 +7,12 @@ import selectorParser from 'postcss-selector-parser';
 import { readCssGraph } from './lib/editorCssSources.mjs';
 
 const defaultRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const budgets = [
-  { path: 'dist/js/page-builder-manager.iife.js', gzip: 90_000 },
-  { path: 'dist/js/page-effects.iife.js', gzip: 24_000 },
-  { path: 'dist/js/page-sliders.iife.js', gzip: 12_000 },
-];
-
-// User-approved 2026-10-13: editor JS bytes are measurements, not ceilings.
+// User-approved 2026-10-14: all JS bytes are measurements, not ceilings.
 // Missing/empty artifacts and actual loading/interaction regressions still fail.
-const EDITOR_JS_MEASUREMENTS = [
+const JS_MEASUREMENTS = [
+  { path: 'dist/js/page-builder-manager.iife.js', warning: 90_000 },
+  { path: 'dist/js/page-effects.iife.js', warning: 24_000 },
+  { path: 'dist/js/page-sliders.iife.js', warning: 12_000 },
   { path: 'dist/js/page-builder-editor.iife.js', warning: 512_000 },
   { path: 'dist/js/page-builder-structure.iife.js', warning: 512_000 },
   { path: 'dist/js/page-builder-site-part.iife.js', warning: 410_000 },
@@ -23,7 +20,7 @@ const EDITOR_JS_MEASUREMENTS = [
 
 // User-approved 2026-10-13: CSS bytes never block development or release.
 // Historical thresholds remain observable warnings; required files, ownership,
-// syntax, visual/runtime checks and unrelated JavaScript ceilings remain enforced.
+// syntax and visual/runtime checks remain enforced.
 const CSS_MEASUREMENTS = [
   { path: 'resources/css/page-builder-core.css', unit: 'raw', warning: 18_000 },
   { path: 'resources/css/page-builder-manager.css', unit: 'raw', warning: 20_000 },
@@ -43,7 +40,7 @@ const PUBLIC_RUNTIME_BUNDLES = [
   'dist/js/page-effects.iife.js',
   'dist/js/page-sliders.iife.js',
 ];
-const PUBLIC_RUNTIME_COMBINED_LIMIT = 34_000;
+const PUBLIC_RUNTIME_COMBINED_WARNING = 34_000;
 
 const EDITOR_ENTRY = 'resources/css/page-builder-editor.css';
 const EDITOR_OWNERS = ['chrome', 'library', 'controls', 'canvas', 'blocks', 'catalog', 'appearance']
@@ -116,21 +113,13 @@ async function main(args) {
     return;
   }
   const report = [];
-  for (const budget of budgets) {
-    const bytes = readFileSync(join(root, budget.path));
-    const actual = budget.gzip === undefined ? bytes.byteLength : gzipSync(bytes).byteLength;
-    const limit = budget.gzip ?? budget.raw;
-    const unit = budget.gzip === undefined ? 'raw' : 'gzip';
-    report.push(`${budget.path}=${actual}/${limit} ${unit} bytes`);
-    if (actual > limit) throw new Error(`Frontend budget exceeded: ${report.at(-1)}`);
-  }
-  for (const { path, warning } of EDITOR_JS_MEASUREMENTS) {
+  for (const { path, warning } of JS_MEASUREMENTS) {
     const bytes = readFileSync(join(root, path));
-    if (bytes.toString('utf8').trim() === '') throw new Error(`Empty editor JavaScript artifact: ${path}`);
+    if (bytes.toString('utf8').trim() === '') throw new Error(`Empty JavaScript artifact: ${path}`);
     const gzip = gzipSync(bytes).byteLength;
     report.push(`${path}=${bytes.byteLength} raw / ${gzip} gzip bytes (reported; no size ceiling)`);
     if (gzip > warning) {
-      report.push(`Editor JS size advisory: ${path} exceeds historical ${warning} gzip bytes; non-blocking`);
+      report.push(`JS size advisory: ${path} exceeds historical ${warning} gzip bytes; non-blocking`);
     }
   }
   for (const { path, unit, warning } of CSS_MEASUREMENTS) {
@@ -145,9 +134,9 @@ async function main(args) {
   const publicRuntimeBytes = PUBLIC_RUNTIME_BUNDLES.map(path =>
     gzipSync(readFileSync(join(root, path))).byteLength);
   const publicRuntimeCombined = publicRuntimeBytes.reduce((total, bytes) => total + bytes, 0);
-  report.push(`Public runtime combined=${publicRuntimeCombined}/${PUBLIC_RUNTIME_COMBINED_LIMIT} gzip bytes (${PUBLIC_RUNTIME_BUNDLES.join(' + ')})`);
-  if (publicRuntimeCombined > PUBLIC_RUNTIME_COMBINED_LIMIT) {
-    throw new Error(`Public runtime combined budget exceeded: ${publicRuntimeCombined}/${PUBLIC_RUNTIME_COMBINED_LIMIT} gzip bytes`);
+  report.push(`Public runtime combined=${publicRuntimeCombined} gzip bytes (reported; no size ceiling; ${PUBLIC_RUNTIME_BUNDLES.join(' + ')})`);
+  if (publicRuntimeCombined > PUBLIC_RUNTIME_COMBINED_WARNING) {
+    report.push(`JS size advisory: Public runtime combined exceeds historical ${PUBLIC_RUNTIME_COMBINED_WARNING} gzip bytes; non-blocking`);
   }
 
   const viewer = readFileSync(join(root, 'resources/views/viewer.blade.php'), 'utf8');

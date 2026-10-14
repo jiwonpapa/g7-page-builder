@@ -31,6 +31,7 @@ final class DataMarkup
 
         return ['data-g7pb-data-source' => $data->source, 'data-g7pb-endpoint' => $endpoint,
             'data-g7pb-audience' => $data->audience, 'data-g7pb-data-limit' => (string) $data->limit,
+            ...isset($data->controls) ? ['data-g7pb-v3-controls' => json_encode($data->controls, JSON_THROW_ON_ERROR), 'data-g7pb-page-size' => (string) $data->controls->page_size] : [],
             'data-g7pb-v3-data' => json_encode($data->fields, JSON_THROW_ON_ERROR),
             'data-g7pb-empty-message' => '표시할 콘텐츠가 없습니다.'];
     }

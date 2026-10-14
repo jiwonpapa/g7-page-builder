@@ -1,6 +1,7 @@
 import policy from '../../../../schemas/design-policy-v3.json';
 import type { DataConnection, DocumentV3, Node } from './types';
 import { reject } from './schema';
+import { remapDataControls, validateDataControls } from './dataControls';
 
 /** Authored element trees are templates; public capability inputs never contain live records. */
 export function validateDataConnections(document: DocumentV3): void {
@@ -29,7 +30,9 @@ export function validateDataConnections(document: DocumentV3): void {
     }
   }
   visit(document.blocks, false);
+  validateDataControls(document);
 }
 export function remapData(data: DataConnection, ids: ReadonlyMap<string, string>): DataConnection {
-  return { ...data, fields: data.fields.map(field => ({ ...field, node_id: ids.get(field.node_id) ?? reject('data_clipboard', field.node_id) })) };
+  return { ...data, ...(data.controls ? { controls: remapDataControls(data.controls, ids) } : {}),
+    fields: data.fields.map(field => ({ ...field, node_id: ids.get(field.node_id) ?? reject('data_clipboard', field.node_id) })) };
 }

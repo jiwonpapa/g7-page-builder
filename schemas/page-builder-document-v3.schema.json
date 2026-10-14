@@ -1502,6 +1502,14 @@
         }
       ]
     },
+    "data_controls": {
+      "type": "object", "additionalProperties": false, "required": ["page_size"],
+      "properties": {
+        "page_size": { "type": "number", "minimum": 1, "maximum": 12, "multipleOf": 1 },
+        "search_id": { "$ref": "#/$defs/uuid" }, "filter_id": { "$ref": "#/$defs/uuid" },
+        "previous_id": { "$ref": "#/$defs/uuid" }, "next_id": { "$ref": "#/$defs/uuid" }, "status_id": { "$ref": "#/$defs/uuid" }
+      }
+    },
     "data_connection": {
       "type": "object", "additionalProperties": false,
       "required": ["source", "feed", "period", "limit", "board_slug", "post_id", "product_key", "audience", "fields"],
@@ -1514,6 +1522,7 @@
         "post_id": { "type": "number", "minimum": 1, "maximum": 2147483647, "multipleOf": 1 },
         "product_key": { "type": "string", "maxLength": 100, "pattern": "^[A-Za-z0-9_-]*$(?![\\s\\S])" },
         "audience": { "enum": ["all", "guest", "member"] },
+        "controls": { "$ref": "#/$defs/data_controls" },
         "fields": { "type": "array", "minItems": 1, "maxItems": 500, "items": {
           "type": "object", "additionalProperties": false, "required": ["node_id", "property", "field"],
           "properties": { "node_id": { "$ref": "#/$defs/uuid" }, "property": { "enum": ["text", "image", "link"] },

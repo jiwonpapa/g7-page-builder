@@ -11,6 +11,7 @@ final class DataBindings
     public static function validate(stdClass $document, array $rules): void
     {
         self::visit($document->blocks, false, $rules);
+        DataControls::validate($document, $rules);
     }
 
     /** @param list<stdClass> $nodes

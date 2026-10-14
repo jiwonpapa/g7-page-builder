@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { installArchiveFilters, installPagination } from '../../resources/js/public/publicArchiveControls';
+import { archiveControlNodes, installArchiveFilters, installPagination } from '../../resources/js/public/publicArchiveControls';
 
 function fixture() {
   const root = document.implementation.createHTMLDocument('archive controls');
@@ -20,6 +20,39 @@ function fixture() {
 }
 
 describe('archive control lifetimes', () => {
+  it('connects authored sibling controls only inside their source surface, suggests categories and releases owned DOM', () => {
+    const { root, block, rows, status } = fixture();
+    const surface = root.createElement('div'); surface.dataset.v3Surface = 'true';
+    block.replaceWith(surface); surface.append(block);
+    const search = root.createElement('input'), filter = root.createElement('input');
+    const previous = root.createElement('button'), next = root.createElement('button'), page = root.createElement('p');
+    const controls = [previous, next, page, search, filter];
+    controls.forEach((control, index) => { control.dataset.v3Node = 'control-' + index; control.id = 'node-control-' + index; surface.append(control); });
+    block.dataset.g7pbV3Controls = JSON.stringify({ previous_id: 'control-0', next_id: 'control-1', status_id: 'control-2', search_id: 'control-3', filter_id: 'control-4', page_size: 1 });
+    const other = root.createElement('div'); other.dataset.v3Surface = 'true';
+    other.innerHTML = '<input data-v3-node="control-3" value="other surface">'; root.body.prepend(other);
+    expect(archiveControlNodes(block)).toEqual([null, previous, next, page, search, filter]);
+    const pagination = installPagination(block, rows), dispose = installArchiveFilters(block, rows, status, pagination);
+    expect(page.getAttribute('role')).toBe('status'); expect(page.getAttribute('aria-live')).toBe('polite');
+    expect(filter.getAttribute('list')).toBe('node-control-4-data-options');
+    expect(Array.from(block.querySelectorAll('datalist option'), option => option.getAttribute('value'))).toEqual(['', 'A', 'B']);
+    next.click(); expect(page.textContent).toBe('2 / 3');
+    filter.value = 'A'; filter.dispatchEvent(new Event('input'));
+    expect(page.textContent).toBe('1 / 2'); expect(rows.map(row => row.hidden)).toEqual([false, true, true]);
+    next.click(); expect(rows.map(row => row.hidden)).toEqual([true, true, false]);
+    search.value = 'missing'; search.dispatchEvent(new Event('input'));
+    expect(status.hidden).toBe(false); expect(status.textContent).toBe('No matching rows'); expect(page.textContent).toBe('0 / 0');
+    search.value = ''; search.dispatchEvent(new Event('input')); expect(status.hidden).toBe(true);
+    const enter = new KeyboardEvent('keydown', { key: 'Enter', cancelable: true }); search.dispatchEvent(enter); expect(enter.defaultPrevented).toBe(true);
+    expect(other.querySelector('input')?.value).toBe('other surface');
+    const before = rows.map(row => row.outerHTML);
+    dispose(); pagination.dispose(); dispose(); pagination.dispose();
+    expect(block.querySelector('datalist')).toBeNull(); expect(filter.hasAttribute('list')).toBe(false);
+    expect(page.hasAttribute('role')).toBe(false); expect(page.hasAttribute('aria-live')).toBe(false);
+    search.value = 'beta'; search.dispatchEvent(new Event('input')); next.click(); pagination.render([rows[1]], true);
+    expect(rows.map(row => row.outerHTML)).toEqual(before);
+  });
+
   it('keeps filtering and local page reset while disposing every owned listener and render callback', () => {
     const { block, rows, status, search, filter, next, pageStatus } = fixture();
     const pagination = installPagination(block, rows);

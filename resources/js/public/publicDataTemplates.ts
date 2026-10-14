@@ -42,7 +42,7 @@ export function renderDataTemplate(root: Document, block: HTMLElement, payload: 
     };
     if (!title || !key) throw new Error('Invalid public data item.');
     clone.dataset.g7pbArchiveTitle = title.toLocaleLowerCase();
-    clone.dataset.g7pbArchiveBoard = asText(item.board_name) || asText(board?.name) || boardSlug;
+    clone.dataset.g7pbArchiveBoard = product ? asText(item.category_name) : asText(item.board_name) || asText(board?.name) || boardSlug;
     for (const raw of fields) {
       const field = asRecord(raw);
       if (!field || typeof field.node_id !== 'string' || typeof field.field !== 'string' || !Object.hasOwn(values, field.field)) throw new Error('Invalid data field.');

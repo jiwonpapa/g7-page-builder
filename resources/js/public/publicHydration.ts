@@ -108,6 +108,7 @@ function hydrateTypedControls(root: Document): void {
 }
 
 export function hydrateTemplateRuntime(root: Document): void {
+  prepareDataTemplates(root);
   hydrateCatalogIcons(root);
   hydrateEmbeds(root);
   hydrateInquiryHosts(root);
@@ -121,3 +122,5 @@ export function ensureSiteShellButtons(root: Document): void {
     button.type = 'button';
   });
 }
+import { prepareDataTemplates } from './publicDataTemplates';
+

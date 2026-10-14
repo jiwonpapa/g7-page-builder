@@ -68,6 +68,8 @@ export function renderDataTemplate(root: Document, block: HTMLElement, payload: 
       else if (field.property === 'image' && target.tagName === 'IMG') {
         if (value) target.setAttribute('src', safeImageSource(value)); else target.removeAttribute('src');
         target.hidden = !value;
+        // A missing record image must not retain the authored inline layout box.
+        if (!value) target.style.setProperty('display', 'none');
       } else if (field.property === 'link' && target.tagName === 'A') target.setAttribute('href', safeLinkSource(value));
       else throw new Error('Invalid data field role.');
     }

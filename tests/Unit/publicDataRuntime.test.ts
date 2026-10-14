@@ -24,6 +24,27 @@ function fixture() {
 const response = (title: string) => new Response(JSON.stringify({ success: true, data: [{ id: title, board_slug: 'fixture', title }] }), { status: 200 });
 
 describe('public data request ownership', () => {
+  it('collapses missing data images without changing the authored prototype or later populated records', () => {
+    const { root, block } = fixture();
+    block.dataset.v3Node = 'image-host'; block.dataset.g7pbDataLimit = '12';
+    block.dataset.g7pbV3Data = JSON.stringify([{ node_id: 'photo', property: 'image', field: 'image' }]);
+    block.insertAdjacentHTML('afterbegin', '<div data-g7pb-data-template hidden style="display:none"><article>'
+      + '<img data-v3-node="photo" src="/authored.webp" alt="원본 설명" style="display:var(--g7pb-v3-current-display, block);height:200px;object-fit:cover"></article></div>');
+    hydrateTemplateRuntime(root);
+    for (const source of ['posts', 'post-archive', 'post-detail', 'products', 'product-showcase', 'product-detail']) {
+      block.dataset.g7pbDataSource = source;
+      const item = { id: 1, title: 'Post', name: 'Product', board_slug: 'notice', product_code: 'product-1' };
+      const payload = (record: object) => ({ data: source.endsWith('-detail') ? record : [record] });
+      const empty = renderDataTemplate(root, block, payload(item))[0].querySelector('img')!;
+      expect(empty.hidden).toBe(true); expect(empty.hasAttribute('src')).toBe(false); expect(empty.style.display).toBe('none');
+      expect(empty.alt).toBe('원본 설명'); expect(empty.style.height).toBe('200px');
+      const image = renderDataTemplate(root, block, payload({ ...item, thumbnail: '/record.webp', thumbnail_url: '/record.webp' }))[0].querySelector('img')!;
+      expect(image.hidden).toBe(false); expect(image.getAttribute('src')).toBe('/record.webp');
+      expect(image.style.display).toBe('var(--g7pb-v3-current-display, block)');
+      expect(image.style.objectFit).toBe('cover');
+    }
+  });
+
   it('detaches sanitizer-compatible authored prototypes before hydration and reuses them without live IDs or embeds', () => {
     const { root, block, list } = fixture();
     block.dataset.v3Node = 'host'; block.dataset.g7pbDataLimit = '12';

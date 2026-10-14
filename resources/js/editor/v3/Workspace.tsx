@@ -6,34 +6,48 @@ export type InputMode = 'structure' | 'geometry' | 'text' | 'pan';
 /** Measure only our authored surface through Puck's public iframe override. */
 export function WorkspaceFrame({ owner, extent }: { owner: Document; extent: (height: number) => void }) {
   useEffect(() => {
-    const frame = owner.defaultView?.frameElement;
-    if (!frame || !('style' in frame) || !(frame instanceof HTMLIFrameElement)) return;
+    const view = owner.defaultView, frame = view?.frameElement;
+    if (!view || !frame || !('style' in frame) || !(frame instanceof HTMLIFrameElement)) return;
     const previous = frame.style.height;
     // Puck mirrors the host body class and stylesheet into this owned frame.
     // Its editor chrome must not paint over the authored workspace underneath.
-    const backgrounds = [owner.documentElement, owner.body].map(element => ({ element,
-      value: element.style.getPropertyValue('background-color'), priority: element.style.getPropertyPriority('background-color') }));
-    for (const { element } of backgrounds) element.style.setProperty('background-color', 'transparent');
+    // The workbench scrolls the full measured surface. A second vertical frame
+    // scrollbar would silently shrink the authored responsive viewport by 15px.
+    const chrome = [owner.documentElement, owner.body].flatMap(element =>
+      ([['background-color', 'transparent'], ['overflow-y', 'clip']] as const).map(([property, applied]) => ({
+        element, property, applied, value: element.style.getPropertyValue(property),
+        priority: element.style.getPropertyPriority(property) })));
+    for (const { element, property, applied } of chrome) element.style.setProperty(property, applied);
     let surface: HTMLElement | null = null;
+    let pending: number | undefined;
     const measure = () => {
       if (!surface) return;
       const height = Math.ceil(Math.max(800, surface.scrollHeight, surface.getBoundingClientRect().height));
       frame.style.height = height + 'px'; extent(height);
     };
-    const resize = new ResizeObserver(measure);
+    const schedule = () => {
+      if (pending !== undefined) return;
+      pending = view.requestAnimationFrame(() => { pending = undefined; measure(); });
+    };
+    const resize = new ResizeObserver(schedule);
     const discover = () => {
       const next = owner.querySelector<HTMLElement>('[data-v3-surface]');
       if (surface !== next) { resize.disconnect(); surface = next; if (surface) resize.observe(surface); }
       measure();
     };
-    const mutations = new MutationObserver(discover);
-    mutations.observe(owner.body, { childList: true, subtree: true }); discover();
+    const mutations = new MutationObserver(records => {
+      if (!surface || !surface.isConnected) { discover(); return; }
+      if (records.some(record => surface?.contains(record.target))) schedule();
+    });
+    mutations.observe(owner.body, { childList: true, subtree: true, attributes: true,
+      attributeFilter: ['style', 'class', 'hidden'] }); discover();
     return () => {
+      if (pending !== undefined) view.cancelAnimationFrame(pending);
       mutations.disconnect(); resize.disconnect(); frame.style.height = previous;
-      for (const { element, value, priority } of backgrounds) {
-        if (element.style.getPropertyValue('background-color') !== 'transparent') continue;
-        if (value) element.style.setProperty('background-color', value, priority);
-        else element.style.removeProperty('background-color');
+      for (const { element, property, applied, value, priority } of chrome) {
+        if (element.style.getPropertyValue(property) !== applied) continue;
+        if (value) element.style.setProperty(property, value, priority);
+        else element.style.removeProperty(property);
       }
     };
   }, [owner, extent]);

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import type { DataConnection, Node } from '../../documents/v3/types';
+import type { DataConnection, DocumentV3, Node } from '../../documents/v3/types';
 import { designPolicyV3 } from '../../documents/v3/validate';
 import type { DocumentCommand } from '../../documents/v3/designCommands';
 import { InputButton } from './TypedInput';
+import { DataControlsInspector } from './DataControlsInspector';
 
 const sources: Record<DataConnection['source'], string> = { posts: '게시글 목록', 'post-archive': '게시글 아카이브', 'post-detail': '게시글 상세', products: '상품 목록', 'product-showcase': '상품 쇼케이스', 'product-detail': '상품 상세' };
-export function DataInspector({ node, disabled, apply }: { node: Node; disabled: boolean; apply: (command: DocumentCommand) => void }) {
+export function DataInspector({ node, document, disabled, apply }: { node: Node; document: DocumentV3; disabled: boolean; apply: (command: DocumentCommand) => void }) {
   const [value, setValue] = useState<DataConnection>(node.data ?? { source: 'posts', feed: 'recent', period: 'week', limit: 6, board_slug: '', post_id: 1, product_key: '', audience: 'all', fields: [] });
   const [error, setError] = useState('');
   if (node.type !== 'layout.container' || node.props.tag !== 'div') return null;
@@ -19,7 +20,8 @@ export function DataInspector({ node, disabled, apply }: { node: Node; disabled:
     <fieldset disabled={disabled || !eligible}>
       <label>데이터 종류<select value={value.source} onChange={event => {
         const source = event.target.value;
-        if (Object.hasOwn(sources, source)) { const typed = source as DataConnection['source']; setValue({ ...value, source: typed, feed: typed.startsWith('product') ? 'latest' : 'recent' }); }
+        if (Object.hasOwn(sources, source)) { const typed = source as DataConnection['source']; const { controls, ...previous } = value;
+          setValue({ ...previous, ...(!typed.endsWith('-detail') && controls ? { controls } : {}), source: typed, feed: typed.startsWith('product') ? 'latest' : 'recent' }); }
       }}>{(Object.keys(sources) as DataConnection['source'][]).map(source => <option key={source} value={source}>{sources[source]}</option>)}</select></label>
       <label>목록 원천<select value={value.feed} onChange={event => {
         const feed = event.target.value;
@@ -42,6 +44,11 @@ export function DataInspector({ node, disabled, apply }: { node: Node; disabled:
           setValue({ ...value, fields });
         }}><option value="">작성한 값 유지</option>{designPolicyV3.data.fields[property].map(name => <option key={name}>{name}</option>)}</select></label>;
       }))}
+      {!value.source.endsWith('-detail') && <DataControlsInspector document={document} value={value.controls} change={controls => {
+        const next = { ...value };
+        if (controls) next.controls = controls; else delete next.controls;
+        setValue(next);
+      }} />}
       <InputButton onClick={() => { try { apply({ kind: 'data', id: node.instance_id, value }); setError(''); } catch (error) { setError(error instanceof Error ? error.message : '데이터를 연결하지 못했습니다.'); } }}>데이터 연결 적용</InputButton>
     </fieldset>
     {node.data && <InputButton disabled={disabled} onClick={() => apply({ kind: 'data', id: node.instance_id, value: null })}>데이터 연결 해제</InputButton>}

@@ -82,6 +82,8 @@
   "systems": { "host_types": ["layout.container"], "host_tags": ["div", "nav"] },
   "data": {
     "host_types": ["layout.container"], "host_tags": ["div"],
+    "control_roles": { "search_id": ["form.control"], "filter_id": ["form.control"], "previous_id": ["action.button"], "next_id": ["action.button"], "status_id": ["content.text"] },
+    "control_kinds": ["text"],
     "properties": { "text": ["content.heading", "content.text", "action.link"], "image": ["media.image"], "link": ["action.link"] },
     "fields": { "text": ["title", "description", "meta", "price"], "image": ["image"], "link": ["link"] },
     "feeds": { "posts": ["recent", "popular", "board"], "post-archive": ["recent", "popular"], "post-detail": ["recent"], "products": ["latest", "new", "popular"], "product-showcase": ["latest", "new", "popular"], "product-detail": ["latest"] }

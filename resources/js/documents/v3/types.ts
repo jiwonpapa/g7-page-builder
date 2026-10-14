@@ -14,11 +14,14 @@ type Side = 'top' | 'right' | 'bottom' | 'left';
 type Corner = 'top_left' | 'top_right' | 'bottom_left' | 'bottom_right';
 export interface ControlPair { trigger_id: string; panel_id: string }
 export type SystemControlKind = 'search' | 'account' | 'cart' | 'notifications' | 'theme' | 'locale' | 'currency';
+export interface DataControls { page_size: number; search_id?: string; filter_id?: string; previous_id?: string; next_id?: string; status_id?: string }
+export type DataControlRole = Exclude<keyof DataControls, 'page_size'>;
 export interface DataConnection {
   source: 'posts' | 'post-archive' | 'post-detail' | 'products' | 'product-showcase' | 'product-detail';
   feed: 'recent' | 'popular' | 'board' | 'latest' | 'new'; period: 'today' | 'week' | 'month' | 'year';
   limit: 3 | 4 | 6 | 8 | 12; board_slug: string; post_id: number; product_key: string;
   audience: 'all' | 'guest' | 'member';
+  controls?: DataControls;
   fields: { node_id: string; property: 'text' | 'image' | 'link'; field: 'title' | 'description' | 'image' | 'link' | 'meta' | 'price' }[];
 }
 export type FormControlKind = 'text' | 'email' | 'tel' | 'textarea' | 'checkbox';

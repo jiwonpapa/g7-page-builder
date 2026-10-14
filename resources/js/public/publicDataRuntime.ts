@@ -1,4 +1,4 @@
-import { archiveControlNodes, installArchiveFilters, installPagination } from './publicArchiveControls';
+import { archiveControlNodes, installArchiveFilters, installPagination, setArchiveControlsEnabled } from './publicArchiveControls';
 import { payloadItems, payloadRecord, renderPost, renderPostDetail, renderProduct, renderProductDetail } from './publicDataRendering';
 import { asRecord } from './publicValues';
 import { shellAuthHeaders } from './siteShellControls';
@@ -19,6 +19,7 @@ interface DataState {
   job: Promise<void>;
   rows?: HTMLElement[];
   controls?: { nodes: (Element | null)[]; dispose: () => void };
+  controlNodes: (Element | null)[];
 }
 interface DataRuntime {
   root: Document;
@@ -34,7 +35,7 @@ const runtimes = new WeakMap<Document, DataRuntime>();
 const inputAttributes = ['data-g7pb-data-source', 'data-g7pb-endpoint', 'data-g7pb-audience',
   'data-g7pb-visibility-audience', 'data-g7pb-product-base', 'data-g7pb-empty-message',
   'data-g7pb-show-content', 'data-g7pb-show-description', 'data-g7pb-detail-url', 'data-g7pb-detail-label',
-  'data-g7pb-data-limit', 'data-g7pb-page-size', 'data-g7pb-motion', 'data-g7pb-motion-stagger', 'data-g7pb-v3-data'];
+  'data-g7pb-data-limit', 'data-g7pb-page-size', 'data-g7pb-motion', 'data-g7pb-motion-stagger', 'data-g7pb-v3-data', 'data-g7pb-v3-controls'];
 
 function dataInputs(block: HTMLElement): string {
   return JSON.stringify(inputAttributes.map((attribute) => block.getAttribute(attribute)));
@@ -60,6 +61,7 @@ function retireVisibility(runtime: DataRuntime, block: HTMLElement): void {
 function retireData(runtime: DataRuntime, block: HTMLElement, state: DataState): void {
   runtime.data.delete(block);
   state.controls?.dispose();
+  if (block.hasAttribute('data-g7pb-v3-controls')) setArchiveControlsEnabled(state.controlNodes, false);
   state.list?.setAttribute('aria-busy', 'false');
   state.detail?.setAttribute('aria-busy', 'false');
   delete block.dataset.g7pbDataReady;
@@ -185,14 +187,19 @@ function dataCurrent(runtime: DataRuntime, block: HTMLElement, state: DataState)
 
 function connectArchive(block: HTMLElement, state: DataState): void {
   if (state.rows === undefined || state.controls) return;
+  state.controlNodes = archiveControlNodes(block);
+  const authoredControls = block.hasAttribute('data-g7pb-v3-controls');
+  if (authoredControls) setArchiveControlsEnabled(state.controlNodes, true);
   const pagination = installPagination(block, state.rows);
   pagination.render(state.rows, true);
-  const disposeFilters = block.dataset.g7pbDataSource === 'post-archive' && state.rows.length > 0
+  const disposeFilters = (authoredControls || (block.dataset.g7pbDataSource === 'post-archive' && state.rows.length > 0))
     ? installArchiveFilters(block, state.rows, state.status, pagination) : undefined;
-  state.controls = { nodes: archiveControlNodes(block), dispose: () => { disposeFilters?.(); pagination.dispose(); } };
+  const nodes = state.controlNodes;
+  state.controls = { nodes, dispose: () => { disposeFilters?.(); pagination.dispose(); if (authoredControls) setArchiveControlsEnabled(nodes, false); } };
 }
 
 async function loadBlock(runtime: DataRuntime, block: HTMLElement, state: DataState, visitor: Promise<Audience>, visibility?: Promise<void>): Promise<void> {
+  if (block.hasAttribute('data-g7pb-v3-controls')) setArchiveControlsEnabled(state.controlNodes, false);
   await visibility;
   const audience = await visitor;
   if (!dataCurrent(runtime, block, state)) return;
@@ -289,7 +296,7 @@ export async function bootDynamicData(root: Document = document, fetcher: typeof
     }
     if (existing) retireData(runtime, block, existing);
     const state: DataState = { fetcher, inputs: dataInputs(block), list: block.querySelector('[data-g7pb-data-list]'),
-      detail: block.querySelector('[data-g7pb-data-detail]'), status: block.querySelector('[data-g7pb-data-status]'), job: Promise.resolve() };
+      detail: block.querySelector('[data-g7pb-data-detail]'), status: block.querySelector('[data-g7pb-data-status]'), job: Promise.resolve(), controlNodes: archiveControlNodes(block) };
     runtime.data.set(block, state);
     const visitor = (block.dataset.g7pbAudience ?? 'all') === 'all' ? Promise.resolve<Audience>('guest') : audience();
     state.job = loadBlock(runtime, block, state, visitor, visibility.get(block));

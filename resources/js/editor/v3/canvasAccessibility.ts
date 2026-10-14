@@ -2,7 +2,9 @@
 interface AttributeOwner { before: string | null; applied: string | null }
 let descriptionSequence = 0;
 
-export function createCanvasAccessibility(owner: Document) {
+export const CANVAS_INPUT_HELP = '키보드로는 레이어에서 요소를 선택한 뒤 속성 패널의 위로, 아래로, 선택 위치로 이동 버튼을 사용하세요. 정밀 조작 모드의 화살표 키는 흐름 순서 또는 좌표를 변경하고, Escape는 진행 중 조작을 취소합니다. 본문 입력 모드에서는 글자를 편집합니다. 읽기 전용에서는 변경할 수 없습니다.';
+
+export function createCanvasAccessibility(owner: Document, inputHelp?: string) {
   const changed = new Map<Element, Map<string, AttributeOwner>>();
   const copies = new Map<string, HTMLParagraphElement>();
   const host = owner.defaultView?.frameElement?.ownerDocument;
@@ -44,7 +46,10 @@ export function createCanvasAccessibility(owner: Document) {
           copy = owner.createElement('p'); copy.id = 'g7pb-canvas-description-' + ++descriptionSequence;
           copy.className = 'g7pb-v3-sr-only'; copies.set(id, copy); owner.body.append(copy);
         }
-        if (copy.textContent !== original.textContent) copy.textContent = original.textContent;
+        // Canvas input belongs to PB. Puck's default sensor instructions can
+        // advertise keyboard dragging even when only PointerSensor is installed.
+        const text = inputHelp ?? original.textContent;
+        if (copy.textContent !== text) copy.textContent = text;
         return copy.id;
       });
       write(element, 'aria-describedby', ids.join(' '));

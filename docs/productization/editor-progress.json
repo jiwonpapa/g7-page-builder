@@ -8,6 +8,11 @@
   "dashboard_file": "docs/productization/editor-progress.md",
   "documents": [
     {
+      "path": "docs/audits/2026-10-14-product-acceptance-closeout.md",
+      "role": "current",
+      "required_text": "목표 진행 중"
+    },
+    {
       "path": "docs/audits/2026-10-14-remaining-nine-final-audit.md",
       "role": "current",
       "required_text": "제품 수용 미완료"
@@ -689,7 +694,7 @@
       "acceptance_ids": [
         "IND-07"
       ],
-      "owner_task": "integration-remaining-nine-20261014",
+      "owner_task": "integration-acceptance-closeout-20261014",
       "implementation_commit": "52aec0b00cfc5991e5b52506c510345337ca9c98",
       "integrated_commit": "4098aacd8fc9efd90b73c99060aa38fd22879d48",
       "evidence": [
@@ -927,7 +932,7 @@
       "acceptance_ids": [
         "IND-08"
       ],
-      "owner_task": "integration-remaining-nine-20261014",
+      "owner_task": "integration-acceptance-closeout-20261014",
       "implementation_commit": "54b3f3e77402de34cca4401b9c1393555a92ec82",
       "integrated_commit": "fc752e9180f4846eed3572b602c1ccc20c9ee539",
       "evidence": [
@@ -960,7 +965,7 @@
       "acceptance_ids": [
         "IND-09"
       ],
-      "owner_task": "integration-remaining-nine-20261014",
+      "owner_task": "integration-acceptance-closeout-20261014",
       "implementation_commit": "a570d746f178f995700bf8d65ed94506383183c5",
       "integrated_commit": "728e0e1fc800dfa27ab9277d43debb5e8fdf5c51",
       "evidence": [
@@ -1000,7 +1005,7 @@
       "acceptance_ids": [
         "IND-10"
       ],
-      "owner_task": "integration-remaining-nine-20261014",
+      "owner_task": "integration-acceptance-closeout-20261014",
       "implementation_commit": "dbc0d6c3961dde837d158949e7455e1cd7e91d21",
       "integrated_commit": "e7c5b2d25ffc85e37bbeceadc857be103e952492",
       "evidence": [

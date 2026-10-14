@@ -1,14 +1,14 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { createCanvasAccessibility } from '../../resources/js/editor/v3/canvasAccessibility';
+import { CANVAS_INPUT_HELP, createCanvasAccessibility } from '../../resources/js/editor/v3/canvasAccessibility';
 
 const cleanup: (() => void)[] = [];
 afterEach(() => { cleanup.splice(0).forEach(run => run()); document.body.replaceChildren(); });
-function fixture() {
+function fixture(inputHelp?: string) {
   const frame = document.createElement('iframe'); document.body.append(frame);
   const owner = frame.contentDocument;
   if (!owner) throw new Error('Missing test iframe');
   owner.body.innerHTML = '<div data-v3-surface><section data-v3-node="parent" role="group" aria-label="Parent" aria-pressed="false" aria-grabbed="false"><h2 data-v3-node="child" role="button" tabindex="0" aria-pressed="false" aria-grabbed="false">Child</h2></section></div>';
-  const runtime = createCanvasAccessibility(owner); cleanup.push(() => runtime.dispose());
+  const runtime = createCanvasAccessibility(owner, inputHelp); cleanup.push(() => runtime.dispose());
   return { owner, runtime, parent: owner.querySelector('[data-v3-node="parent"]')!, child: owner.querySelector('[data-v3-node="child"]')! };
 }
 describe('PB canvas accessibility ownership', () => {
@@ -33,6 +33,25 @@ describe('PB canvas accessibility ownership', () => {
     parent.setAttribute('aria-describedby', 'local-help missing-author-help'); runtime.sync();
     expect(parent.getAttribute('aria-describedby')).toBe('local-help missing-author-help');
     expect(owner.querySelector('.g7pb-v3-sr-only')).toBeNull();
+  });
+  it('describes the PB keyboard path without advertising an uninstalled vendor sensor', () => {
+    const description = document.createElement('p'); description.id = 'vendor-help';
+    description.textContent = 'Press space to pick up; use the arrow keys to drag.'; document.body.append(description);
+    const { owner, parent, runtime } = fixture(CANVAS_INPUT_HELP);
+    parent.setAttribute('aria-describedby', description.id); runtime.sync();
+    const local = owner.getElementById(parent.getAttribute('aria-describedby')!);
+    expect(local?.textContent).toBe(CANVAS_INPUT_HELP);
+    expect(local?.textContent).not.toContain('Press space');
+    expect(local?.textContent).toContain('레이어'); expect(local?.textContent).toContain('정밀 조작');
+    expect(description.textContent).toBe('Press space to pick up; use the arrow keys to drag.');
+    runtime.dispose(); expect(parent.getAttribute('aria-describedby')).toBe(description.id);
+  });
+  it('preserves authored local and unknown references with PB instructions enabled', () => {
+    const { owner, parent, runtime } = fixture(CANVAS_INPUT_HELP);
+    const local = owner.createElement('p'); local.id = 'authored-help'; local.textContent = 'Keep this hint'; owner.body.append(local);
+    parent.setAttribute('aria-describedby', 'authored-help absent-help'); runtime.sync();
+    expect(parent.getAttribute('aria-describedby')).toBe('authored-help absent-help');
+    expect(local.textContent).toBe('Keep this hint'); expect(owner.querySelector('.g7pb-v3-sr-only')).toBeNull();
   });
   it('handles later vendor mutations and new canvas nodes but ignores outside nodes', async () => {
     const { owner, parent } = fixture(); parent.setAttribute('aria-pressed', 'true');

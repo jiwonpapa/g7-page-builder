@@ -5,6 +5,21 @@ export interface PaginationController {
   dispose: () => void;
 }
 
+// Keep authored layout across control reinstallation without mutating rows on disposal.
+const rowDisplays = new WeakMap<HTMLElement, { value: string; priority: string }>();
+function setRowVisible(node: HTMLElement, visible: boolean): void {
+  let authored = rowDisplays.get(node);
+  if (!authored) {
+    authored = { value: node.style.getPropertyValue('display'), priority: node.style.getPropertyPriority('display') };
+    rowDisplays.set(node, authored);
+  }
+  node.hidden = !visible;
+  // Inline layout beats the browser's [hidden] rule; restore the responsive value, not a computed pixel layout.
+  if (!visible) node.style.setProperty('display', 'none', authored.priority);
+  else if (authored.value) node.style.setProperty('display', authored.value, authored.priority);
+  else node.style.removeProperty('display');
+}
+
 export function archiveControlNodes(block: HTMLElement): (HTMLElement | null)[] {
   if (block.hasAttribute('data-g7pb-v3-controls')) {
     try {
@@ -43,7 +58,7 @@ export function installPagination(block: HTMLElement, nodes: HTMLElement[]): Pag
     const pageCount = Math.max(1, Math.ceil(active.length / pageSize));
     page = Math.min(Math.max(1, page), pageCount);
     const visible = new Set(active.slice((page - 1) * pageSize, page * pageSize));
-    nodes.forEach((node) => { node.hidden = !visible.has(node); });
+    nodes.forEach((node) => { setRowVisible(node, visible.has(node)); });
     if (nav) nav.hidden = active.length === 0 || pageCount <= 1;
     previous?.toggleAttribute('disabled', page <= 1);
     next?.toggleAttribute('disabled', page >= pageCount);

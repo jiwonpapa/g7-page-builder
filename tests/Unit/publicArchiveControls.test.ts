@@ -20,6 +20,31 @@ function fixture() {
 }
 
 describe('archive control lifetimes', () => {
+  it('preserves authored responsive display across filtering, frozen disposal and reinstallation', () => {
+    const { block, rows, next } = fixture();
+    rows[0].style.display = 'var(--g7pb-v3-current-display, flex)';
+    rows[1].style.setProperty('display', 'grid', 'important');
+    const pagination = installPagination(block, rows);
+    expect(rows.map(row => row.style.display)).toEqual(['var(--g7pb-v3-current-display, flex)', 'none', 'none']);
+    next.click();
+    expect(rows.map(row => row.hidden)).toEqual([true, false, true]);
+    expect(rows[1].style.display).toBe('grid'); expect(rows[1].style.getPropertyPriority('display')).toBe('important');
+    pagination.render([], true);
+    expect(rows.every(row => row.hidden && row.style.display === 'none')).toBe(true);
+    const before = rows.map(row => row.outerHTML);
+    pagination.dispose(); pagination.dispose(); next.click(); pagination.render(rows, true);
+    expect(rows.map(row => row.outerHTML)).toEqual(before);
+    const replacement = installPagination(block, rows);
+    expect(rows[0].hidden).toBe(false);
+    expect(rows[0].style.display).toBe('var(--g7pb-v3-current-display, flex)');
+    next.click(); expect(rows[1].style.display).toBe('grid');
+    next.click(); expect(rows[2].hidden).toBe(false); expect(rows[2].style.display).toBe('');
+    replacement.render([rows[0]], true);
+    expect(rows[0].style.display).toBe('var(--g7pb-v3-current-display, flex)');
+    expect(rows[1].style.display).toBe('none'); expect(rows[2].style.display).toBe('none');
+    replacement.dispose();
+  });
+
   it('connects authored sibling controls only inside their source surface, suggests categories and releases owned DOM', () => {
     const { root, block, rows, status } = fixture();
     const surface = root.createElement('div'); surface.dataset.v3Surface = 'true';

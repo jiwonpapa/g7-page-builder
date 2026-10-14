@@ -12,6 +12,23 @@ function fixture(): { doc: Document; host: HTMLElement } {
 afterEach(() => { vi.restoreAllMocks(); localStorage.clear(); document.body.replaceChildren(); });
 
 describe('Site Shell product release gate', () => {
+  it('connects authored system hosts to the existing shell styles without replacing their design', () => {
+    const doc = document.implementation.createHTMLDocument('Authored controls');
+    const host = doc.createElement('div');
+    host.dataset.v3System = 'account'; host.dataset.g7pbSystemControls = '';
+    host.dataset.g7pbShellOptions = JSON.stringify({ ...options, search: false, cart: false });
+    host.className = 'existing-scope'; host.style.width = '72px'; host.style.height = '48px';
+    host.style.display = 'grid'; host.style.color = 'var(--owned-text)';
+    const design = host.style.cssText;
+    doc.body.append(host); mountShellControls(doc); mountShellControls(doc);
+    expect(host.classList.contains('g7pb-system-controls')).toBe(true);
+    expect(host.classList.contains('existing-scope')).toBe(true);
+    expect(host.style.cssText).toBe(design);
+    expect(host.dataset.v3System).toBe('account');
+    expect(host.querySelectorAll('[data-g7pb-account-trigger]')).toHaveLength(1);
+    expect(host.querySelector('[data-g7pb-system-cart]')).toBeNull();
+  });
+
   it('restores disclosure and keyboard focus after a G7 HtmlContent DOM replacement', () => {
     const first = document.importNode(fixture().host, true); document.body.append(first);
     const dispose = installShellDisclosures(first);

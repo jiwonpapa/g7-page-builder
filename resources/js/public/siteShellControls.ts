@@ -65,6 +65,7 @@ export function mountShellControls(root: ParentNode): void {
       const options = shellRecord(JSON.parse(host.dataset.g7pbShellOptions ?? '{}'));
       const normalized = Object.fromEntries(['search', 'account', 'cart', 'notifications', 'theme', 'locale', 'currency'].map((key) => [key, options[key] === true])) as ShellOptions;
       const markup = shellControlsMarkup(normalized, host.dataset.g7pbShellLocale?.startsWith('en'));
+      if (host.hasAttribute('data-v3-system')) host.classList.add('g7pb-system-controls');
       host.innerHTML = host.hasAttribute('data-v3-system') ? decorateSystemMarkup(markup) : markup;
       host.dataset.g7pbShellMounted = 'true';
     } catch { /* Malformed optional controls retain the compiled fallback. */ }

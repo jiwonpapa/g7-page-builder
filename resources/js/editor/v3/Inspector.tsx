@@ -18,6 +18,10 @@ export function Inspector({ node, document, disabled, apply, viewport = 'base' }
   const [props, setProps] = useState(() => structuredClone(node.props));
   const [error, setError] = useState('');
   const changed = JSON.stringify(draft) !== JSON.stringify(layer);
+  const text = 'runs' in node.props || 'paragraphs' in node.props || 'label' in node.props;
+  const priority = text ? ['글자', '크기', '자동 배치'] : ['크기', '자동 배치'];
+  const ordered = [...groups].sort((a, b) => (priority.indexOf(a.title) < 0 ? priority.length : priority.indexOf(a.title))
+    - (priority.indexOf(b.title) < 0 ? priority.length : priority.indexOf(b.title)));
   const change = (key: keyof Style, value: unknown) => { setDraft(current => ({ ...current, [key]: value })); setError(''); };
   const reset = (key: keyof Style) => setDraft(current => { const next = { ...current }; delete next[key]; return next; });
   const submit = () => {
@@ -35,17 +39,17 @@ export function Inspector({ node, document, disabled, apply, viewport = 'base' }
       if (event.key === 'Escape') { event.stopPropagation(); setDraft(structuredClone(layer)); setError(''); }
     }}>
       <fieldset disabled={disabled} style={{ border: 0, padding: 0, margin: 0 }}>
-        {groups.map((group, index) => <details key={group.title} open={index < 2} className="g7pb-v3-property-group">
+        {ordered.map((group, index) => <details key={group.title} open={index < 2} className="g7pb-v3-property-group">
           <summary>{group.title}</summary>
-          {group.keys.map(key => <div key={key} className="g7pb-v3-property-row">
+          {group.keys.map(key => <div key={key} className="g7pb-v3-property-row" data-specified={Object.hasOwn(draft, key)}>
             <label><input type="checkbox" aria-label={labelFor(key) + ' 지정'} checked={Object.hasOwn(draft, key)}
               onChange={event => event.target.checked ? change(key, structuredClone(effective[key] ?? (['width', 'height', 'basis'].includes(key) ? 'auto' : seed(styleRules[key]!)))) : reset(key)} />{labelFor(key)}</label>
             {Object.hasOwn(draft, key) ? <><TypedInput rule={styleRules[key]!} value={draft[key]} label={labelFor(key)} change={value => change(key, value)} assets={document.assets} />
-              <small>{viewport === 'base' ? ' 공통값 지정' : ' 이 화면 재정의'}</small>
+              <small className="g7pb-v3-property-scope">{viewport === 'base' ? ' 공통값 지정' : ' 이 화면 재정의'}</small>
               <InputButton onClick={() => reset(key)} aria-label={labelFor(key) + ' 초기화'}>초기화</InputButton></>
               : <small style={{ color: 'var(--g7pb-muted)', overflowWrap: 'anywhere' }} aria-label={labelFor(key) + ' 상속'}>
                 {viewport !== 'base' && node.style[key] !== undefined ? ' 공통값에서 상속: ' + JSON.stringify(node.style[key]) : ' 미지정 · 기본값 사용'}</small>}
-            {viewport === 'base' && <small aria-label={labelFor(key) + ' 영향'} style={{ display: 'block', color: 'var(--g7pb-muted)' }}>
+            {viewport === 'base' && <small className="g7pb-v3-sr-only" aria-label={labelFor(key) + ' 영향'}>
               {(['tablet', 'mobile'] as const).map(target => viewportLabel(target) + (Object.hasOwn(node.responsive[target] ?? {}, key) ? ': 별도값 유지' : ': 공통값 반영')).join(' · ')}
             </small>}
           </div>)}

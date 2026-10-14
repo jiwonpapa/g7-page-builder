@@ -96,8 +96,8 @@
 .g7pb-v3-properties > [aria-label='읽기 순서 안내'] { padding-top: 12px; font-size: 11px; }
 .g7pb-v3-properties [role='group']:empty { display: none; }
 .g7pb-v3-properties [hidden] { display: none; }
-.g7pb-v3-selection-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin-top: 12px; }
-.g7pb-v3-selection-actions .g7pb-button { white-space: normal; line-height: 1.3; }
+.g7pb-v3-selection-actions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 12px; }
+.g7pb-v3-selection-actions .g7pb-button { width: 30px; min-height: 30px; padding: 0; }
 .g7pb-v3-panel form > label { display: grid; gap: 6px; margin-bottom: 8px; }
 .g7pb-v3-panel :is(input, textarea, select):not([type='checkbox']):not([type='radio']),
 .g7pb-v3-toolbar :is(input, select),
@@ -114,11 +114,14 @@
 .g7pb-v3-property-group { padding: 12px 0; border-bottom: 1px solid var(--g7pb-border); }
 .g7pb-v3-property-group summary { cursor: pointer; font-weight: 600; }
 .g7pb-v3-property-row { display: grid; gap: 6px; padding-block: 10px; }
+.g7pb-v3-property-row[data-specified='false'] { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; padding-block: 8px; }
 .g7pb-v3-property-row + .g7pb-v3-property-row { border-top: 1px solid var(--g7pb-surface-hover); }
 .g7pb-v3-property-row > small { font-size: 10px; color: var(--g7pb-muted); }
+.g7pb-v3-property-row > .g7pb-v3-sr-only { grid-column: 1 / -1; }
+.g7pb-v3-property-scope { justify-self: start; }
 .g7pb-v3-property-row > div { display: grid; gap: 6px; }
 .g7pb-v3-property-row > .g7pb-button { justify-self: start; padding: 3px 6px; min-height: 24px; border-color: transparent; color: var(--g7pb-muted); }
-.g7pb-v3-apply { display: flex; gap: 6px; padding: 12px 0 8px; }
+.g7pb-v3-apply { position: sticky; z-index: 1; bottom: -16px; display: flex; gap: 6px; padding: 12px 0 8px; background: var(--g7pb-surface-strong); border-top: 1px solid var(--g7pb-border); }
 .g7pb-v3-apply > button:first-child:not(:disabled) { background: var(--g7pb-accent); border-color: var(--g7pb-accent); color: var(--g7pb-on-accent); }
 .g7pb-v3-statusbar { flex: 0 0 auto; min-height: 30px; padding: 6px 16px; overflow-wrap: anywhere; border-top: 1px solid var(--g7pb-border); background: var(--g7pb-surface-strong); color: var(--g7pb-muted); font-size: 11px; }
 .g7pb-v3-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }

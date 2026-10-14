@@ -38,10 +38,10 @@
 | 세부 편집 | IP4 · 정밀 Inspector와 자동 배치 | 완료 | IP3 | ip4-richtext-race-20261012 | 구현 `2a2596997a886c19ffa8f752d08f7f43f95c2d94`<br>통합 `9118103d91f2c5674f555e81667b260ec9aa4cb6`<br>필수 증거 3/3<br>[IND-04/unit](<../audits/2026-10-12-ip4-precision-inspector.md>) · [IND-04/browser](<../audits/2026-10-12-ip4-precision-inspector.md>) · [IND-04/parity](<../audits/2026-10-12-ip4-precision-inspector.md>) |
 | 세부 편집 | IP5 · 핸들과 다중 선택 작업면 | 완료 | IP4 | ip5-canvas-ui-20261012 | 구현 `aff9225883b330777807804b4177e16e2b3fcd13`<br>통합 `c58a1e83ba0003015cd63eccdba32a0d063332b2`<br>필수 증거 3/3<br>[IND-05/unit](<../audits/2026-10-12-ip5-canvas-interactions.md>) · [IND-05/browser](<../audits/2026-10-12-ip5-canvas-interactions.md>) · [IND-05/accessibility](<../audits/2026-10-12-ip5-canvas-interactions.md>) |
 | 세부 편집 | IP6 · 반응형 상세 편집 | 완료 | IP5 | ip6-responsive-editor-20261012 | 구현 `b23d204f8183c971b5b093e5736bb30b5da36630`<br>통합 `29f80fdab86058ce2683343e5ff6e056efca1c27`<br>필수 증거 3/3<br>[IND-06/contract](<../audits/2026-10-12-ip6-responsive-editing.md>) · [IND-06/browser](<../audits/2026-10-12-ip6-responsive-editing.md>) · [IND-06/parity](<../audits/2026-10-12-ip6-responsive-editing.md>) |
-| 전체 연결과 수용 | IP7 · 내장 구성 템플릿과 공통영역 | 진행 | IP6 | data04-visibility-reaudit-20261014 | 소스 `52aec0b00cfc5991e5b52506c510345337ca9c98`<br>통합 `4098aacd8fc9efd90b73c99060aa38fd22879d48`<br>수용 미완료·재감사 인계 |
-| 전체 연결과 수용 | IP8 · 미디어와 재사용 구성 | 진행 | IP7 | editor-final-handoff-20261014 | 소스 `54b3f3e77402de34cca4401b9c1393555a92ec82`<br>통합 `fc752e9180f4846eed3572b602c1ccc20c9ee539`<br>수용 미완료·재감사 인계 |
-| 전체 연결과 수용 | IP9 · 저장 복구와 공개 출력 일치 | 진행 | IP8 | editor-final-handoff-20261014 | 소스 `a570d746f178f995700bf8d65ed94506383183c5`<br>통합 `728e0e1fc800dfa27ab9277d43debb5e8fdf5c51`<br>수용 미완료·재감사 인계 |
-| 전체 연결과 수용 | IP10 · 독립성 호환성과 제품 수용 | 계획 | IP9 | 미배정 | 미완료 |
+| 전체 연결과 수용 | IP7 · 내장 구성 템플릿과 공통영역 | 진행 | IP6 | integration-remaining-nine-20261014 | 소스 `52aec0b00cfc5991e5b52506c510345337ca9c98`<br>통합 `4098aacd8fc9efd90b73c99060aa38fd22879d48`<br>수용 미완료·재감사 인계 |
+| 전체 연결과 수용 | IP8 · 미디어와 재사용 구성 | 진행 | IP7 | integration-remaining-nine-20261014 | 소스 `54b3f3e77402de34cca4401b9c1393555a92ec82`<br>통합 `fc752e9180f4846eed3572b602c1ccc20c9ee539`<br>수용 미완료·재감사 인계 |
+| 전체 연결과 수용 | IP9 · 저장 복구와 공개 출력 일치 | 진행 | IP8 | integration-remaining-nine-20261014 | 소스 `a570d746f178f995700bf8d65ed94506383183c5`<br>통합 `728e0e1fc800dfa27ab9277d43debb5e8fdf5c51`<br>수용 미완료·재감사 인계 |
+| 전체 연결과 수용 | IP10 · 독립성 호환성과 제품 수용 | 진행 | IP9 | integration-remaining-nine-20261014 | 미완료 |
 
 다음 진행 가능: IP7
 
@@ -49,9 +49,9 @@
 
 아래 소스/통합 기록은 제품 수용 완료 수에 합산하지 않습니다.
 
-- IP7: 공통 요소/시작 구성 91개/새 Header·Footer/문의·실행 컨트롤/동적 6종과 검색·분류·페이지 조작의 소스는 구현·통합했습니다. 블록별 편집기 등록과 기존 문서 전환은 추가하지 않았습니다. DATA02/03은 후속 승인 보완으로 해소했고, 기본 desktop 흐름 4건·새 Header/Footer 2건과 동적 6종 UI 저장/재열기/none 미리보기·명시 발행은 부분 증거로 보존합니다. DATA04의 첫 실패 32e65372c9f7bcfe248ae80afc1f3409b3035b86은 그대로 보존하고, 다음 재감사의 추가 보완 1회로 행 표시·정리 문제를 해소했습니다(52aec0b0/4098aacd). 관련 단위 112건·타입·구조와 실제 네 목록의 숨김/검색/분류/페이지 제한 확인은 통과했습니다. 상품 표본은 1개·분류 없음으로 다중 페이지/실제 분류는 미실행입니다. 캡처에서 빈 이미지가 여백을 차지하는 DATA05를 관찰했으나 이번 행 표시 범위를 넓혀 수정하지 않았습니다. docs/audits/2026-10-14-data04-visibility-reaudit.md에 근거·한계·다음 범위를 인계하며 IP7 전체 수용 미완료를 유지합니다. JS/CSS byte 초과는 경고입니다. 온라인은 0.37.0-dev.20261014/a84b8eb4 배포 상태이며 이후 수정은 온라인 미배포입니다. 기존 v1/v2/Site Part 처리는 독립 프로세스로 유지합니다.
-- IP8: 미디어 업로드/재사용/교체/alt/fit/초점, 빈 문서 첫 이미지 삽입, 사용자 구성 저장/검색/재삽입을 소스 구현·통합했습니다. 기존 단일 Undo/ID/참조/자산 경로를 사용하고 파일을 삭제하지 않습니다. 추가 브라우저·권한·지연 응답 제품 수용은 실행하지 않고 docs/audits/2026-10-14-editor-implementation-handoff.md로 인계합니다. 수용 완료가 아닙니다.
-- IP9: 새 v3 페이지와 새 Site Part v2 리비전의 명시 초안 복원 및 문서함 진입을 소스 구현·통합했습니다. 기존 문서 전환은 실행하지 않았습니다. 최종 통합본의 CAS/지연 응답/발행 유지/다른 영역 Undo/세 출력 1px 비교는 실행하지 않고 docs/audits/2026-10-14-editor-implementation-handoff.md로 인계합니다. 수용 완료가 아닙니다.
+- IP7: 공통 요소와 시작 구성 91개를 같은 편집기/명령/이력으로 구현했습니다. 잔여 1~9 목표에서 DATA05 및 SYSTEM01~03을 각 원인별 한 번 보완했고, 실제 내장 브라우저에서 6종 정상 응답·빈 이미지 0높이·권한/오류/빈/지연 상태와 상품 다중 조작 대역을 확인했습니다. 실제 상품은 1개/분류 없음이므로 대역 결과를 실제 다중 상품 API 수용으로 바꾸지 않습니다. none/template/builder의 실제 6종 출력, 문의 5개 기존 제품 시험, 계정/검색/통화/화면 모드·팝업 3폭·키보드 닫기와 언어 capability 부재를 부분 증거로 기록했습니다. template의 PB 폭은 f7cfe1ed에서 한 번 보완했지만 현재 외부 테마 Header의 모바일 넘침과 실제 외부 임베드 초기 재생 영향 등 전체 수용은 미완료입니다. 실패 이력과 정확한 경계는 docs/audits/2026-10-14-remaining-nine-goal.md에 보존합니다. JS/CSS 용량은 경고이며 온라인은 기존 0.37.0-dev.20261014/a84b8eb4입니다. 기존 문서 전환·테마/코어 수정은 하지 않았습니다.
+- IP8: 잔여 목표에서 실제 업로드 201/선택/교체/alt/3폭 fit·초점/한 Undo·저장·재열기, 빈 문서 첫 이미지 취소/URL/라이브러리 삽입과 자산 중복 방지, 구성 저장/검색/독립 재삽입/새 ID·참조/삭제 무전파를 확인했습니다. 관련 세션 22개와 실제 모듈 영속·권한 회귀 3개/25단언도 통과했습니다. 지연 응답 중 일부는 이전 정상 업로드 201을 브라우저에 재생한 통제이며 새 지연 업로드/두 번째 실제 사용자 로그인 증거로 확대하지 않습니다. 근거는 docs/audits/2026-10-14-remaining-nine-goal.md입니다. 앞선 통합 소스와 현재 제품 전체 수용은 구분하며 IP7 의존성과 최종 감사가 남아 완료 수에 합산하지 않습니다. 파일/기존 문서 삭제는 없습니다.
+- IP9: 잔여 목표에서 페이지 리비전 명시 복원·마지막 공개 artifact 유지·readonly를 확인했습니다. 새 미적용 Site Part 세트는 실제 내장 UI로 Header #2를 새 revision 4/lock 5로 복원했고 원본 JSON 정확 일치, Header 새 Undo 비활성, Footer 미저장 입력/Undo 및 발행 #2 포인터 보존을 확인했습니다. 기존 Site Part 409/지연/쌍 발행 성공은 재사용했습니다. 대표 미디어/구성 16요소는 세 폭의 editor/preview/public 6비교에서 최대 0px였지만 전체 카탈로그/현재 외부 테마/모든 시나리오의 1px 합격으로 확대하지 않습니다. 정확한 source/build·환경 제한·재감사 잔여는 docs/audits/2026-10-14-remaining-nine-goal.md에 기록합니다. 기존 문서 전환은 별도이며 전체 수용 완료는 아닙니다.
 
 조회: `make editor-status` · 정합성 검사: `make editor-plan-check`
 

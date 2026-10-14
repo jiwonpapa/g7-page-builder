@@ -94,6 +94,7 @@ COMPILER_OWNERS = "src/Application/Compilation/HtmlDocument/"
 COMPILER_COVERAGE = "scripts/check-php-coverage.php"
 COMPILER_TEST = "tests/UnitPhp/HtmlDocumentCompilerTest.php"
 STANDALONE_VIEWER = "resources/views/viewer.blade.php"
+STANDALONE_SYSTEM_ASSETS_TEST = "tests/Integration/Gnuboard7/StandaloneViewerAssetsTest.php"
 
 
 # Caches live for one selection only; edits between calls never reuse a graph.
@@ -136,21 +137,41 @@ def compiler_family(root):
 
 
 
-def standalone_viewer_class_added(root, base):
-    """One reviewed additive class; every other Blade byte remains unchanged."""
+def standalone_viewer_contents(root, base):
+    """Read the exact owned view and reviewed base, never a linked replacement."""
     root = root.resolve()
     file = root / STANDALONE_VIEWER
     if any((root / path).is_symlink() for path in (Path(STANDALONE_VIEWER), *Path(STANDALONE_VIEWER).parents)):
-        return False
+        return None
     try:
         before = subprocess.run(["git", "-C", str(root), "show", f"{base}:{STANDALONE_VIEWER}"],
                                 capture_output=True, check=True, timeout=10).stdout
         after = file.read_bytes()
     except (OSError, subprocess.SubprocessError):
+        return None
+    return before, after
+
+
+def standalone_viewer_class_added(root, base):
+    """One reviewed additive class; every other Blade byte remains unchanged."""
+    contents = standalone_viewer_contents(root, base)
+    if contents is None:
         return False
+    before, after = contents
     prefix = b'<!doctype html>\n<html lang='
     marked = b'<!doctype html>\n<html class="g7pb-standalone-viewer" lang='
     return before.startswith(prefix) and after == marked + before[len(prefix):]
+
+
+def standalone_viewer_system_runtime_added(root, base):
+    """SYSTEM01 only: add one fixed runtime predicate, preserving every other byte."""
+    contents = standalone_viewer_contents(root, base)
+    if contents is None:
+        return False
+    before, after = contents
+    anchor = b"str_contains($page->artifact, 'data-g7pb-runtime-button')"
+    addition = b" || str_contains($page->artifact, 'data-g7pb-system-controls')"
+    return before.count(anchor) == 1 and addition not in before and after == before.replace(anchor, anchor + addition, 1)
 
 
 EDITOR_ASSET_VIEW = "resources/views/editor.blade.php"
@@ -661,6 +682,12 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                     True, env=BROWSER_ENVIRONMENT)
         elif path == STANDALONE_VIEWER and not full and standalone_viewer_class_added(root, base):
             viewer_styles.append(path)
+        elif path == STANDALONE_VIEWER and not full and standalone_viewer_system_runtime_added(root, base):
+            viewer_styles.append(path)
+            if not (root / STANDALONE_SYSTEM_ASSETS_TEST).is_file():
+                plan.unresolved.append("Missing system-only viewer runtime consumer: " + STANDALONE_SYSTEM_ASSETS_TEST)
+            else:
+                php_tests.append(STANDALONE_SYSTEM_ASSETS_TEST)
         elif path.startswith(("database/", "resources/routes/", "resources/layouts/", "resources/views/", "schemas/", "config/", "docker/")) or path in {"module.php", "compose.yaml", "composer.json", "composer.lock"}:
             if not full:
                 plan.unresolved.append(f"Explicit shared runtime/contract scope required: {path}")
@@ -756,7 +783,8 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                 + ([] if full else ["--exclude-group", "content-catalog"]) + [test])
         kit_inputs = site_kit_inputs(root) if test in (
             "tests/UnitPhp/SiteKitBundleTest.php", "tests/Integration/Gnuboard7/SiteKitInstallationTest.php") else ()
-        add("php:" + test, argv, [*graph.files, *kit_inputs, *contract_fixture_inputs(test), "composer.lock", "phpunit.xml.dist"], "Related PHP behavior", ("php", "g7") if g7 else ("php",), g7, graph.reusable)
+        viewer_inputs = (STANDALONE_VIEWER,) if test == STANDALONE_SYSTEM_ASSETS_TEST else ()
+        add("php:" + test, argv, [*graph.files, *kit_inputs, *viewer_inputs, *contract_fixture_inputs(test), "composer.lock", "phpunit.xml.dist"], "Related PHP behavior", ("php", "g7") if g7 else ("php",), g7, graph.reusable)
     if covered_tests:
         graphs = [php_graphs[test] for test in covered_tests]
         g7 = any(test.startswith("tests/Integration/") for test in covered_tests)

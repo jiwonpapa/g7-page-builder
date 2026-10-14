@@ -513,11 +513,13 @@ class PlannerTests(unittest.TestCase):
                     if changed.endswith(".mjs"):
                         self.assertIn("syntax:" + changed, names)
 
-    def viewer_fixture(self):
+    def viewer_fixture(self, system_runtime=False):
         from tools.g7pb.browser_requirements import PAGE, STRUCTURE_THEME
         path = "resources/views/viewer.blade.php"
         original = (Path(__file__).resolve().parents[2] / path).read_bytes().replace(
             b'<html class="g7pb-standalone-viewer" lang=', b"<html lang=", 1)
+        if system_runtime:
+            original = original.replace(b" || str_contains($page->artifact, 'data-g7pb-system-controls')", b"")
         self.write(path, "")
         (self.root / path).write_bytes(original)
         for args in (("init", "--quiet"), ("add", path),
@@ -530,6 +532,62 @@ class PlannerTests(unittest.TestCase):
         marked = original.replace(b"<html lang=", b'<html class="g7pb-standalone-viewer" lang=', 1)
         self.assertNotEqual(marked, original)
         return path, base, original, marked
+
+    def test_system_only_viewer_predicate_preserves_browser_gates_and_requires_php_rendering(self):
+        from tools.g7pb.browser_requirements import PAGE, STRUCTURE_THEME
+        consumer = "tests/Integration/Gnuboard7/StandaloneViewerAssetsTest.php"
+        path, base, original, _ = self.viewer_fixture(system_runtime=True)
+        anchor = b"str_contains($page->artifact, 'data-g7pb-runtime-button')"
+        addition = b" || str_contains($page->artifact, 'data-g7pb-system-controls')"
+        changed = original.replace(anchor, anchor + addition, 1)
+        self.assertNotEqual(original, changed)
+        (self.root / path).write_bytes(changed)
+        self.assertIn("Missing system-only viewer runtime consumer: " + consumer,
+                      build_plan(self.root, [path], base=base).unresolved)
+        self.write(consumer, "<?php // Render the real Blade view in the product regression.\n")
+        for phase in ("submission", "integration", "verification", "ci"):
+            with self.subTest(phase=phase):
+                plan = build_plan(self.root, [path], base=base, phase=phase)
+                self.assertFalse(plan.unresolved, plan.unresolved)
+                self.assertFalse(plan.full)
+                gates = {gate.name: gate for gate in plan.gates}
+                self.assertEqual(set(gates), {"browser-runtime-sync", "browser-assets", "php:" + consumer,
+                                              "browser:" + PAGE.spec, "browser:" + STRUCTURE_THEME.spec})
+                php = gates["php:" + consumer]
+                self.assertTrue(php.runtime)
+                self.assertIn(path, php.inputs)
+                self.assertIn(consumer, php.inputs)
+                self.assertIn("tests/Integration/bootstrap.php", php.argv)
+                self.assertEqual(php.deferred, phase == "submission")
+                for scenario in (PAGE, STRUCTURE_THEME):
+                    gate = gates["browser:" + scenario.spec]
+                    self.assertIn(path, gate.inputs)
+                    self.assertEqual(gate.depends_on, ("browser-assets",))
+
+    def test_system_viewer_scope_rejects_any_other_byte_change_and_unsafe_base(self):
+        path, base, original, _ = self.viewer_fixture(system_runtime=True)
+        self.write("tests/Integration/Gnuboard7/StandaloneViewerAssetsTest.php", "<?php\n")
+        anchor = b"str_contains($page->artifact, 'data-g7pb-runtime-button')"
+        addition = b" || str_contains($page->artifact, 'data-g7pb-system-controls')"
+        changed = original.replace(anchor, anchor + addition, 1)
+        for value in (original, changed + b"<!-- other change -->", changed.replace(b"@if", b"@unless", 1),
+                      changed.replace(b"$page->locale", b"$other->locale"),
+                      changed.replace(b"page-builder-public.css", b"changed.css"),
+                      changed.replace(b"{!! $page->artifact !!}", b"{!! $other->artifact !!}"),
+                      original.replace(anchor, anchor + addition + addition),
+                      changed.replace(b"data-g7pb-system-controls')", b"data-v3-system')")):
+            with self.subTest(value=value[:80]):
+                (self.root / path).write_bytes(value)
+                self.assertEqual(build_plan(self.root, [path], base=base).unresolved,
+                                 ["Explicit shared runtime/contract scope required: " + path])
+        (self.root / path).write_bytes(changed)
+        self.assertTrue(build_plan(self.root, [path], base="missing-base").unresolved)
+        (self.root / path).unlink()
+        self.assertTrue(build_plan(self.root, [path], base=base).unresolved)
+        target = self.root / "other-view.blade.php"
+        target.write_bytes(changed)
+        (self.root / path).symlink_to(target)
+        self.assertTrue(build_plan(self.root, [path], base=base).unresolved)
 
     def test_standalone_viewer_root_class_uses_scoped_preview_page_and_cache_sync(self):
         from tools.g7pb.browser_requirements import PAGE, STRUCTURE_THEME

@@ -114,7 +114,9 @@ export function installArchiveFilters(block: HTMLElement, nodes: HTMLElement[], 
       if (block.hasAttribute('data-g7pb-v3-controls')) status.hidden = matches.length > 0;
     }
   };
-  const preventSubmit = (event: Event): void => { if ('key' in event && event.key === 'Enter') event.preventDefault(); };
+  const preventSubmit = (event: Event): void => {
+    if ('key' in event && event.key === 'Enter' && (!('isComposing' in event) || event.isComposing !== true)) event.preventDefault();
+  };
   search?.addEventListener('input', apply);
   search?.addEventListener('keydown', preventSubmit);
   filter?.addEventListener('input', apply);

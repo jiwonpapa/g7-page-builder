@@ -76,3 +76,9 @@ Vimeo player는 유효 표본의 컨트롤/01:02 길이를 표시했지만 실�
 현재 `c79a4637..8d00fe4f`의 공식 verification 계획은 full=false/unresolved=0입니다. 기존 자동 브라우저는 `structureDocumentProduct` 13건, `structureEditorV3` 90건, `structureSitePartProduct` 2건, 합계 105건을 선택합니다. 새 시험/전체 coverage를 추가하지 않았습니다. 이 자동 gate는 별도 headless Chromium을 사용하므로 사용자에게 해당 자동 경로만의 허용을 요청했으며, 응답 전 실행하지 않았습니다. 내장 수동 영수증을 자동 gate 통과 JSON으로 위조하거나 docs-only 차수로 검증 기준 SHA를 승격하지 않습니다.
 
 OS IME, 전체 대상의 미확보 UI/출력 수용, provider 실제 재생 한계, 정식 gate/새 버전 배포는 남아 있습니다. 완료 수는 여전히 6/10이며 목표 진행 중입니다. 원본 v1/v2 자동 전환, 코어 변경, 무관한 테마 변경과 비차단 파일 삭제는 없습니다.
+
+## 제공자 단독 대조와 이어가기 경계
+
+PB·G7·JWsoft 코드가 없는 동일 내장 브라우저의 `https://player.vimeo.com/video/76979871`에서도 실제 재생을 눌렀습니다. 최종 UI는 `저작권 문제`와 재생 인증 문제를 표시했고 media는 paused=true/time=0/readyState=0이었습니다. `output/playwright/closeout-vimeo-control-iab-20261014.{json,png}`에 보존했습니다. 따라서 현재 실패는 PB를 거치지 않아도 발생하며 PB만의 원인으로 확정할 수 없습니다. 이것은 제공자 전송/인증의 세부 원인을 확정하거나 Vimeo 실재생 성공으로 바꾸는 근거는 아닙니다. 임의 provider 우회·DRM/보호 해제·샘플 순회·host renderer 변경은 하지 않았습니다.
+
+이어가기에서 원래 한글 시험 탭을 다시 읽었을 때 같은 28개 자동화 입력 이벤트와 composition 이벤트 0개, `저장됨`/구조 선택 상태였습니다. 실제 OS 조합의 새 증거가 생기지 않았으므로 이를 반복 입력하거나 합성하여 메우지 않았습니다. 기존 자동 gate의 별도 headless 경로 허용도 아직 사용자 응답이 없습니다. 제품 수용·release 검증 SHA를 승격하지 않고, 기존 활성 integration/runtime lease와 시험 세션을 보존합니다. 이 보충 기록은 정책 확정·코드 구현·제품 수용·배포 중 어떤 미완료 단계도 완료로 바꾸지 않습니다.

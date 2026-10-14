@@ -12,7 +12,7 @@ export function ResponsiveControls({ width, change }: { width: number; change: (
   useEffect(() => setDraft(String(width)), [width]);
   const viewport = viewportAt(width);
   const icons = [Monitor, Tablet, Smartphone];
-  return <div aria-label="반응형 작업면" className="g7pb-v3-responsive-controls">
+  return <div role="group" aria-label="반응형 작업면" className="g7pb-v3-responsive-controls">
     <div className="g7pb-v3-segmented">
     {([1280, 768, 360] as const).map((value, index) => <InputButton key={value} aria-pressed={viewport === viewportAt(value)}
       onClick={() => change(value)}>{React.createElement(icons[index], { size: 16, 'aria-hidden': true })}<span>{viewportLabel(viewportAt(value))}</span></InputButton>)}
@@ -24,7 +24,7 @@ export function ResponsiveControls({ width, change }: { width: number; change: (
         onChange={event => setDraft(event.target.value)} style={{ width: 72 }} /> px</label>
       <InputButton type="submit">폭 적용</InputButton>
     </form>
-    <span className="g7pb-v3-sr-only" aria-label="스타일 편집 대상">{viewportLabel(viewport)} · {width}px</span>
+    <span role="note" className="g7pb-v3-sr-only" aria-label="스타일 편집 대상">{viewportLabel(viewport)} · {width}px</span>
   </div>;
 }
 
@@ -34,7 +34,7 @@ export function ReadingOrderNotice({ document, viewport }: { document: DocumentV
     const style = effectiveStyle(node, viewport);
     return style.position === 'absolute' || style.column_start !== undefined || style.row_start !== undefined;
   });
-  return <p aria-label="읽기 순서 안내" style={{ color: 'var(--g7pb-muted)', margin: '6px 0' }}>
+  return <p role="note" aria-label="읽기 순서 안내" style={{ color: 'var(--g7pb-muted)', margin: '6px 0' }}>
     {reordered ? '시각 배치와 읽기·Tab 순서가 다를 수 있습니다. 레이어의 공통 DOM 순서를 확인하세요.'
       : '구조·본문·읽기 순서는 모든 화면에서 공유합니다.'}
   </p>;

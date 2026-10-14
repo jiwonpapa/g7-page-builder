@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { bootDynamicData } from '../../resources/js/public/pageEffects';
 import { bootBlockVisibility, disposePublicDataRuntime, publicDataFetcher } from '../../resources/js/public/publicDataRuntime';
+import { renderDataTemplate } from '../../resources/js/public/publicDataTemplates';
+import { hydrateTemplateRuntime } from '../../resources/js/public/publicHydration';
 
 const documents = new Set<Document>();
 afterEach(() => { documents.forEach(disposePublicDataRuntime); documents.clear(); vi.restoreAllMocks(); });
@@ -22,6 +24,32 @@ function fixture() {
 const response = (title: string) => new Response(JSON.stringify({ success: true, data: [{ id: title, board_slug: 'fixture', title }] }), { status: 200 });
 
 describe('public data request ownership', () => {
+  it('detaches sanitizer-compatible authored prototypes before hydration and reuses them without live IDs or embeds', () => {
+    const { root, block, list } = fixture();
+    block.dataset.v3Node = 'host'; block.dataset.g7pbDataLimit = '12';
+    block.dataset.g7pbV3Data = JSON.stringify([{ node_id: 'title', property: 'text', field: 'title' }]);
+    block.insertAdjacentHTML('afterbegin', '<div data-g7pb-data-template hidden aria-hidden="true" style="display:none">'
+      + '<article id="prototype"><h3 id="title-id" data-v3-node="title">Authored title</h3><a href="#title-id" aria-labelledby="title-id">Read</a>'
+      + '<span data-g7pb-embed data-g7pb-embed-kind="video-youtube" data-g7pb-embed-src="https://www.youtube-nocookie.com/embed/example"></span></article></div>');
+    hydrateTemplateRuntime(root); hydrateTemplateRuntime(root);
+    expect(root.querySelector('iframe')).toBeNull();
+    expect(root.getElementById('prototype')).toBeNull();
+    expect(block.querySelector('[data-g7pb-data-template]')?.childElementCount).toBe(0);
+    const payload = { data: [{ id: 1, title: 'Alpha', board_slug: 'a' }, { id: 2, title: 'Beta', board_slug: 'b' }] };
+    const rows = renderDataTemplate(root, block, payload); list.replaceChildren(...rows);
+    expect(rows.map(row => row.querySelector('h3')?.textContent)).toEqual(['Alpha', 'Beta']);
+    expect(rows[0].querySelector('a')?.getAttribute('href')).toBe('#title-id-data-host-0');
+    expect(rows[1].querySelector('a')?.getAttribute('aria-labelledby')).toBe('title-id-data-host-1');
+    const ids = [...root.querySelectorAll('[id]')].map(element => element.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    hydrateTemplateRuntime(root);
+    expect(root.querySelectorAll('iframe')).toHaveLength(2);
+    const refreshed = renderDataTemplate(root, block, { data: [{ id: 3, title: 'Fresh', board_slug: 'a' }] });
+    expect(refreshed[0].querySelector('h3')?.textContent).toBe('Fresh');
+    expect(refreshed[0].querySelector('iframe')).toBeNull();
+    expect(refreshed[0].querySelector('[data-g7pb-embed]')).not.toBeNull();
+  });
+
   it('shares one pending block request across concurrent boot calls', async () => {
     const { root, list } = fixture(); const pending = deferred<Response>();
     const fetcher = vi.fn<typeof fetch>().mockImplementation(() => pending.promise);

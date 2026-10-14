@@ -43,6 +43,6 @@ final class DataMarkup
         }
         $target = str_ends_with($node->data->source, '-detail') ? 'detail' : 'list';
 
-        return '<template data-g7pb-data-template="">'.$body.'</template><div data-g7pb-data-'.$target.'="" style="display:contents" aria-busy="true"></div><p data-g7pb-data-status="" role="status" style="margin:0">콘텐츠를 불러오는 중입니다.</p>';
+        return '<div data-g7pb-data-template="" hidden="" aria-hidden="true" style="display:none">'.$body.'</div><div data-g7pb-data-'.$target.'="" style="display:contents" aria-busy="true"></div><p data-g7pb-data-status="" role="status" style="margin:0">콘텐츠를 불러오는 중입니다.</p>';
     }
 }

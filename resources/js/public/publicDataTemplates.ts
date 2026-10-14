@@ -1,10 +1,25 @@
 import { asRecord, asText, plainText, safeImageSource, safeLinkSource } from './publicValues';
 import { payloadItems, payloadRecord, type DynamicPayload } from './publicDataRendering';
 
+const prototypes = new WeakMap<Element, Element>();
+function prototypeOf(marker: Element | null): Element | null {
+  if (!marker) return null;
+  const stored = prototypes.get(marker);
+  if (stored) return stored;
+  const source = marker.tagName === 'TEMPLATE'
+    ? (marker as HTMLTemplateElement).content.firstElementChild : marker.firstElementChild;
+  if (source) { source.remove(); prototypes.set(marker, source); }
+  return source;
+}
+
+/** Detach sanitized prototypes before control/embed hydration; retain them for later requests. */
+export function prepareDataTemplates(root: Document): void {
+  root.querySelectorAll('[data-g7pb-data-template]').forEach(prototypeOf);
+}
+
 /** Runtime records fill a cloned authored tree. No block-specific DOM factory or source mutation. */
 export function renderDataTemplate(root: Document, block: HTMLElement, payload: DynamicPayload): HTMLElement[] {
-  const template = block.querySelector<HTMLTemplateElement>(':scope > template[data-g7pb-data-template]');
-  const prototype = template?.content.firstElementChild;
+  const prototype = prototypeOf(block.querySelector(':scope > [data-g7pb-data-template]'));
   const fields: unknown = JSON.parse(block.dataset.g7pbV3Data ?? 'null');
   if (!prototype || !Array.isArray(fields)) throw new Error('Invalid authored data template.');
   const detail = (block.dataset.g7pbDataSource ?? '').endsWith('-detail');

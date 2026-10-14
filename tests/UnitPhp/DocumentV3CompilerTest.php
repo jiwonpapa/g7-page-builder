@@ -74,6 +74,21 @@ final class DocumentV3CompilerTest extends TestCase
         }
     }
 
+    public function test_all_six_authored_data_starters_compile_without_forbidden_template_markup(): void
+    {
+        $starters = json_decode(file_get_contents(__DIR__.'/../../resources/compositions/builtin-v3.json'), flags: JSON_THROW_ON_ERROR);
+        foreach (array_slice($starters, -6) as $fixture) {
+            $source = $this->source($fixture);
+            $json = $source->toJson();
+            $result = (new HtmlCompiler($this->validator()))->compile($source, 1, 'html', HtmlDocumentCompiler::TARGET_ENGINE_VERSION);
+            self::assertStringContainsString('data-g7pb-v3-data=', $result->artifact);
+            self::assertStringContainsString('<div data-g7pb-data-template="" hidden="" aria-hidden="true" style="display:none">', $result->artifact);
+            self::assertStringNotContainsString('<template', $result->artifact);
+            self::assertStringContainsString('aria-busy="true"', $result->artifact);
+            self::assertSame($json, $source->toJson());
+        }
+    }
+
     public function test_every_generated_property_has_static_breakpoint_transport(): void
     {
         $css = file_get_contents(__DIR__.'/../../resources/css/page-builder-v3-public.css');

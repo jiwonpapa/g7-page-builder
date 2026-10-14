@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Hand, Maximize2, MousePointer2, Move, Type } from 'lucide-react';
 import { useV3Puck, type PuckBridge } from './PuckBridge';
 
 export type InputMode = 'structure' | 'geometry' | 'text' | 'pan';
@@ -54,13 +55,16 @@ export function WorkspaceControls({ mode, change, zoom, setZoom, fit, disabled }
   mode: InputMode; change: (mode: InputMode) => void; zoom: number; setZoom: (zoom: number) => void;
   fit: () => void; disabled: boolean;
 }) {
-  return <nav aria-label="작업면 조작" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+  const icons = [MousePointer2, Move, Type, Hand];
+  return <nav aria-label="작업면 조작" className="g7pb-v3-workspace-controls">
+    <div className="g7pb-v3-segmented">
     {(['structure', 'geometry', 'text', 'pan'] as const).map((value, i) =>
       <button key={value} type="button" className="g7pb-button g7pb-button--quiet" aria-pressed={mode === value}
-        disabled={disabled && value !== 'pan'} onClick={() => change(value)}>{['구조 선택', '정밀 조작', '본문 입력', '화면 이동'][i]}</button>)}
-    <label>확대<select aria-label="작업면 확대" value={zoom} onChange={event => setZoom(Number(event.target.value))}>
+        disabled={disabled && value !== 'pan'} onClick={() => change(value)}>{React.createElement(icons[i], { size: 16, 'aria-hidden': true })}<span>{['구조 선택', '정밀 조작', '본문 입력', '화면 이동'][i]}</span></button>)}
+    </div>
+    <label className="g7pb-v3-zoom"><span className="g7pb-v3-sr-only">확대</span><select aria-label="작업면 확대" value={zoom} onChange={event => setZoom(Number(event.target.value))}>
       {Array.from(new Set([.5, 1, 2, zoom])).sort((a, b) => a - b).map(value => <option key={value} value={value}>{Math.round(value * 100)}%</option>)}
     </select></label>
-    <button type="button" className="g7pb-button g7pb-button--quiet" onClick={fit}>화면 맞춤</button>
+    <button type="button" className="g7pb-button g7pb-button--quiet" title="화면 맞춤" onClick={fit}><Maximize2 size={15} aria-hidden /><span className="g7pb-v3-sr-only">화면 맞춤</span></button>
   </nav>;
 }

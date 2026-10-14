@@ -1,6 +1,7 @@
 import React, { createContext, forwardRef, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ActionBar, Puck, type Overrides, type ComponentConfig, type Field, type SlotComponent } from '@puckeditor/core';
+import { Layers3, MousePointer2, Plus, Redo2, SlidersHorizontal, Undo2 } from 'lucide-react';
 import type { DocumentV3, Node } from '../../documents/v3/types';
 import { effectiveStyle, validateDocumentV3, viewportAt } from '../../documents/v3/validate';
 import { indexTree, type Location } from '../../documents/v3/tree';
@@ -88,7 +89,6 @@ function CanvasNode({ id, body, Content, dragRef }: { id: string; body: React.Re
   return <NodeRenderer node={node} document={context.document} styles={context.styles} attributes={context.attributes} dragRef={dragRef}
     body={context.textEditing && (node.type.startsWith('content.') || node.type === 'action.link' || node.type === 'action.button' || node.type === 'form.label') ? body : undefined} editing />;
 }
-const control: React.CSSProperties = { display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' };
 function CommandButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return <button type="button" className="g7pb-button g7pb-button--quiet" {...props}>{children}</button>;
 }
@@ -106,9 +106,9 @@ function RenameControl({ node, disabled, rename }: { node: Node; disabled?: bool
 }
 function Toolbar({ bridge, disabled, run }: { bridge: PuckBridge; disabled: boolean; run: (action: () => void) => void }) {
   const api = useV3Puck(state => state);
-  return <div style={control} aria-label="편집 이력">
-    <CommandButton disabled={disabled || !api.history.hasPast} onClick={() => run(() => bridge.history('back'))}>실행 취소</CommandButton>
-    <CommandButton disabled={disabled || !api.history.hasFuture} onClick={() => run(() => bridge.history('forward'))}>다시 실행</CommandButton>
+  return <div className="g7pb-v3-history" aria-label="편집 이력">
+    <CommandButton title="실행 취소 (⌘/Ctrl+Z)" disabled={disabled || !api.history.hasPast} onClick={() => run(() => bridge.history('back'))}><Undo2 size={16} aria-hidden /><span className="g7pb-v3-sr-only">실행 취소</span></CommandButton>
+    <CommandButton title="다시 실행 (⌘/Ctrl+Shift+Z)" disabled={disabled || !api.history.hasFuture} onClick={() => run(() => bridge.history('forward'))}><Redo2 size={16} aria-hidden /><span className="g7pb-v3-sr-only">다시 실행</span></CommandButton>
   </div>;
 }
 function EditorSession(props: StructureEditorProps) {
@@ -129,6 +129,11 @@ function EditorSession(props: StructureEditorProps) {
   const viewport = viewportAt(canvasWidth);
   const [canvasHeight, setCanvasHeight] = useState(800);
   const scrollHost = useRef<HTMLElement>(null);
+  // Initial fit is workspace state only; authored width, breakpoints and Undo stay unchanged.
+  useEffect(() => {
+    const available = scrollHost.current?.clientWidth ?? 0;
+    if (available > 64) setZoom(Math.max(.1, Math.min(1, (available - 64) / 1280)));
+  }, []);
   const [actionTarget, setActionTarget] = useState<HTMLDivElement | null>(null);
   const [geometryTools, setGeometryTools] = useState<HTMLDivElement | null>(null);
   const serverRevision = useRef(props.serverRevision);
@@ -215,7 +220,7 @@ function EditorSession(props: StructureEditorProps) {
       event.preventDefault(); event.stopPropagation(); bridge.history(event.shiftKey ? 'forward' : 'back');
     }
   };
-  return <main className="g7pb-root" aria-label="독립 구조 편집기" onKeyDownCapture={inputBoundary}>
+  return <main className="g7pb-root g7pb-structure-editor" aria-label="독립 구조 편집기" onKeyDownCapture={inputBoundary}>
     <CanvasContext.Provider value={{ document, tree, styles, attributes: presentation.formAttributes, textEditing: textEditing && !props.readonly }}>
       <InteractionContext.Provider value={{ source: document, bridge, selected, mode, readonly: Boolean(props.readonly || preview),
         zoom, viewport, canvasWidth, controls: geometryTools, report: setMessage, pan: (x, y) => scrollHost.current?.scrollBy(x, y), extent: setCanvasHeight }}>
@@ -226,52 +231,48 @@ function EditorSession(props: StructureEditorProps) {
         iframe={{ enabled: props.iframeEnabled !== false }}>
         <BridgeObserver bridge={bridge} />
         <WorkspaceMode mode={mode} bridge={bridge} />
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <header style={{ ...control, padding: 12, borderBottom: '1px solid var(--g7pb-border)', background: 'var(--g7pb-surface-strong)' }}>
-          <strong>페이지 구조</strong><Toolbar bridge={bridge} disabled={Boolean(props.readonly)} run={run} />
-          <WorkspaceControls mode={mode} change={setMode} zoom={zoom} setZoom={setZoom} disabled={Boolean(props.readonly || preview)}
-            fit={() => { setZoom(Math.max(.1, Math.min(2, ((scrollHost.current?.clientWidth ?? canvasWidth) - 40) / canvasWidth))); scrollHost.current?.scrollTo(0, 0); }} />
-          <CommandButton disabled={props.readonly || saving || publishing} onClick={() => void save().catch(() => {})}>{saving ? '저장 중' : '저장'}</CommandButton>
-          <CommandButton aria-pressed={preview} onClick={() => setPreview(!preview)}>구조 미리보기</CommandButton>
-          {props.publication && <PublicationControls port={props.publication} context={bridge.context} save={save}
-            disabled={Boolean(props.readonly || saving)} editRevision={bridge.context().revision} busy={setPublishing} published={props.onPublished} />}
-          <ResponsiveControls width={canvasWidth} change={value => { setCanvasWidth(value); scrollHost.current?.scrollTo(0, 0); }} />
-          <span role="status" aria-label="편집 상태" style={{ marginLeft: 'auto', color: 'var(--g7pb-muted)' }}>{props.readonly ? '읽기 전용' : message}</span>
+        <div className="g7pb-v3-shell">
+        <header className="g7pb-v3-commandbar">
+          <strong><Layers3 size={17} aria-hidden />페이지 편집</strong>
+          <div className="g7pb-v3-document-actions">
+            <CommandButton disabled={props.readonly || saving || publishing} onClick={() => void save().catch(() => {})}>{saving ? '저장 중' : '저장'}</CommandButton>
+            <CommandButton aria-pressed={preview} onClick={() => setPreview(!preview)}>구조 미리보기</CommandButton>
+            {props.publication && <PublicationControls port={props.publication} context={bridge.context} save={save}
+              disabled={Boolean(props.readonly || saving)} editRevision={bridge.context().revision} busy={setPublishing} published={props.onPublished} />}
+          </div>
         </header>
-        <div style={{ display: 'grid', gridTemplateColumns: '220px minmax(320px, 1fr) 320px', flex: 1, minHeight: 0, overflow: 'auto' }}>
-          <aside aria-label="레이어" style={{ padding: 16, overflow: 'auto', background: 'var(--g7pb-surface-strong)' }}>
-            <h2 style={{ fontSize: 15 }}>레이어</h2>
+        <div className="g7pb-v3-toolbar">
+          <Toolbar bridge={bridge} disabled={Boolean(props.readonly)} run={run} />
+          <WorkspaceControls mode={mode} change={setMode} zoom={zoom} setZoom={setZoom} disabled={Boolean(props.readonly || preview)}
+            fit={() => { setZoom(Math.max(.1, Math.min(2, ((scrollHost.current?.clientWidth ?? canvasWidth) - 64) / canvasWidth))); scrollHost.current?.scrollTo(0, 0); }} />
+          <ResponsiveControls width={canvasWidth} change={value => { setCanvasWidth(value); scrollHost.current?.scrollTo(0, 0); }} />
+        </div>
+        <div className="g7pb-v3-workbench">
+          <aside aria-label="레이어" className="g7pb-v3-panel g7pb-v3-navigation">
+            <div className="g7pb-v3-panel-heading"><h2><Layers3 size={16} aria-hidden />레이어</h2><span>{tree.size}</span></div>
+            <div className="g7pb-v3-layer-list">
             <LayerTree nodes={document.blocks} selected={selected} viewport={viewport} select={(id, extend) => bridge.select(id, extend)} />
-            {!document.blocks.length && <p>삽입할 요소를 선택하세요.</p>}
-            <p style={{ color: 'var(--g7pb-muted)' }}>Shift 클릭으로 구조를 함께 선택합니다.</p>
-          </aside>
-          <section ref={scrollHost} aria-label="작업면" onClickCapture={event => {
-            if (!preview && event.target instanceof Element && event.target.closest('a')) event.preventDefault();
-          }} style={{ overflow: 'auto', padding: 20 }}>
-            <nav aria-label="조상 탐색" style={{ ...control, minHeight: 40, marginBottom: 12, flexWrap: 'nowrap', overflowX: 'auto' }}>
-              {focus?.ancestors.map(parent => <CommandButton key={parent.instance_id} onClick={() => bridge.select(parent.instance_id)}>{parent.name}</CommandButton>)}
-              {focus && <span aria-current="true">{focus.node.name}</span>}
-            </nav>
-            <div style={{ width: canvasWidth * zoom, height: canvasHeight * zoom, position: 'relative' }}>
-            <div data-v3-workspace data-v3-viewport={viewport} style={{ position: 'absolute', background: 'var(--g7pb-surface-strong)', width: canvasWidth, minHeight: 800, transform: 'scale(' + zoom + ')', transformOrigin: 'top left' }}>
-              {preview ? <BehaviorPreview document={document} viewport={viewport} /> : <Puck.Preview />}
+            {!document.blocks.length && <p className="g7pb-v3-hint">아직 요소가 없습니다.<br />아래에서 요소나 구성을 삽입하세요.</p>}
             </div>
-            </div>
-          </section>
-          <aside aria-label="구조 속성" style={{ padding: 16, overflow: 'auto', background: 'var(--g7pb-surface-strong)' }}>
-            <div ref={setActionTarget} role="group" aria-label="문맥 도구" />
-            <div ref={setGeometryTools} />
-            <ReadingOrderNotice document={document} viewport={viewport} />
-            <h2 style={{ fontSize: 15 }}>삽입 위치</h2>
-            <select aria-label="삽입 위치" value={target} onChange={event => setTarget(event.target.value)} style={{ maxWidth: '100%' }}>
+            <p className="g7pb-v3-hint">Shift 클릭으로 여러 요소 선택</p>
+            <section aria-label="요소 삽입" className="g7pb-v3-insert">
+            <h2><Plus size={16} aria-hidden />요소 삽입</h2>
+            <label className="g7pb-v3-field">삽입 위치<select aria-label="삽입 위치" value={target} onChange={event => setTarget(event.target.value)}>
               <option value="root">페이지</option>
               {[...tree.values()].filter(item => item.node.type.startsWith('layout.') && !item.node.system).map(item => <option key={item.node.instance_id} value={item.node.instance_id}>{item.node.name}</option>)}
-            </select>
-            <div style={{ ...control, marginTop: 10 }}>{(Object.keys(primitiveLabels) as Node['type'][]).map(type =>
+            </select></label>
+            <div className="g7pb-v3-primitives">{(Object.keys(primitiveLabels) as Node['type'][]).map(type =>
               <CommandButton key={type} disabled={props.readonly || preview} onClick={() => {
                 if (type === 'media.image' && !bridge.read().assets.length) { setInsertImage(true); return; }
                 run(() => bridge.execute({ kind: 'insert', destination: destination(), nodes: [createPrimitive(type, props.nextId(), bridge.read())] }));
-              }}>{primitiveLabels[type]} 삽입</CommandButton>)}</div>
+              }}>{primitiveLabels[type]} 삽입</CommandButton>)}
+              <CommandButton disabled={props.readonly || preview} onClick={() => run(() => {
+                const node = createPrimitive('layout.container', props.nextId(), bridge.read());
+                Object.assign(node, { name: 'G7 계정 컨트롤', system: { kind: 'account' },
+                  style: { display: 'flex', width: { value: 42, unit: 'px' }, height: { value: 42, unit: 'px' } } });
+                bridge.execute({ kind: 'insert', destination: destination(), nodes: [node] });
+              })}>G7 컨트롤 삽입</CommandButton>
+            </div>
             {insertImage && <MediaInsertion port={props.media} nextId={props.nextId} close={() => setInsertImage(false)}
               read={() => {
                 const where = destination();
@@ -280,12 +281,7 @@ function EditorSession(props: StructureEditorProps) {
                 return { context: { ...context, readonly: Boolean(context.readonly || preview || parent?.node.locked || parent?.ancestors.some(node => node.locked)) },
                   destination: where, selection: bridge.selection() };
               }} apply={(value, expected) => { bridge.execute(value, expected); }} />}
-            <CommandButton disabled={props.readonly || preview} onClick={() => run(() => {
-              const node = createPrimitive('layout.container', props.nextId(), bridge.read());
-              Object.assign(node, { name: 'G7 계정 컨트롤', system: { kind: 'account' },
-                style: { display: 'flex', width: { value: 42, unit: 'px' }, height: { value: 42, unit: 'px' } } });
-              bridge.execute({ kind: 'insert', destination: destination(), nodes: [node] });
-            })}>G7 컨트롤 삽입</CommandButton>
+            </section>
             <CompositionPanel sources={props.compositions} disabled={Boolean(props.readonly || preview)}
               insert={choice => run(() => bridge.execute({ kind: 'paste', destination: destination(),
                 clipboard: compositionClipboard(choice) }))} />
@@ -293,10 +289,31 @@ function EditorSession(props: StructureEditorProps) {
               read={() => ({ context: { ...bridge.context(), readonly: Boolean(props.readonly || preview || bridge.context().readonly) },
                 document: bridge.read(), ids: bridge.selection() })}
               insert={choice => run(() => bridge.execute({ kind: 'paste', destination: destination(), clipboard: compositionClipboard(choice) }))} />
-            <h2 style={{ fontSize: 15, marginTop: 24 }}>선택 {selected.length}개</h2>
+          </aside>
+          <section ref={scrollHost} className="g7pb-v3-canvas" aria-label="작업면" onClickCapture={event => {
+            if (!preview && event.target instanceof Element && event.target.closest('a')) event.preventDefault();
+          }}>
+            <nav aria-label="조상 탐색" className="g7pb-v3-breadcrumb">
+              <span>페이지</span>
+              {focus?.ancestors.map(parent => <CommandButton key={parent.instance_id} onClick={() => bridge.select(parent.instance_id)}>{parent.name}</CommandButton>)}
+              {focus && <span aria-current="true">{focus.node.name}</span>}
+            </nav>
+            <div className="g7pb-v3-artboard" style={{ width: canvasWidth * zoom, height: canvasHeight * zoom }}>
+            <div data-v3-workspace data-v3-viewport={viewport} style={{ position: 'absolute', background: 'var(--g7pb-surface-strong)', width: canvasWidth, minHeight: 800, transform: 'scale(' + zoom + ')', transformOrigin: 'top left' }}>
+              {preview ? <BehaviorPreview document={document} viewport={viewport} /> : <Puck.Preview />}
+            </div>
+            {!document.blocks.length && <div className="g7pb-v3-empty-canvas"><Plus size={24} aria-hidden /><strong>빈 페이지에서 시작하세요</strong><span>왼쪽에서 요소 또는 구성 템플릿을 삽입하세요.</span></div>}
+            </div>
+          </section>
+          <aside aria-label="구조 속성" className="g7pb-v3-panel g7pb-v3-properties">
+            <div className="g7pb-v3-panel-heading"><h2><SlidersHorizontal size={16} aria-hidden />속성</h2><span>선택 {selected.length}개</span></div>
+            <div ref={setActionTarget} role="group" aria-label="문맥 도구" />
+            <div ref={setGeometryTools} />
+            {!selected.length && <div className="g7pb-v3-empty-selection"><MousePointer2 size={24} aria-hidden /><strong>편집할 요소를 선택하세요</strong><p>캔버스나 레이어에서 선택하면<br />디자인과 내용을 수정할 수 있습니다.</p></div>}
+            <div hidden={!selected.length}>
             {focus && <RenameControl key={`${focus.node.instance_id}:${focus.node.name}`} node={focus.node} disabled={props.readonly}
               rename={name => command({ kind: 'rename', id: focus.node.instance_id, name })} />}
-            <div style={{ ...control, marginTop: 12 }}>
+            <div className="g7pb-v3-selection-actions">
               <CommandButton disabled={!focus || props.readonly || focus.index === 0} onClick={() => step(-1)}>위로</CommandButton>
               <CommandButton disabled={!focus || props.readonly || focus.index === focus.siblings.length - 1} onClick={() => step(1)}>아래로</CommandButton>
               <CommandButton disabled={!selected.length || props.readonly} onClick={() => command({ kind: 'move', ids: selected, destination: destination() })}>선택 위치로 이동</CommandButton>
@@ -331,8 +348,11 @@ function EditorSession(props: StructureEditorProps) {
               disabled={Boolean(preview || props.readonly || focus.node.locked || focus.ancestors.some(node => node.locked))} apply={value => { bridge.execute(value); }} />}
             {selected.length > 1 && <MultiInspector key={viewport + ':' + selected.join(':')} document={document} ids={selected} viewport={viewport}
               disabled={Boolean(props.readonly)} apply={value => { bridge.execute(value); }} />}
+            </div>
+            <ReadingOrderNotice document={document} viewport={viewport} />
           </aside>
         </div>
+        <footer className="g7pb-v3-statusbar"><span role="status" aria-label="편집 상태">{props.readonly ? '읽기 전용' : message}</span></footer>
         </div>
       </Puck>
       </InteractionContext.Provider>

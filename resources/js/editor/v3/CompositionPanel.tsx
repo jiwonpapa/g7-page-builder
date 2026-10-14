@@ -13,12 +13,12 @@ export function CompositionPanel({ disabled, sources = empty, insert }: {
   const [selected, setSelected] = useState('');
   const choices = catalog.choices.filter(choice => choice.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
   const choice = choices.find(item => item.id === selected) ?? choices[0];
-  return <section aria-label="구성 템플릿" style={{ marginTop: 16 }}>
-    <h2 style={{ fontSize: 15 }}>구성 템플릿</h2>
+  return <section aria-label="구성 템플릿" className="g7pb-v3-library">
+    <h2>구성 템플릿</h2>
     {catalog.error ? <p role="alert">{catalog.error}</p> : <>
-      <label>구성 검색<input aria-label="구성 검색" type="search" value={query}
+      <label className="g7pb-v3-field">구성 검색<input aria-label="구성 검색" type="search" placeholder="이름으로 검색" value={query}
         onChange={event => setQuery(event.target.value)} style={{ width: '100%' }} /></label>
-      <label>구성 선택<select aria-label="구성 선택" value={choice?.id ?? ''} disabled={disabled || !choices.length}
+      <label className="g7pb-v3-field">구성 선택<select aria-label="구성 선택" value={choice?.id ?? ''} disabled={disabled || !choices.length}
         onChange={event => setSelected(event.target.value)} style={{ width: '100%' }}>
         {choices.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
       </select></label>
@@ -26,6 +26,6 @@ export function CompositionPanel({ disabled, sources = empty, insert }: {
         onClick={() => { if (!disabled && choice) insert(choice); }}>구성 삽입</button>
       {!choices.length && <p role="status">{query ? '검색 결과가 없습니다.' : '등록된 구성이 없습니다. 기본 요소로 직접 구성할 수 있습니다.'}</p>}
     </>}
-    <p style={{ color: 'var(--g7pb-muted)' }}>독립 사본으로 삽입합니다. 레이어에서 내부 요소를 선택하여 편집하세요.</p>
+    <p className="g7pb-v3-hint">삽입 후 내부 요소를 자유롭게 편집할 수 있습니다.</p>
   </section>;
 }

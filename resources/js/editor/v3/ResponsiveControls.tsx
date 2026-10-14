@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Monitor, Smartphone, Tablet } from 'lucide-react';
 import type { DocumentV3 } from '../../documents/v3/types';
 import { effectiveStyle, viewportAt, type Viewport } from '../../documents/v3/validate';
 import { indexTree } from '../../documents/v3/tree';
@@ -10,17 +11,20 @@ export function ResponsiveControls({ width, change }: { width: number; change: (
   const [draft, setDraft] = useState(String(width));
   useEffect(() => setDraft(String(width)), [width]);
   const viewport = viewportAt(width);
-  return <div aria-label="반응형 작업면" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-    {([1280, 768, 360] as const).map(value => <InputButton key={value} aria-pressed={viewport === viewportAt(value)}
-      onClick={() => change(value)}>{viewportLabel(viewportAt(value))}</InputButton>)}
+  const icons = [Monitor, Tablet, Smartphone];
+  return <div aria-label="반응형 작업면" className="g7pb-v3-responsive-controls">
+    <div className="g7pb-v3-segmented">
+    {([1280, 768, 360] as const).map((value, index) => <InputButton key={value} aria-pressed={viewport === viewportAt(value)}
+      onClick={() => change(value)}>{React.createElement(icons[index], { size: 16, 'aria-hidden': true })}<span>{viewportLabel(viewportAt(value))}</span></InputButton>)}
+    </div>
     <form onSubmit={event => { event.preventDefault(); const value = Number(draft);
       if (Number.isInteger(value) && value >= 320 && value <= 2560) change(value);
-    }} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+    }} className="g7pb-v3-width">
       <label>폭 <input aria-label="캔버스 폭" type="number" min={320} max={2560} step={1} required value={draft}
         onChange={event => setDraft(event.target.value)} style={{ width: 72 }} /> px</label>
       <InputButton type="submit">폭 적용</InputButton>
     </form>
-    <span aria-label="스타일 편집 대상">{viewportLabel(viewport)} · {width}px</span>
+    <span className="g7pb-v3-sr-only" aria-label="스타일 편집 대상">{viewportLabel(viewport)} · {width}px</span>
   </div>;
 }
 

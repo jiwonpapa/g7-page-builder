@@ -7,6 +7,7 @@ import { bootDynamicData, disposePublicDataRuntime, publicDataFetcher } from './
 import { bootMobileNavigation, disposeMobileNavigation, pruneMobileNavigation } from './mobileNavigation';
 import { bootPageMotion, disposePageMotion, type MotionWindow } from './publicMotion';
 import { bootPageSliders, disposePageSliders } from './publicSliderLoader';
+import { createTemplateViewportWidth } from './templateViewportWidth';
 
 interface PublicRuntime {
   root: Document;
@@ -17,6 +18,7 @@ interface PublicRuntime {
   starting: (() => void) | null;
   transport?: { source: typeof fetch; bound: typeof fetch };
   sessionChanged: () => void;
+  templateViewport: ReturnType<typeof createTemplateViewportWidth>;
 }
 const runtimes = new WeakMap<Document, PublicRuntime>();
 // P1 retires request ownership on each of these input records, including equal-value writes.
@@ -41,6 +43,7 @@ function runtimeFor(root: Document, view: MotionWindow): PublicRuntime {
   if (previous?.view === view) return previous;
   if (previous) disposePageEffects(root);
   const runtime: PublicRuntime = { root, view, active: true, observer: null, scheduled: false, starting: null,
+    templateViewport: createTemplateViewportWidth(root),
     sessionChanged: () => {
       if (!current(runtime)) return;
       disposePublicDataRuntime(root);
@@ -53,6 +56,7 @@ export function bootPageEffects(root: Document = document, view: MotionWindow = 
   const runtime = runtimeFor(root, view);
   pruneMobileNavigation(root, runtime.observer?.takeRecords() ?? []);
   hydrateTemplateRuntime(root); ensureSiteShellButtons(root);
+  runtime.templateViewport.update();
   bootG7SystemControls(root, view, runtime.sessionChanged);
   bootSiteShellMenu(root, view); bootServiceActions(root, view);
   bootAccordions(root); bootTabs(root);
@@ -105,6 +109,7 @@ export function disposePageEffects(root: Document = document): void {
   const runtime = runtimes.get(root);
   if (runtime) {
     runtime.active = false; runtime.observer?.disconnect();
+    runtime.templateViewport.dispose();
     if (runtime.starting) root.removeEventListener('DOMContentLoaded', runtime.starting);
     runtime.starting = null; runtime.scheduled = false; runtimes.delete(root);
   }

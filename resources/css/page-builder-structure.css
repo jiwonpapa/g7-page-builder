@@ -37,7 +37,7 @@
 .g7pb-site-part-structure__body { padding: 64px 24px; border-block: 1px dashed var(--g7pb-border); color: var(--g7pb-muted); text-align: center; }
 
 /* Independent editor chrome only. These selectors never enter the authored iframe surface. */
-.g7pb-structure-editor { min-height: 0; font-size: 12px; }
+.g7pb-structure-editor { position: relative; min-height: 0; font-size: 12px; }
 .g7pb-v3-shell { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .g7pb-v3-commandbar,
 .g7pb-v3-toolbar { display: flex; flex: 0 0 auto; align-items: center; gap: 12px; padding: 8px 16px; border-bottom: 1px solid var(--g7pb-border); background: var(--g7pb-surface-strong); }
@@ -60,7 +60,7 @@
 .g7pb-structure-editor :is(.g7pb-v3-commandbar, .g7pb-v3-toolbar) .g7pb-button { min-height: 30px; border-radius: 5px; font-size: 11px; }
 .g7pb-structure-editor .g7pb-button[aria-pressed='true'] { background: var(--g7pb-accent-soft); border-color: var(--g7pb-accent-border); color: var(--g7pb-accent-dark); }
 .g7pb-v3-workbench { display: grid; grid-template-columns: 260px minmax(280px, 1fr) 300px; flex: 1; min-height: 0; overflow: auto; }
-.g7pb-v3-panel { min-width: 0; padding: 16px; overflow: auto; overscroll-behavior: contain; background: var(--g7pb-surface-strong); scrollbar-width: thin; }
+.g7pb-v3-panel { position: relative; min-width: 0; padding: 16px; overflow: auto; overscroll-behavior: contain; background: var(--g7pb-surface-strong); scrollbar-width: thin; }
 .g7pb-v3-navigation { border-right: 1px solid var(--g7pb-border); }
 .g7pb-v3-properties { border-left: 1px solid var(--g7pb-border); }
 .g7pb-v3-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }

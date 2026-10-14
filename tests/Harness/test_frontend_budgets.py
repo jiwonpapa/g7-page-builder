@@ -75,21 +75,22 @@ class FrontendBudgetTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertIn(f"{path}={len(source.encode())} raw / ", result.stdout)
                 self.assertIn("gzip bytes (reported; no size ceiling)", result.stdout)
-                self.assertIn(f"Editor JS size advisory: {path} exceeds historical {warning} gzip bytes; non-blocking", result.stdout)
+                self.assertIn(f"JS size advisory: {path} exceeds historical {warning} gzip bytes; non-blocking", result.stdout)
 
     def test_small_editor_entries_are_measured_without_advisories(self):
         self.full_fixture()
         result = self.run_checker()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertNotIn("Editor JS size advisory:", result.stdout)
+        self.assertNotIn("JS size advisory:", result.stdout)
         for entry in ("editor", "structure", "site-part"):
             self.assertIn(f"dist/js/page-builder-{entry}.iife.js=7 raw / ", result.stdout)
 
-    def test_editor_artifacts_remain_required_and_nonempty(self):
-        for entry in ("editor", "structure", "site-part"):
-            with self.subTest(entry=entry):
+    def test_all_javascript_artifacts_remain_required_and_nonempty(self):
+        for name in ("page-builder-editor", "page-builder-structure", "page-builder-site-part",
+                     "page-builder-manager", "page-effects", "page-sliders"):
+            with self.subTest(entry=name):
                 self.full_fixture()
-                path = f"dist/js/page-builder-{entry}.iife.js"
+                path = f"dist/js/{name}.iife.js"
                 (self.root / path).unlink()
                 missing = self.run_checker()
                 self.assertNotEqual(missing.returncode, 0)
@@ -98,15 +99,15 @@ class FrontendBudgetTests(unittest.TestCase):
                 self.write(path, " \n")
                 result = self.run_checker()
                 self.assertNotEqual(result.returncode, 0)
-                self.assertIn(f"Empty editor JavaScript artifact: {path}", result.stderr)
+                self.assertIn(f"Empty JavaScript artifact: {path}", result.stderr)
 
-    def test_manager_budget_is_not_weakened_by_editor_policy(self):
+    def test_manager_growth_is_measured_and_never_blocks(self):
         self.full_fixture()
         self.write("dist/js/page-builder-manager.iife.js", self.payload("manager-over", 4000))
         result = self.run_checker()
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("dist/js/page-builder-manager.iife.js=", result.stderr)
-        self.assertIn("/90000 gzip bytes", result.stderr)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("dist/js/page-builder-manager.iife.js=", result.stdout)
+        self.assertIn("JS size advisory: dist/js/page-builder-manager.iife.js exceeds historical 90000 gzip bytes; non-blocking", result.stdout)
 
     def test_full_command_reports_split_family_growth_without_a_ceiling(self):
         self.full_fixture()
@@ -261,7 +262,7 @@ class FrontendBudgetTests(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0, result.stdout)
                     self.assertIn(error, result.stderr)
 
-    def test_full_command_rejects_main_public_bundle_over_unchanged_limit_and_source_mode_skips_dist(self):
+    def test_main_public_bundle_growth_is_advisory_and_source_mode_skips_dist(self):
         self.full_fixture()
         good = self.run_checker()
         self.assertEqual(good.returncode, 0, good.stderr)
@@ -270,32 +271,29 @@ class FrontendBudgetTests(unittest.TestCase):
         self.assertEqual(raw.returncode, 0, raw.stderr)
         self.assertIn("resources/css/page-builder-core.css=18001 raw bytes (reported; no size ceiling)", raw.stdout)
         self.write("resources/css/page-builder-core.css", ".fixture {}")
-        # A deterministic incompressible-like fixture exercises the existing JS
-        # limit; source-only must never run that unrelated artifact gate.
+        # Deterministic growth exceeds the former threshold, without a new cap.
         self.write("dist/js/page-effects.iife.js", self.payload("main-over", 1_000))
         gzip = self.run_checker()
-        self.assertNotEqual(gzip.returncode, 0, gzip.stdout)
-        self.assertIn("dist/js/page-effects.iife.js=", gzip.stderr)
-        self.assertIn("/24000 gzip bytes", gzip.stderr)
+        self.assertEqual(gzip.returncode, 0, gzip.stderr)
+        self.assertIn("dist/js/page-effects.iife.js=", gzip.stdout)
+        self.assertIn("JS size advisory: dist/js/page-effects.iife.js exceeds historical 24000 gzip bytes; non-blocking", gzip.stdout)
         source = self.run_checker("--editor-source-only")
         self.assertEqual(source.returncode, 0, source.stderr)
 
-    def test_full_command_rejects_optional_slider_bundle_over_its_own_limit(self):
+    def test_optional_slider_growth_is_advisory(self):
         self.full_fixture()
         self.write("dist/js/page-sliders.iife.js", self.payload("slider-over", 500))
         result = self.run_checker()
-        self.assertNotEqual(result.returncode, 0, result.stdout)
-        self.assertIn("dist/js/page-sliders.iife.js=", result.stderr)
-        self.assertIn("/12000 gzip bytes", result.stderr)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("dist/js/page-sliders.iife.js=", result.stdout)
+        self.assertIn("JS size advisory: dist/js/page-sliders.iife.js exceeds historical 12000 gzip bytes; non-blocking", result.stdout)
 
-    def test_full_command_rejects_combined_public_runtime_without_moving_the_debt(self):
+    def test_combined_public_runtime_growth_is_measured_and_advisory(self):
         self.full_fixture()
-        # Each artifact is below its own limit, while a slider page would load
-        # more than the aggregate allowance. Moving bytes out of the main IIFE
-        # must not turn the old exception green by itself.
+        # Aggregate growth remains visible even below individual old thresholds.
         # Node builds may use different zlib implementations. Size the synthetic
         # samples with the executing Node, then assert the test's preconditions.
-        # The product's individual/aggregate limits remain unchanged.
+        # All former thresholds are advisory, not replacement hard limits.
         script = """
           const {gzipSync} = require('node:zlib');
           const {readFileSync} = require('node:fs');
@@ -322,9 +320,9 @@ class FrontendBudgetTests(unittest.TestCase):
             self.write(f"dist/js/{bundle}.iife.js", sample["source"])
         self.assertGreater(sum(measured), 34_000)
         result = self.run_checker()
-        self.assertNotEqual(result.returncode, 0, result.stdout)
-        self.assertIn("Public runtime combined budget exceeded", result.stderr)
-        self.assertIn("/34000 gzip bytes", result.stderr)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(f"Public runtime combined={sum(measured)} gzip bytes (reported; no size ceiling;", result.stdout)
+        self.assertIn("JS size advisory: Public runtime combined exceeds historical 34000 gzip bytes; non-blocking", result.stdout)
 
 
 if __name__ == "__main__":

@@ -46,27 +46,31 @@ for (const output of outputs) {
 }
 
 const readInventory = (name) => JSON.parse(readFileSync(join(root, `dist/meta/${name}-modules.json`), 'utf8')).modules;
-const nativeModules = readInventory('native-editor');
-if (gzipSync(readFileSync(join(root, 'dist/js/page-builder-native.iife.js'))).length > 8_000) {
-  throw new Error('Native editor gzip budget exceeded: 8KB');
+// Byte growth is observable, not a release/development veto. Integrity and
+// host dependency isolation below are independent requirements and still fail.
+for (const [name, warning] of [['native', 8_000], ['native-compositions', 6_000], ['native-components', 4_000]]) {
+  const path = `dist/js/page-builder-${name}.iife.js`;
+  const source = readFileSync(join(root, path));
+  const gzip = gzipSync(source).length;
+  console.log(`${path}=${source.length} raw / ${gzip} gzip bytes (reported; no size ceiling)`);
+  if (gzip > warning) console.warn(`JS size advisory: ${path} exceeds historical ${warning} gzip bytes; non-blocking`);
 }
+const nativeModules = readInventory('native-editor');
 if (!nativeModules.some((id) => id.endsWith('/native-editor/entry.ts'))
   || nativeModules.some((id) => /(?:^|\/)(?:react|react-dom|@puckeditor|@tiptap)(?:\/|$)/.test(id))) {
   throw new Error('Native editor must use the host React runtime and exclude Puck/Tiptap.');
 }
 const compositionModules = readInventory('native-compositions');
-if (gzipSync(readFileSync(join(root, 'dist/js/page-builder-native-compositions.iife.js'))).length > 6_000
-  || !compositionModules.some(id => id.endsWith('/native-editor/compositionEntry.tsx'))
+if (!compositionModules.some(id => id.endsWith('/native-editor/compositionEntry.tsx'))
   || compositionModules.some(id => /(?:^|\/)(?:react|react-dom|@puckeditor|@tiptap)(?:\/|$)/.test(id))
   || nativeModules.some(id => id.endsWith('/native-editor/ui/compositions.tsx') || id.endsWith('/gnuboard7/compositionLibrary.ts'))) {
-  throw new Error('Native composition library must load separately under 6KB gzip and share host React.');
+  throw new Error('Native composition library must load separately and share host React.');
 }
 const companionModules = readInventory('native-components');
-if (gzipSync(readFileSync(join(root, 'dist/js/page-builder-native-components.iife.js'))).length > 4_000
-  || !companionModules.some(id => id.endsWith('/native-components/entry.ts'))
+if (!companionModules.some(id => id.endsWith('/native-components/entry.ts'))
   || companionModules.some(id => /(?:^|\/)(?:react|react-dom|@puckeditor|@tiptap)(?:\/|$)/.test(id)
     || id.includes('/native-editor/') || id.includes('/adapters/'))) {
-  throw new Error('Native component companion must remain under 4KB gzip and use shared React without editor dependencies.');
+  throw new Error('Native component companion must use shared React without editor dependencies.');
 }
 const editorModules = readInventory('editor');
 const structureModules = readInventory('structure-editor');

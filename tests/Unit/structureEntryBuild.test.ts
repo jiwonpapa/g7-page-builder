@@ -6,6 +6,13 @@ import { describe, expect, it } from 'vitest';
 import config from '../../vite.structure.config';
 
 describe('installed structure entry artifact', () => {
+  it('uses the existing higher-contrast semantic token only for the workbench breadcrumb', () => {
+    const stylesheet = readFileSync('resources/css/page-builder-structure.css', 'utf8');
+    const rule = stylesheet.match(/^\.g7pb-v3-breadcrumb \{([^}]+)/m)?.[1];
+    expect(rule).toContain('color: var(--g7pb-secondary);');
+    expect(rule).not.toContain('color: var(--g7pb-muted);');
+  });
+
   it('owns workbench styles in the independent mount as well as the authenticated entry', () => {
     const stylesheet = "import '../../../css/page-builder-structure.css';";
     expect(readFileSync('resources/js/editor/v3/mount.tsx', 'utf8')).toContain(stylesheet);

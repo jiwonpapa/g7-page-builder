@@ -84,7 +84,7 @@
 .g7pb-v3-library form > .g7pb-button { width: 100%; }
 .g7pb-v3-library form { margin-bottom: 12px; }
 .g7pb-v3-canvas { overflow: auto; min-width: 0; padding: 16px 32px 48px; background: var(--g7pb-bg); overscroll-behavior: contain; scrollbar-width: thin; }
-.g7pb-v3-breadcrumb { display: flex; align-items: center; gap: 6px; min-height: 28px; margin-bottom: 12px; overflow-x: auto; color: var(--g7pb-muted); white-space: nowrap; }
+.g7pb-v3-breadcrumb { display: flex; align-items: center; gap: 6px; min-height: 28px; margin-bottom: 12px; overflow-x: auto; color: var(--g7pb-secondary); white-space: nowrap; }
 .g7pb-v3-breadcrumb > :not(:first-child)::before { content: '/'; margin-right: 8px; color: var(--g7pb-border-strong); }
 .g7pb-v3-breadcrumb .g7pb-button { min-height: 26px; border: 0; padding: 2px 4px; background: transparent; font-size: 11px; }
 .g7pb-v3-artboard { position: relative; margin-inline: auto; background: var(--g7pb-surface-strong); box-shadow: 0 0 0 1px var(--g7pb-border), 0 4px 18px color-mix(in srgb, var(--g7pb-shadow-ink) 6%, transparent); }

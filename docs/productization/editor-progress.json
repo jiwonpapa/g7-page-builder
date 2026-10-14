@@ -855,6 +855,13 @@
           "commit": "a14082bf9e2f26922e87f1cf7fccccf5a365a114",
           "result": "pass",
           "path": "docs/audits/2026-10-14-editor-remaining-implementation.md"
+        },
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-ui-save-reopen-publication-browser",
+          "commit": "6b64ccd681447e0ef6c706e8cf693c85dd066cbf",
+          "result": "pass",
+          "path": "docs/audits/2026-10-14-ip7-flow-reaudit.md"
         }
       ],
       "blocked_reason": null,
@@ -867,7 +874,7 @@
         "src/Application/Compilation",
         "tests/E2E"
       ],
-      "completion": "공통 요소/시작 구성 91개/새 Header·Footer/문의·실행 컨트롤/동적 6종과 공통 검색·분류·페이지 조작을 소스 구현·통합했습니다. 기존 85개 원본은 보존하며 블록 이름별 편집·삽입·렌더 코드를 추가하지 않았습니다. DATA02는 별도 승인 수정으로 해소했고 새 조작·붙여넣기/참조·PHP/TS·타입·구조 관련 검사는 통과했습니다. 확정 잔여 소스 범위를 닫고 2026-10-14 사용자 지시로 모든 JS/CSS와 분리 구성 자산의 byte 초과 차단을 경고로 전환했습니다. a84b8eb4edfffa2f0aecb90f39605624a7394c39를 0.37.0-dev.20261014로 온라인 작업 사이트 https://www.g7devops.com에 배포하고 artifact 일치/공식 최소 smoke 및 정밀 편집기 자산 3개 HTTP 200을 확인했습니다. 실제 데이터/저장·출력/UX의 전체 제품 수용은 미확인입니다. docs/audits/2026-10-14-worksite-deployment.md에 배포 근거와 실패 1회 보완을, docs/audits/2026-10-14-editor-remaining-implementation.md에 제한된 검사와 재감사 필요성을 인계합니다. 기존 문서 처리는 독립 프로세스이고 확대 검증이나 제품 전체 합격으로 바꾸지 않습니다."
+      "completion": "공통 요소/시작 구성 91개/새 Header·Footer/문의·실행 컨트롤/동적 6종과 공통 검색·분류·페이지 조작을 소스 구현·통합했습니다. 기존 85개 원본은 보존하며 블록 이름별 편집·삽입·렌더 코드를 추가하지 않았습니다. DATA02는 별도 승인 수정으로 해소했고 새 조작·붙여넣기/참조·PHP/TS·타입·구조 관련 검사는 통과했습니다. 확정 잔여 소스 범위를 닫고 2026-10-14 사용자 지시로 모든 JS/CSS와 분리 구성 자산의 byte 초과 차단을 경고로 전환했습니다. a84b8eb4edfffa2f0aecb90f39605624a7394c39를 0.37.0-dev.20261014로 온라인 작업 사이트 https://www.g7devops.com에 배포하고 artifact 일치/공식 최소 smoke 및 정밀 편집기 자산 3개 HTTP 200을 확인했습니다. 실제 데이터/저장·출력/UX의 전체 제품 수용은 미확인입니다. docs/audits/2026-10-14-worksite-deployment.md에 배포 근거와 실패 1회 보완을, docs/audits/2026-10-14-editor-remaining-implementation.md에 제한된 검사와 재감사 필요성을 인계합니다. 기존 문서 처리는 독립 프로세스이고 확대 검증이나 제품 전체 합격으로 바꾸지 않습니다. 후속 명시 승인으로 docs/audits/2026-10-14-ip7-flow-reaudit.md의 기존 desktop 흐름 4건(편집/저장/재열기 1, 세 출력 발행 3)을 로컬에서 실행해 모두 첫 실행 통과했습니다(재시도/skip/제품 수정 0). 확인한 흐름의 부분 증거이며 동적 데이터·미디어·새 Site Part·전체 카탈로그·IP8~IP10의 수용을 대신하지 않습니다."
     },
     {
       "id": "IP8",

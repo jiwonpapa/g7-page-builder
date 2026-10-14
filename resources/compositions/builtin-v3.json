@@ -52012,5 +52012,4183 @@
         }
       }
     ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "96000001-0000-4000-8000-000000000018",
+    "slug": "data-posts-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [
+      {
+        "asset_id": "00000000-0000-4000-8000-000000000090",
+        "url": "/modules/jiwonpapa-page_builder/store/previews/local-business-hero.webp"
+      }
+    ],
+    "blocks": [
+      {
+        "instance_id": "96000001-0000-4000-8000-000000000017",
+        "block_version": 1,
+        "name": "최근 게시글 · 데이터 연결",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "96000001-0000-4000-8000-000000000009",
+              "block_version": 1,
+              "name": "최근 게시글",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 32,
+                  "unit": "px"
+                },
+                "line_height": 1.35,
+                "font_weight": 700
+              },
+              "responsive": {},
+              "type": "content.heading",
+              "props": {
+                "level": 2,
+                "runs": [
+                  {
+                    "text": "최근 게시글"
+                  }
+                ]
+              }
+            },
+            {
+              "instance_id": "96000001-0000-4000-8000-000000000012",
+              "block_version": 1,
+              "name": "목록 검색과 분류",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "96000001-0000-4000-8000-000000000010",
+                    "block_version": 1,
+                    "name": "검색 입력",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "border_top": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_right": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_left": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "radius_top_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_top_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "width": "fill",
+                      "basis": {
+                        "value": 220,
+                        "unit": "px"
+                      },
+                      "grow": 1
+                    },
+                    "responsive": {},
+                    "type": "form.control",
+                    "props": {
+                      "kind": "text",
+                      "label": "제목 검색",
+                      "placeholder": "게시글 제목 검색"
+                    }
+                  },
+                  {
+                    "instance_id": "96000001-0000-4000-8000-000000000011",
+                    "block_version": 1,
+                    "name": "분류 필터",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "border_top": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_right": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_left": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "radius_top_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_top_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "width": "fill",
+                      "basis": {
+                        "value": 180,
+                        "unit": "px"
+                      },
+                      "grow": 1
+                    },
+                    "responsive": {},
+                    "type": "form.control",
+                    "props": {
+                      "kind": "text",
+                      "label": "게시판",
+                      "placeholder": "전체 분류 · 선택 또는 입력"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "wrap": "wrap",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "column_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "width": "fill"
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            },
+            {
+              "instance_id": "96000001-0000-4000-8000-000000000008",
+              "block_version": 1,
+              "name": "데이터 연결 · 최근 게시글",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "96000001-0000-4000-8000-000000000007",
+                    "block_version": 1,
+                    "name": "반복 항목 원형",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "96000001-0000-4000-8000-000000000001",
+                          "block_version": 1,
+                          "name": "항목 이미지",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "width": "fill",
+                            "aspect_ratio": 1.5,
+                            "object_fit": "cover"
+                          },
+                          "responsive": {},
+                          "type": "media.image",
+                          "props": {
+                            "asset_id": "00000000-0000-4000-8000-000000000090",
+                            "alt": ""
+                          }
+                        },
+                        {
+                          "instance_id": "96000001-0000-4000-8000-000000000002",
+                          "block_version": 1,
+                          "name": "항목 제목",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "font_size": {
+                              "value": 22,
+                              "unit": "px"
+                            },
+                            "line_height": 1.35,
+                            "font_weight": 700
+                          },
+                          "responsive": {},
+                          "type": "content.heading",
+                          "props": {
+                            "level": 3,
+                            "runs": [
+                              {
+                                "text": "게시글 제목"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000001-0000-4000-8000-000000000003",
+                          "block_version": 1,
+                          "name": "항목 설명",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "muted"
+                            },
+                            "line_height": 1.6
+                          },
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "게시글 내용이 표시됩니다."
+                                }
+                              ]
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000001-0000-4000-8000-000000000004",
+                          "block_version": 1,
+                          "name": "항목 분류",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "muted"
+                            },
+                            "font_size": {
+                              "value": 14,
+                              "unit": "px"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "게시판 · 작성자 · 날짜"
+                                }
+                              ]
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000001-0000-4000-8000-000000000006",
+                          "block_version": 1,
+                          "name": "항목 링크",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            },
+                            "text_decoration": "underline"
+                          },
+                          "responsive": {},
+                          "type": "action.link",
+                          "props": {
+                            "label": "게시글 자세히 보기",
+                            "link": {
+                              "url": "/pages/guide",
+                              "new_tab": false
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "column",
+                      "row_gap": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "width": "fill",
+                      "padding_bottom": {
+                        "value": 20,
+                        "unit": "px"
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "grid",
+                "columns": [
+                  {
+                    "fr": 1
+                  },
+                  {
+                    "fr": 1
+                  },
+                  {
+                    "fr": 1
+                  }
+                ],
+                "row_gap": {
+                  "value": 24,
+                  "unit": "px"
+                },
+                "column_gap": {
+                  "value": 24,
+                  "unit": "px"
+                },
+                "width": "fill"
+              },
+              "responsive": {
+                "tablet": {
+                  "columns": [
+                    {
+                      "fr": 1
+                    },
+                    {
+                      "fr": 1
+                    }
+                  ]
+                },
+                "mobile": {
+                  "columns": [
+                    {
+                      "fr": 1
+                    }
+                  ]
+                }
+              },
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              },
+              "data": {
+                "source": "posts",
+                "feed": "recent",
+                "period": "week",
+                "limit": 12,
+                "board_slug": "",
+                "post_id": 1,
+                "product_key": "",
+                "audience": "all",
+                "fields": [
+                  {
+                    "node_id": "96000001-0000-4000-8000-000000000001",
+                    "property": "image",
+                    "field": "image"
+                  },
+                  {
+                    "node_id": "96000001-0000-4000-8000-000000000002",
+                    "property": "text",
+                    "field": "title"
+                  },
+                  {
+                    "node_id": "96000001-0000-4000-8000-000000000003",
+                    "property": "text",
+                    "field": "description"
+                  },
+                  {
+                    "node_id": "96000001-0000-4000-8000-000000000004",
+                    "property": "text",
+                    "field": "meta"
+                  },
+                  {
+                    "node_id": "96000001-0000-4000-8000-000000000006",
+                    "property": "link",
+                    "field": "link"
+                  }
+                ],
+                "controls": {
+                  "page_size": 3,
+                  "search_id": "96000001-0000-4000-8000-000000000010",
+                  "filter_id": "96000001-0000-4000-8000-000000000011",
+                  "previous_id": "96000001-0000-4000-8000-000000000013",
+                  "next_id": "96000001-0000-4000-8000-000000000014",
+                  "status_id": "96000001-0000-4000-8000-000000000015"
+                }
+              }
+            },
+            {
+              "instance_id": "96000001-0000-4000-8000-000000000016",
+              "block_version": 1,
+              "name": "페이지 조작",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "96000001-0000-4000-8000-000000000013",
+                    "block_version": 1,
+                    "name": "이전 페이지",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "border_top": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_right": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_left": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "radius_top_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_top_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "width": "hug"
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "이전"
+                    }
+                  },
+                  {
+                    "instance_id": "96000001-0000-4000-8000-000000000015",
+                    "block_version": 1,
+                    "name": "현재 페이지",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "color": {
+                        "kind": "token",
+                        "value": "muted"
+                      },
+                      "font_size": {
+                        "value": 14,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "content.text",
+                    "props": {
+                      "paragraphs": [
+                        [
+                          {
+                            "text": "1 / 1"
+                          }
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "instance_id": "96000001-0000-4000-8000-000000000014",
+                    "block_version": 1,
+                    "name": "다음 페이지",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "border_top": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_right": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_left": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "radius_top_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_top_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "width": "hug"
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "다음"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "align": "center",
+                "justify": "center",
+                "column_gap": {
+                  "value": 16,
+                  "unit": "px"
+                },
+                "width": "fill"
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "nav"
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill",
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          }
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "96000002-0000-4000-8000-000000000018",
+    "slug": "data-post-archive-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [
+      {
+        "asset_id": "00000000-0000-4000-8000-000000000090",
+        "url": "/modules/jiwonpapa-page_builder/store/previews/local-business-hero.webp"
+      }
+    ],
+    "blocks": [
+      {
+        "instance_id": "96000002-0000-4000-8000-000000000017",
+        "block_version": 1,
+        "name": "콘텐츠 아카이브 · 데이터 연결",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "96000002-0000-4000-8000-000000000009",
+              "block_version": 1,
+              "name": "콘텐츠 아카이브",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 32,
+                  "unit": "px"
+                },
+                "line_height": 1.35,
+                "font_weight": 700
+              },
+              "responsive": {},
+              "type": "content.heading",
+              "props": {
+                "level": 2,
+                "runs": [
+                  {
+                    "text": "콘텐츠 아카이브"
+                  }
+                ]
+              }
+            },
+            {
+              "instance_id": "96000002-0000-4000-8000-000000000012",
+              "block_version": 1,
+              "name": "목록 검색과 분류",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "96000002-0000-4000-8000-000000000010",
+                    "block_version": 1,
+                    "name": "검색 입력",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "border_top": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_right": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_left": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "radius_top_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_top_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "width": "fill",
+                      "basis": {
+                        "value": 220,
+                        "unit": "px"
+                      },
+                      "grow": 1
+                    },
+                    "responsive": {},
+                    "type": "form.control",
+                    "props": {
+                      "kind": "text",
+                      "label": "제목 검색",
+                      "placeholder": "게시글 제목 검색"
+                    }
+                  },
+                  {
+                    "instance_id": "96000002-0000-4000-8000-000000000011",
+                    "block_version": 1,
+                    "name": "분류 필터",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "border_top": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_right": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_left": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "radius_top_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_top_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "width": "fill",
+                      "basis": {
+                        "value": 180,
+                        "unit": "px"
+                      },
+                      "grow": 1
+                    },
+                    "responsive": {},
+                    "type": "form.control",
+                    "props": {
+                      "kind": "text",
+                      "label": "게시판",
+                      "placeholder": "전체 분류 · 선택 또는 입력"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "wrap": "wrap",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "column_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "width": "fill"
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            },
+            {
+              "instance_id": "96000002-0000-4000-8000-000000000008",
+              "block_version": 1,
+              "name": "데이터 연결 · 콘텐츠 아카이브",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "96000002-0000-4000-8000-000000000007",
+                    "block_version": 1,
+                    "name": "반복 항목 원형",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "96000002-0000-4000-8000-000000000001",
+                          "block_version": 1,
+                          "name": "항목 이미지",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "width": "fill",
+                            "aspect_ratio": 1.5,
+                            "object_fit": "cover"
+                          },
+                          "responsive": {},
+                          "type": "media.image",
+                          "props": {
+                            "asset_id": "00000000-0000-4000-8000-000000000090",
+                            "alt": ""
+                          }
+                        },
+                        {
+                          "instance_id": "96000002-0000-4000-8000-000000000002",
+                          "block_version": 1,
+                          "name": "항목 제목",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "font_size": {
+                              "value": 22,
+                              "unit": "px"
+                            },
+                            "line_height": 1.35,
+                            "font_weight": 700
+                          },
+                          "responsive": {},
+                          "type": "content.heading",
+                          "props": {
+                            "level": 3,
+                            "runs": [
+                              {
+                                "text": "게시글 제목"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000002-0000-4000-8000-000000000003",
+                          "block_version": 1,
+                          "name": "항목 설명",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "muted"
+                            },
+                            "line_height": 1.6
+                          },
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "게시글 내용이 표시됩니다."
+                                }
+                              ]
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000002-0000-4000-8000-000000000004",
+                          "block_version": 1,
+                          "name": "항목 분류",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "muted"
+                            },
+                            "font_size": {
+                              "value": 14,
+                              "unit": "px"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "게시판 · 작성자 · 날짜"
+                                }
+                              ]
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000002-0000-4000-8000-000000000006",
+                          "block_version": 1,
+                          "name": "항목 링크",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            },
+                            "text_decoration": "underline"
+                          },
+                          "responsive": {},
+                          "type": "action.link",
+                          "props": {
+                            "label": "게시글 자세히 보기",
+                            "link": {
+                              "url": "/pages/guide",
+                              "new_tab": false
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "column",
+                      "row_gap": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "width": "fill",
+                      "padding_bottom": {
+                        "value": 20,
+                        "unit": "px"
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "grid",
+                "columns": [
+                  {
+                    "fr": 1
+                  },
+                  {
+                    "fr": 1
+                  }
+                ],
+                "row_gap": {
+                  "value": 24,
+                  "unit": "px"
+                },
+                "column_gap": {
+                  "value": 24,
+                  "unit": "px"
+                },
+                "width": "fill"
+              },
+              "responsive": {
+                "tablet": {
+                  "columns": [
+                    {
+                      "fr": 1
+                    },
+                    {
+                      "fr": 1
+                    }
+                  ]
+                },
+                "mobile": {
+                  "columns": [
+                    {
+                      "fr": 1
+                    }
+                  ]
+                }
+              },
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              },
+              "data": {
+                "source": "post-archive",
+                "feed": "recent",
+                "period": "week",
+                "limit": 12,
+                "board_slug": "",
+                "post_id": 1,
+                "product_key": "",
+                "audience": "all",
+                "fields": [
+                  {
+                    "node_id": "96000002-0000-4000-8000-000000000001",
+                    "property": "image",
+                    "field": "image"
+                  },
+                  {
+                    "node_id": "96000002-0000-4000-8000-000000000002",
+                    "property": "text",
+                    "field": "title"
+                  },
+                  {
+                    "node_id": "96000002-0000-4000-8000-000000000003",
+                    "property": "text",
+                    "field": "description"
+                  },
+                  {
+                    "node_id": "96000002-0000-4000-8000-000000000004",
+                    "property": "text",
+                    "field": "meta"
+                  },
+                  {
+                    "node_id": "96000002-0000-4000-8000-000000000006",
+                    "property": "link",
+                    "field": "link"
+                  }
+                ],
+                "controls": {
+                  "page_size": 4,
+                  "search_id": "96000002-0000-4000-8000-000000000010",
+                  "filter_id": "96000002-0000-4000-8000-000000000011",
+                  "previous_id": "96000002-0000-4000-8000-000000000013",
+                  "next_id": "96000002-0000-4000-8000-000000000014",
+                  "status_id": "96000002-0000-4000-8000-000000000015"
+                }
+              }
+            },
+            {
+              "instance_id": "96000002-0000-4000-8000-000000000016",
+              "block_version": 1,
+              "name": "페이지 조작",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "96000002-0000-4000-8000-000000000013",
+                    "block_version": 1,
+                    "name": "이전 페이지",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "border_top": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_right": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_left": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "radius_top_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_top_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "width": "hug"
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "이전"
+                    }
+                  },
+                  {
+                    "instance_id": "96000002-0000-4000-8000-000000000015",
+                    "block_version": 1,
+                    "name": "현재 페이지",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "color": {
+                        "kind": "token",
+                        "value": "muted"
+                      },
+                      "font_size": {
+                        "value": 14,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "content.text",
+                    "props": {
+                      "paragraphs": [
+                        [
+                          {
+                            "text": "1 / 1"
+                          }
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "instance_id": "96000002-0000-4000-8000-000000000014",
+                    "block_version": 1,
+                    "name": "다음 페이지",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "border_top": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_right": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_left": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "radius_top_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_top_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "width": "hug"
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "다음"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "align": "center",
+                "justify": "center",
+                "column_gap": {
+                  "value": 16,
+                  "unit": "px"
+                },
+                "width": "fill"
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "nav"
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill",
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          }
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "96000003-0000-4000-8000-000000000011",
+    "slug": "data-post-detail-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [
+      {
+        "asset_id": "00000000-0000-4000-8000-000000000090",
+        "url": "/modules/jiwonpapa-page_builder/store/previews/local-business-hero.webp"
+      }
+    ],
+    "blocks": [
+      {
+        "instance_id": "96000003-0000-4000-8000-000000000010",
+        "block_version": 1,
+        "name": "게시글 상세 · 데이터 연결",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "96000003-0000-4000-8000-000000000009",
+              "block_version": 1,
+              "name": "게시글 상세",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 32,
+                  "unit": "px"
+                },
+                "line_height": 1.35,
+                "font_weight": 700
+              },
+              "responsive": {},
+              "type": "content.heading",
+              "props": {
+                "level": 2,
+                "runs": [
+                  {
+                    "text": "게시글 상세"
+                  }
+                ]
+              }
+            },
+            {
+              "instance_id": "96000003-0000-4000-8000-000000000008",
+              "block_version": 1,
+              "name": "데이터 연결 · 게시글 상세",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "96000003-0000-4000-8000-000000000007",
+                    "block_version": 1,
+                    "name": "반복 항목 원형",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "96000003-0000-4000-8000-000000000001",
+                          "block_version": 1,
+                          "name": "항목 이미지",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "width": "fill",
+                            "aspect_ratio": 1.8,
+                            "object_fit": "cover"
+                          },
+                          "responsive": {},
+                          "type": "media.image",
+                          "props": {
+                            "asset_id": "00000000-0000-4000-8000-000000000090",
+                            "alt": ""
+                          }
+                        },
+                        {
+                          "instance_id": "96000003-0000-4000-8000-000000000002",
+                          "block_version": 1,
+                          "name": "항목 제목",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "font_size": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "line_height": 1.35,
+                            "font_weight": 700
+                          },
+                          "responsive": {},
+                          "type": "content.heading",
+                          "props": {
+                            "level": 3,
+                            "runs": [
+                              {
+                                "text": "게시글 제목"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000003-0000-4000-8000-000000000003",
+                          "block_version": 1,
+                          "name": "항목 설명",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "muted"
+                            },
+                            "line_height": 1.6
+                          },
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "게시글 내용이 표시됩니다."
+                                }
+                              ]
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000003-0000-4000-8000-000000000004",
+                          "block_version": 1,
+                          "name": "항목 분류",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "muted"
+                            },
+                            "font_size": {
+                              "value": 14,
+                              "unit": "px"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "게시판 · 작성자 · 날짜"
+                                }
+                              ]
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000003-0000-4000-8000-000000000006",
+                          "block_version": 1,
+                          "name": "항목 링크",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            },
+                            "text_decoration": "underline"
+                          },
+                          "responsive": {},
+                          "type": "action.link",
+                          "props": {
+                            "label": "게시글 자세히 보기",
+                            "link": {
+                              "url": "/pages/guide",
+                              "new_tab": false
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "column",
+                      "row_gap": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "width": "fill",
+                      "padding_bottom": {
+                        "value": 20,
+                        "unit": "px"
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "grid",
+                "columns": [
+                  {
+                    "fr": 1
+                  }
+                ],
+                "row_gap": {
+                  "value": 24,
+                  "unit": "px"
+                },
+                "column_gap": {
+                  "value": 24,
+                  "unit": "px"
+                },
+                "width": "fill"
+              },
+              "responsive": {
+                "tablet": {
+                  "columns": [
+                    {
+                      "fr": 1
+                    }
+                  ]
+                },
+                "mobile": {
+                  "columns": [
+                    {
+                      "fr": 1
+                    }
+                  ]
+                }
+              },
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              },
+              "data": {
+                "source": "post-detail",
+                "feed": "recent",
+                "period": "week",
+                "limit": 3,
+                "board_slug": "notice",
+                "post_id": 1,
+                "product_key": "",
+                "audience": "all",
+                "fields": [
+                  {
+                    "node_id": "96000003-0000-4000-8000-000000000001",
+                    "property": "image",
+                    "field": "image"
+                  },
+                  {
+                    "node_id": "96000003-0000-4000-8000-000000000002",
+                    "property": "text",
+                    "field": "title"
+                  },
+                  {
+                    "node_id": "96000003-0000-4000-8000-000000000003",
+                    "property": "text",
+                    "field": "description"
+                  },
+                  {
+                    "node_id": "96000003-0000-4000-8000-000000000004",
+                    "property": "text",
+                    "field": "meta"
+                  },
+                  {
+                    "node_id": "96000003-0000-4000-8000-000000000006",
+                    "property": "link",
+                    "field": "link"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill",
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          }
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "96000004-0000-4000-8000-000000000018",
+    "slug": "data-products-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [
+      {
+        "asset_id": "00000000-0000-4000-8000-000000000090",
+        "url": "/modules/jiwonpapa-page_builder/store/previews/local-business-hero.webp"
+      }
+    ],
+    "blocks": [
+      {
+        "instance_id": "96000004-0000-4000-8000-000000000017",
+        "block_version": 1,
+        "name": "상품 목록 · 데이터 연결",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "96000004-0000-4000-8000-000000000009",
+              "block_version": 1,
+              "name": "상품 목록",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 32,
+                  "unit": "px"
+                },
+                "line_height": 1.35,
+                "font_weight": 700
+              },
+              "responsive": {},
+              "type": "content.heading",
+              "props": {
+                "level": 2,
+                "runs": [
+                  {
+                    "text": "상품 목록"
+                  }
+                ]
+              }
+            },
+            {
+              "instance_id": "96000004-0000-4000-8000-000000000012",
+              "block_version": 1,
+              "name": "목록 검색과 분류",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "96000004-0000-4000-8000-000000000010",
+                    "block_version": 1,
+                    "name": "검색 입력",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "border_top": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_right": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_left": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "radius_top_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_top_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "width": "fill",
+                      "basis": {
+                        "value": 220,
+                        "unit": "px"
+                      },
+                      "grow": 1
+                    },
+                    "responsive": {},
+                    "type": "form.control",
+                    "props": {
+                      "kind": "text",
+                      "label": "제목 검색",
+                      "placeholder": "상품 이름 검색"
+                    }
+                  },
+                  {
+                    "instance_id": "96000004-0000-4000-8000-000000000011",
+                    "block_version": 1,
+                    "name": "분류 필터",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "border_top": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_right": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_left": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "radius_top_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_top_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "width": "fill",
+                      "basis": {
+                        "value": 180,
+                        "unit": "px"
+                      },
+                      "grow": 1
+                    },
+                    "responsive": {},
+                    "type": "form.control",
+                    "props": {
+                      "kind": "text",
+                      "label": "상품 분류",
+                      "placeholder": "전체 분류 · 선택 또는 입력"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "wrap": "wrap",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "column_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "width": "fill"
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            },
+            {
+              "instance_id": "96000004-0000-4000-8000-000000000008",
+              "block_version": 1,
+              "name": "데이터 연결 · 상품 목록",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "96000004-0000-4000-8000-000000000007",
+                    "block_version": 1,
+                    "name": "반복 항목 원형",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "96000004-0000-4000-8000-000000000001",
+                          "block_version": 1,
+                          "name": "항목 이미지",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "width": "fill",
+                            "aspect_ratio": 1.5,
+                            "object_fit": "cover"
+                          },
+                          "responsive": {},
+                          "type": "media.image",
+                          "props": {
+                            "asset_id": "00000000-0000-4000-8000-000000000090",
+                            "alt": ""
+                          }
+                        },
+                        {
+                          "instance_id": "96000004-0000-4000-8000-000000000002",
+                          "block_version": 1,
+                          "name": "항목 제목",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "font_size": {
+                              "value": 22,
+                              "unit": "px"
+                            },
+                            "line_height": 1.35,
+                            "font_weight": 700
+                          },
+                          "responsive": {},
+                          "type": "content.heading",
+                          "props": {
+                            "level": 3,
+                            "runs": [
+                              {
+                                "text": "상품 이름"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000004-0000-4000-8000-000000000003",
+                          "block_version": 1,
+                          "name": "항목 설명",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "muted"
+                            },
+                            "line_height": 1.6
+                          },
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "상품 설명이 표시됩니다."
+                                }
+                              ]
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000004-0000-4000-8000-000000000004",
+                          "block_version": 1,
+                          "name": "항목 분류",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "muted"
+                            },
+                            "font_size": {
+                              "value": 14,
+                              "unit": "px"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "상품 분류 · 상품 코드"
+                                }
+                              ]
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000004-0000-4000-8000-000000000005",
+                          "block_version": 1,
+                          "name": "상품 가격",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "font_size": {
+                              "value": 20,
+                              "unit": "px"
+                            },
+                            "font_weight": 700
+                          },
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "상품 가격"
+                                }
+                              ]
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000004-0000-4000-8000-000000000006",
+                          "block_version": 1,
+                          "name": "항목 링크",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            },
+                            "text_decoration": "underline"
+                          },
+                          "responsive": {},
+                          "type": "action.link",
+                          "props": {
+                            "label": "상품 자세히 보기",
+                            "link": {
+                              "url": "/pages/guide",
+                              "new_tab": false
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "column",
+                      "row_gap": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "width": "fill",
+                      "padding_bottom": {
+                        "value": 20,
+                        "unit": "px"
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "grid",
+                "columns": [
+                  {
+                    "fr": 1
+                  },
+                  {
+                    "fr": 1
+                  },
+                  {
+                    "fr": 1
+                  }
+                ],
+                "row_gap": {
+                  "value": 24,
+                  "unit": "px"
+                },
+                "column_gap": {
+                  "value": 24,
+                  "unit": "px"
+                },
+                "width": "fill"
+              },
+              "responsive": {
+                "tablet": {
+                  "columns": [
+                    {
+                      "fr": 1
+                    },
+                    {
+                      "fr": 1
+                    }
+                  ]
+                },
+                "mobile": {
+                  "columns": [
+                    {
+                      "fr": 1
+                    }
+                  ]
+                }
+              },
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              },
+              "data": {
+                "source": "products",
+                "feed": "latest",
+                "period": "week",
+                "limit": 12,
+                "board_slug": "",
+                "post_id": 1,
+                "product_key": "",
+                "audience": "all",
+                "fields": [
+                  {
+                    "node_id": "96000004-0000-4000-8000-000000000001",
+                    "property": "image",
+                    "field": "image"
+                  },
+                  {
+                    "node_id": "96000004-0000-4000-8000-000000000002",
+                    "property": "text",
+                    "field": "title"
+                  },
+                  {
+                    "node_id": "96000004-0000-4000-8000-000000000003",
+                    "property": "text",
+                    "field": "description"
+                  },
+                  {
+                    "node_id": "96000004-0000-4000-8000-000000000004",
+                    "property": "text",
+                    "field": "meta"
+                  },
+                  {
+                    "node_id": "96000004-0000-4000-8000-000000000005",
+                    "property": "text",
+                    "field": "price"
+                  },
+                  {
+                    "node_id": "96000004-0000-4000-8000-000000000006",
+                    "property": "link",
+                    "field": "link"
+                  }
+                ],
+                "controls": {
+                  "page_size": 3,
+                  "search_id": "96000004-0000-4000-8000-000000000010",
+                  "filter_id": "96000004-0000-4000-8000-000000000011",
+                  "previous_id": "96000004-0000-4000-8000-000000000013",
+                  "next_id": "96000004-0000-4000-8000-000000000014",
+                  "status_id": "96000004-0000-4000-8000-000000000015"
+                }
+              }
+            },
+            {
+              "instance_id": "96000004-0000-4000-8000-000000000016",
+              "block_version": 1,
+              "name": "페이지 조작",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "96000004-0000-4000-8000-000000000013",
+                    "block_version": 1,
+                    "name": "이전 페이지",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "border_top": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_right": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_left": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "radius_top_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_top_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "width": "hug"
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "이전"
+                    }
+                  },
+                  {
+                    "instance_id": "96000004-0000-4000-8000-000000000015",
+                    "block_version": 1,
+                    "name": "현재 페이지",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "color": {
+                        "kind": "token",
+                        "value": "muted"
+                      },
+                      "font_size": {
+                        "value": 14,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "content.text",
+                    "props": {
+                      "paragraphs": [
+                        [
+                          {
+                            "text": "1 / 1"
+                          }
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "instance_id": "96000004-0000-4000-8000-000000000014",
+                    "block_version": 1,
+                    "name": "다음 페이지",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "border_top": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_right": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_left": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "radius_top_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_top_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "width": "hug"
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "다음"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "align": "center",
+                "justify": "center",
+                "column_gap": {
+                  "value": 16,
+                  "unit": "px"
+                },
+                "width": "fill"
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "nav"
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill",
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          }
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "96000005-0000-4000-8000-000000000018",
+    "slug": "data-product-showcase-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [
+      {
+        "asset_id": "00000000-0000-4000-8000-000000000090",
+        "url": "/modules/jiwonpapa-page_builder/store/previews/local-business-hero.webp"
+      }
+    ],
+    "blocks": [
+      {
+        "instance_id": "96000005-0000-4000-8000-000000000017",
+        "block_version": 1,
+        "name": "상품 쇼케이스 · 데이터 연결",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "96000005-0000-4000-8000-000000000009",
+              "block_version": 1,
+              "name": "상품 쇼케이스",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 32,
+                  "unit": "px"
+                },
+                "line_height": 1.35,
+                "font_weight": 700
+              },
+              "responsive": {},
+              "type": "content.heading",
+              "props": {
+                "level": 2,
+                "runs": [
+                  {
+                    "text": "상품 쇼케이스"
+                  }
+                ]
+              }
+            },
+            {
+              "instance_id": "96000005-0000-4000-8000-000000000012",
+              "block_version": 1,
+              "name": "목록 검색과 분류",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "96000005-0000-4000-8000-000000000010",
+                    "block_version": 1,
+                    "name": "검색 입력",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "border_top": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_right": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_left": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "radius_top_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_top_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "width": "fill",
+                      "basis": {
+                        "value": 220,
+                        "unit": "px"
+                      },
+                      "grow": 1
+                    },
+                    "responsive": {},
+                    "type": "form.control",
+                    "props": {
+                      "kind": "text",
+                      "label": "제목 검색",
+                      "placeholder": "상품 이름 검색"
+                    }
+                  },
+                  {
+                    "instance_id": "96000005-0000-4000-8000-000000000011",
+                    "block_version": 1,
+                    "name": "분류 필터",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "border_top": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_right": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_left": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "radius_top_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_top_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "width": "fill",
+                      "basis": {
+                        "value": 180,
+                        "unit": "px"
+                      },
+                      "grow": 1
+                    },
+                    "responsive": {},
+                    "type": "form.control",
+                    "props": {
+                      "kind": "text",
+                      "label": "상품 분류",
+                      "placeholder": "전체 분류 · 선택 또는 입력"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "wrap": "wrap",
+                "row_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "column_gap": {
+                  "value": 12,
+                  "unit": "px"
+                },
+                "width": "fill"
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              }
+            },
+            {
+              "instance_id": "96000005-0000-4000-8000-000000000008",
+              "block_version": 1,
+              "name": "데이터 연결 · 상품 쇼케이스",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "96000005-0000-4000-8000-000000000007",
+                    "block_version": 1,
+                    "name": "반복 항목 원형",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "96000005-0000-4000-8000-000000000001",
+                          "block_version": 1,
+                          "name": "항목 이미지",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "width": "fill",
+                            "aspect_ratio": 1.5,
+                            "object_fit": "cover"
+                          },
+                          "responsive": {},
+                          "type": "media.image",
+                          "props": {
+                            "asset_id": "00000000-0000-4000-8000-000000000090",
+                            "alt": ""
+                          }
+                        },
+                        {
+                          "instance_id": "96000005-0000-4000-8000-000000000002",
+                          "block_version": 1,
+                          "name": "항목 제목",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "font_size": {
+                              "value": 22,
+                              "unit": "px"
+                            },
+                            "line_height": 1.35,
+                            "font_weight": 700
+                          },
+                          "responsive": {},
+                          "type": "content.heading",
+                          "props": {
+                            "level": 3,
+                            "runs": [
+                              {
+                                "text": "상품 이름"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000005-0000-4000-8000-000000000003",
+                          "block_version": 1,
+                          "name": "항목 설명",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "muted"
+                            },
+                            "line_height": 1.6
+                          },
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "상품 설명이 표시됩니다."
+                                }
+                              ]
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000005-0000-4000-8000-000000000004",
+                          "block_version": 1,
+                          "name": "항목 분류",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "muted"
+                            },
+                            "font_size": {
+                              "value": 14,
+                              "unit": "px"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "상품 분류 · 상품 코드"
+                                }
+                              ]
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000005-0000-4000-8000-000000000005",
+                          "block_version": 1,
+                          "name": "상품 가격",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "font_size": {
+                              "value": 20,
+                              "unit": "px"
+                            },
+                            "font_weight": 700
+                          },
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "상품 가격"
+                                }
+                              ]
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000005-0000-4000-8000-000000000006",
+                          "block_version": 1,
+                          "name": "항목 링크",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            },
+                            "text_decoration": "underline"
+                          },
+                          "responsive": {},
+                          "type": "action.link",
+                          "props": {
+                            "label": "상품 자세히 보기",
+                            "link": {
+                              "url": "/pages/guide",
+                              "new_tab": false
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "column",
+                      "row_gap": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "width": "fill",
+                      "padding_bottom": {
+                        "value": 20,
+                        "unit": "px"
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "grid",
+                "columns": [
+                  {
+                    "fr": 1
+                  },
+                  {
+                    "fr": 1
+                  }
+                ],
+                "row_gap": {
+                  "value": 24,
+                  "unit": "px"
+                },
+                "column_gap": {
+                  "value": 24,
+                  "unit": "px"
+                },
+                "width": "fill"
+              },
+              "responsive": {
+                "tablet": {
+                  "columns": [
+                    {
+                      "fr": 1
+                    },
+                    {
+                      "fr": 1
+                    }
+                  ]
+                },
+                "mobile": {
+                  "columns": [
+                    {
+                      "fr": 1
+                    }
+                  ]
+                }
+              },
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              },
+              "data": {
+                "source": "product-showcase",
+                "feed": "popular",
+                "period": "week",
+                "limit": 8,
+                "board_slug": "",
+                "post_id": 1,
+                "product_key": "",
+                "audience": "all",
+                "fields": [
+                  {
+                    "node_id": "96000005-0000-4000-8000-000000000001",
+                    "property": "image",
+                    "field": "image"
+                  },
+                  {
+                    "node_id": "96000005-0000-4000-8000-000000000002",
+                    "property": "text",
+                    "field": "title"
+                  },
+                  {
+                    "node_id": "96000005-0000-4000-8000-000000000003",
+                    "property": "text",
+                    "field": "description"
+                  },
+                  {
+                    "node_id": "96000005-0000-4000-8000-000000000004",
+                    "property": "text",
+                    "field": "meta"
+                  },
+                  {
+                    "node_id": "96000005-0000-4000-8000-000000000005",
+                    "property": "text",
+                    "field": "price"
+                  },
+                  {
+                    "node_id": "96000005-0000-4000-8000-000000000006",
+                    "property": "link",
+                    "field": "link"
+                  }
+                ],
+                "controls": {
+                  "page_size": 4,
+                  "search_id": "96000005-0000-4000-8000-000000000010",
+                  "filter_id": "96000005-0000-4000-8000-000000000011",
+                  "previous_id": "96000005-0000-4000-8000-000000000013",
+                  "next_id": "96000005-0000-4000-8000-000000000014",
+                  "status_id": "96000005-0000-4000-8000-000000000015"
+                }
+              }
+            },
+            {
+              "instance_id": "96000005-0000-4000-8000-000000000016",
+              "block_version": 1,
+              "name": "페이지 조작",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "96000005-0000-4000-8000-000000000013",
+                    "block_version": 1,
+                    "name": "이전 페이지",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "border_top": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_right": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_left": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "radius_top_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_top_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "width": "hug"
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "이전"
+                    }
+                  },
+                  {
+                    "instance_id": "96000005-0000-4000-8000-000000000015",
+                    "block_version": 1,
+                    "name": "현재 페이지",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "color": {
+                        "kind": "token",
+                        "value": "muted"
+                      },
+                      "font_size": {
+                        "value": 14,
+                        "unit": "px"
+                      }
+                    },
+                    "responsive": {},
+                    "type": "content.text",
+                    "props": {
+                      "paragraphs": [
+                        [
+                          {
+                            "text": "1 / 1"
+                          }
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "instance_id": "96000005-0000-4000-8000-000000000014",
+                    "block_version": 1,
+                    "name": "다음 페이지",
+                    "locked": false,
+                    "slots": {},
+                    "style": {
+                      "padding_top": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_bottom": {
+                        "value": 10,
+                        "unit": "px"
+                      },
+                      "padding_left": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "padding_right": {
+                        "value": 14,
+                        "unit": "px"
+                      },
+                      "font_size": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "border_top": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_right": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "border_left": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      },
+                      "radius_top_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_top_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_left": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "radius_bottom_right": {
+                        "value": 6,
+                        "unit": "px"
+                      },
+                      "color": {
+                        "kind": "token",
+                        "value": "text"
+                      },
+                      "background": {
+                        "kind": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "surface"
+                        }
+                      },
+                      "width": "hug"
+                    },
+                    "responsive": {},
+                    "type": "action.button",
+                    "props": {
+                      "label": "다음"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "flex",
+                "align": "center",
+                "justify": "center",
+                "column_gap": {
+                  "value": 16,
+                  "unit": "px"
+                },
+                "width": "fill"
+              },
+              "responsive": {},
+              "type": "layout.container",
+              "props": {
+                "tag": "nav"
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill",
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          }
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        }
+      }
+    ]
+  },
+  {
+    "schema_version": "g7-page-builder/v3",
+    "document_id": "96000006-0000-4000-8000-000000000011",
+    "slug": "data-product-detail-starter",
+    "mode": "canvas",
+    "locale": "ko",
+    "shell_mode": "none",
+    "tokens": {
+      "text": {
+        "kind": "hex",
+        "value": "#112233"
+      },
+      "muted": {
+        "kind": "hex",
+        "value": "#667788"
+      },
+      "primary": {
+        "kind": "hex",
+        "value": "#2255ff"
+      },
+      "surface": {
+        "kind": "hex",
+        "value": "#ffffff"
+      },
+      "border": {
+        "kind": "hex",
+        "value": "#ddeeff"
+      },
+      "accent": {
+        "kind": "hex",
+        "value": "#ff8800"
+      }
+    },
+    "assets": [
+      {
+        "asset_id": "00000000-0000-4000-8000-000000000090",
+        "url": "/modules/jiwonpapa-page_builder/store/previews/local-business-hero.webp"
+      }
+    ],
+    "blocks": [
+      {
+        "instance_id": "96000006-0000-4000-8000-000000000010",
+        "block_version": 1,
+        "name": "상품 상세 · 데이터 연결",
+        "locked": false,
+        "slots": {
+          "content": [
+            {
+              "instance_id": "96000006-0000-4000-8000-000000000009",
+              "block_version": 1,
+              "name": "상품 상세",
+              "locked": false,
+              "slots": {},
+              "style": {
+                "font_size": {
+                  "value": 32,
+                  "unit": "px"
+                },
+                "line_height": 1.35,
+                "font_weight": 700
+              },
+              "responsive": {},
+              "type": "content.heading",
+              "props": {
+                "level": 2,
+                "runs": [
+                  {
+                    "text": "상품 상세"
+                  }
+                ]
+              }
+            },
+            {
+              "instance_id": "96000006-0000-4000-8000-000000000008",
+              "block_version": 1,
+              "name": "데이터 연결 · 상품 상세",
+              "locked": false,
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "96000006-0000-4000-8000-000000000007",
+                    "block_version": 1,
+                    "name": "반복 항목 원형",
+                    "locked": false,
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "96000006-0000-4000-8000-000000000001",
+                          "block_version": 1,
+                          "name": "항목 이미지",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "width": "fill",
+                            "aspect_ratio": 1.8,
+                            "object_fit": "cover"
+                          },
+                          "responsive": {},
+                          "type": "media.image",
+                          "props": {
+                            "asset_id": "00000000-0000-4000-8000-000000000090",
+                            "alt": ""
+                          }
+                        },
+                        {
+                          "instance_id": "96000006-0000-4000-8000-000000000002",
+                          "block_version": 1,
+                          "name": "항목 제목",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "font_size": {
+                              "value": 28,
+                              "unit": "px"
+                            },
+                            "line_height": 1.35,
+                            "font_weight": 700
+                          },
+                          "responsive": {},
+                          "type": "content.heading",
+                          "props": {
+                            "level": 3,
+                            "runs": [
+                              {
+                                "text": "상품 이름"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000006-0000-4000-8000-000000000003",
+                          "block_version": 1,
+                          "name": "항목 설명",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "muted"
+                            },
+                            "line_height": 1.6
+                          },
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "상품 설명이 표시됩니다."
+                                }
+                              ]
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000006-0000-4000-8000-000000000004",
+                          "block_version": 1,
+                          "name": "항목 분류",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "muted"
+                            },
+                            "font_size": {
+                              "value": 14,
+                              "unit": "px"
+                            }
+                          },
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "상품 분류 · 상품 코드"
+                                }
+                              ]
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000006-0000-4000-8000-000000000005",
+                          "block_version": 1,
+                          "name": "상품 가격",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "font_size": {
+                              "value": 20,
+                              "unit": "px"
+                            },
+                            "font_weight": 700
+                          },
+                          "responsive": {},
+                          "type": "content.text",
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "상품 가격"
+                                }
+                              ]
+                            ]
+                          }
+                        },
+                        {
+                          "instance_id": "96000006-0000-4000-8000-000000000006",
+                          "block_version": 1,
+                          "name": "항목 링크",
+                          "locked": false,
+                          "slots": {},
+                          "style": {
+                            "color": {
+                              "kind": "token",
+                              "value": "primary"
+                            },
+                            "text_decoration": "underline"
+                          },
+                          "responsive": {},
+                          "type": "action.link",
+                          "props": {
+                            "label": "상품 자세히 보기",
+                            "link": {
+                              "url": "/pages/guide",
+                              "new_tab": false
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "style": {
+                      "display": "flex",
+                      "direction": "column",
+                      "row_gap": {
+                        "value": 16,
+                        "unit": "px"
+                      },
+                      "width": "fill",
+                      "padding_bottom": {
+                        "value": 20,
+                        "unit": "px"
+                      },
+                      "border_bottom": {
+                        "width": 1,
+                        "style": "solid",
+                        "color": {
+                          "kind": "token",
+                          "value": "border"
+                        }
+                      }
+                    },
+                    "responsive": {},
+                    "type": "layout.container",
+                    "props": {
+                      "tag": "div"
+                    }
+                  }
+                ]
+              },
+              "style": {
+                "display": "grid",
+                "columns": [
+                  {
+                    "fr": 1
+                  }
+                ],
+                "row_gap": {
+                  "value": 24,
+                  "unit": "px"
+                },
+                "column_gap": {
+                  "value": 24,
+                  "unit": "px"
+                },
+                "width": "fill"
+              },
+              "responsive": {
+                "tablet": {
+                  "columns": [
+                    {
+                      "fr": 1
+                    }
+                  ]
+                },
+                "mobile": {
+                  "columns": [
+                    {
+                      "fr": 1
+                    }
+                  ]
+                }
+              },
+              "type": "layout.container",
+              "props": {
+                "tag": "div"
+              },
+              "data": {
+                "source": "product-detail",
+                "feed": "latest",
+                "period": "week",
+                "limit": 3,
+                "board_slug": "",
+                "post_id": 1,
+                "product_key": "example",
+                "audience": "all",
+                "fields": [
+                  {
+                    "node_id": "96000006-0000-4000-8000-000000000001",
+                    "property": "image",
+                    "field": "image"
+                  },
+                  {
+                    "node_id": "96000006-0000-4000-8000-000000000002",
+                    "property": "text",
+                    "field": "title"
+                  },
+                  {
+                    "node_id": "96000006-0000-4000-8000-000000000003",
+                    "property": "text",
+                    "field": "description"
+                  },
+                  {
+                    "node_id": "96000006-0000-4000-8000-000000000004",
+                    "property": "text",
+                    "field": "meta"
+                  },
+                  {
+                    "node_id": "96000006-0000-4000-8000-000000000005",
+                    "property": "text",
+                    "field": "price"
+                  },
+                  {
+                    "node_id": "96000006-0000-4000-8000-000000000006",
+                    "property": "link",
+                    "field": "link"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "style": {
+          "display": "flex",
+          "direction": "column",
+          "row_gap": {
+            "value": 24,
+            "unit": "px"
+          },
+          "width": "fill",
+          "padding_top": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_bottom": {
+            "value": 32,
+            "unit": "px"
+          },
+          "padding_left": {
+            "value": 24,
+            "unit": "px"
+          },
+          "padding_right": {
+            "value": 24,
+            "unit": "px"
+          }
+        },
+        "responsive": {
+          "mobile": {
+            "padding_left": {
+              "value": 16,
+              "unit": "px"
+            },
+            "padding_right": {
+              "value": 16,
+              "unit": "px"
+            }
+          }
+        },
+        "type": "layout.section",
+        "props": {
+          "tag": "section"
+        }
+      }
+    ]
   }
 ]

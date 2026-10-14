@@ -41,6 +41,31 @@ function hostElement() {
 }
 
 describe('v3 structural UI and explicit mount', () => {
+  it('separates insertion from selected properties and initially fits without editing the document', async () => {
+    const doc = source(); doc.blocks = [];
+    const host = hostElement(), root = createRoot(host), changed = vi.fn();
+    const width = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains('g7pb-v3-canvas') ? 800 : 0;
+    });
+    cleanup.push(() => { root.unmount(); width.mockRestore(); });
+    await act(async () => root.render(<StructureEditor document={doc} sessionId="workspace-chrome" serverRevision={1}
+      drafts={{ save: async request => ({ documentId: request.documentId, revision: 2 }) }}
+      nextId={() => id(980)} iframeEnabled={false} onChange={changed} />)); await flush();
+    const navigation = host.querySelector('[aria-label="레이어"]')!, properties = host.querySelector('[aria-label="구조 속성"]')!;
+    expect(navigation.querySelector('[aria-label="요소 삽입"]')).not.toBeNull();
+    expect(navigation.querySelector('[aria-label="구성 템플릿"]')).not.toBeNull();
+    expect(properties.querySelector('[aria-label="삽입 위치"]')).toBeNull();
+    expect(properties.textContent).toContain('편집할 요소를 선택하세요');
+    expect(host.querySelector<HTMLSelectElement>('[aria-label="작업면 확대"]')!.value).toBe(String(736 / 1280));
+    expect(host.querySelector<HTMLElement>('[data-v3-workspace]')!.style.width).toBe('1280px');
+    expect(changed).not.toHaveBeenCalled();
+    await click(host, '제목 삽입');
+    expect(changed).toHaveBeenCalledTimes(1);
+    await act(async () => navigation.querySelector<HTMLButtonElement>('[data-testid="layer-' + id(980) + '"]')!.click());
+    expect(properties.querySelector('[aria-label="레이어 이름"]')).not.toBeNull();
+    expect(properties.querySelector('[aria-label="정밀 Inspector"]')).not.toBeNull();
+  });
+
   it('isolates mirrored frame chrome and restores only the background values it owns', async () => {
     const frame = document.createElement('iframe'); document.body.append(frame);
     cleanup.push(() => frame.remove());
@@ -322,7 +347,7 @@ describe('v3 structural UI and explicit mount', () => {
     const select = host.querySelector<HTMLButtonElement>(`[data-testid="layer-${id(1)}"]`)!;
     await act(async () => select.click()); await flush();
     await click(host, '삭제');
-    expect(host.querySelector('[role="status"]')?.textContent).toContain('locked');
+    expect(host.querySelector('[aria-label="편집 상태"]')?.textContent).toContain('locked');
     expect(changed).not.toHaveBeenCalled();
     const collapse = host.querySelector<HTMLButtonElement>('[aria-label="본문 접기"]')!;
     await act(async () => collapse.click());

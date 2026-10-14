@@ -27,7 +27,7 @@ export function Inspector({ node, document, disabled, apply, viewport = 'base' }
       setError('');
     } catch (error) { setError(error instanceof Error ? error.message : '값을 확인해 주세요.'); }
   };
-  return <section aria-label="정밀 Inspector" style={{ borderTop: '1px solid var(--g7pb-border)', marginTop: 24, paddingTop: 16 }}>
+  return <section aria-label="정밀 Inspector" className="g7pb-v3-inspector">
     <h2 style={{ fontSize: 15 }}>디자인 · {viewportLabel(viewport)}</h2>
     <p style={{ color: 'var(--g7pb-muted)' }}>{viewport === 'base' ? '기기별 재정의가 없는 속성에 함께 적용됩니다.'
       : '이 화면에만 적용합니다. 미지정 속성은 공통값에서 상속합니다. 다른 화면 값은 유지됩니다.'}</p>
@@ -35,9 +35,9 @@ export function Inspector({ node, document, disabled, apply, viewport = 'base' }
       if (event.key === 'Escape') { event.stopPropagation(); setDraft(structuredClone(layer)); setError(''); }
     }}>
       <fieldset disabled={disabled} style={{ border: 0, padding: 0, margin: 0 }}>
-        {groups.map((group, index) => <details key={group.title} open={index < 2} style={{ borderBottom: '1px solid var(--g7pb-border)', padding: '10px 0' }}>
+        {groups.map((group, index) => <details key={group.title} open={index < 2} className="g7pb-v3-property-group">
           <summary>{group.title}</summary>
-          {group.keys.map(key => <div key={key} style={{ padding: '8px 0' }}>
+          {group.keys.map(key => <div key={key} className="g7pb-v3-property-row">
             <label><input type="checkbox" aria-label={labelFor(key) + ' 지정'} checked={Object.hasOwn(draft, key)}
               onChange={event => event.target.checked ? change(key, structuredClone(effective[key] ?? (['width', 'height', 'basis'].includes(key) ? 'auto' : seed(styleRules[key]!)))) : reset(key)} />{labelFor(key)}</label>
             {Object.hasOwn(draft, key) ? <><TypedInput rule={styleRules[key]!} value={draft[key]} label={labelFor(key)} change={value => change(key, value)} assets={document.assets} />
@@ -55,7 +55,7 @@ export function Inspector({ node, document, disabled, apply, viewport = 'base' }
               setDraft(current => ({ ...current, ...Object.fromEntries(['top', 'right', 'bottom', 'left'].map(side => [prefix + '_' + side, structuredClone(value)])) }));
             }}>{prefix === 'padding' ? '안쪽' : '바깥'} 위 값을 네 변에</InputButton>)}
         </details>)}
-        <div style={{ display: 'flex', gap: 8, paddingTop: 12 }}><InputButton type="submit" disabled={!changed}>디자인 적용</InputButton>
+        <div className="g7pb-v3-apply"><InputButton type="submit" disabled={!changed}>디자인 적용</InputButton>
           <InputButton disabled={!changed} onClick={() => { setDraft(structuredClone(layer)); setError(''); }}>입력 취소</InputButton></div>
         <InputButton disabled={!Object.keys(draft).length} onClick={() => { setDraft({}); setError(''); }}>현재 화면 스타일 초기화</InputButton>
       </fieldset>

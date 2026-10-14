@@ -44,15 +44,15 @@ export function UserCompositionPanel({ port, disabled, read, nextId, insert }: {
     } catch (error) { if (live.current.active && token === live.current.sequence) setMessage(error instanceof Error ? error.message : '구성을 삭제하지 못했습니다.'); }
     finally { if (live.current.active && token === live.current.sequence) setBusy(false); }
   };
-  return <section aria-label="내 구성" style={{ borderTop: '1px solid var(--g7pb-border)', marginTop: 16, paddingTop: 16 }}>
-    <h2 style={{ fontSize: 15 }}>내 구성</h2>
+  return <section aria-label="내 구성" className="g7pb-v3-library">
+    <h2>내 구성</h2>
     {!port ? <p>사용자 구성 저장 서비스가 연결되지 않았습니다.</p> : <>
       <form onSubmit={event => { event.preventDefault(); void save(); }}>
-        <label>구성 이름<input aria-label="사용자 구성 이름" maxLength={120} value={title} disabled={disabled || busy}
+        <label className="g7pb-v3-field">구성 이름<input aria-label="사용자 구성 이름" maxLength={120} value={title} disabled={disabled || busy}
           onChange={event => setTitle(event.target.value)} /></label>
         <InputButton type="submit" disabled={disabled || busy || !title.trim() || !read().ids.length}>선택을 구성으로 저장</InputButton>
       </form>
-      <label>내 구성 검색<input type="search" value={query} onChange={event => setQuery(event.target.value)} /></label>
+      <label className="g7pb-v3-field">내 구성 검색<input type="search" value={query} onChange={event => setQuery(event.target.value)} /></label>
       <InputButton disabled={busy} onClick={() => void load()}>구성 목록 새로고침</InputButton>
       {entries.filter(entry => entry.title.toLocaleLowerCase().includes(query.toLocaleLowerCase())).map(entry => <div key={entry.id} style={{ marginTop: 10 }}>
         <strong style={{ overflowWrap: 'anywhere' }}>{entry.title}</strong>
@@ -64,7 +64,7 @@ export function UserCompositionPanel({ port, disabled, read, nextId, insert }: {
         <InputButton disabled={disabled || busy} onClick={() => void remove(entry.id)}>라이브러리에서 삭제</InputButton>
       </div>)}
       {!busy && !entries.length && <p>저장된 구성이 없습니다.</p>}
-      <p>독립 사본으로 삽입합니다. 새 ID와 내부 참조를 연결하며 원본 구성과 다른 페이지는 함께 변경되지 않습니다.</p>
+      <p className="g7pb-v3-hint">독립 사본으로 삽입되며 원본과 다른 페이지는 유지됩니다.</p>
     </>}
     {busy && <p role="status">구성을 처리하는 중입니다.</p>}
     {message && <p role="status">{message}</p>}

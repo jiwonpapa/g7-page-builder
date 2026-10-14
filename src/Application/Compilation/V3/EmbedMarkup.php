@@ -43,7 +43,9 @@ final class EmbedMarkup
             return '<span data-g7pb-embed="" data-g7pb-embed-kind="'.$target['kind'].'" data-g7pb-embed-src="'.$src.'" data-g7pb-embed-title="'.$title.'" data-g7pb-embed-sizing="parent"></span>';
         }
 
-        return '<iframe src="'.$src.'" title="'.$title.'" loading="lazy" referrerpolicy="no-referrer"'.($target['video'] ? ' allowfullscreen=""' : '')
+        $referrerPolicy = $target['kind'] === 'video-youtube' ? 'strict-origin-when-cross-origin' : 'no-referrer';
+
+        return '<iframe src="'.$src.'" title="'.$title.'" loading="lazy" referrerpolicy="'.$referrerPolicy.'"'.($target['video'] ? ' allowfullscreen=""' : '')
             .' style="display:block;width:100%;height:100%;border:0;min-width:0;min-height:0;"></iframe>';
     }
 }

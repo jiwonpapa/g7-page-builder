@@ -48,7 +48,8 @@ function hydrateEmbeds(root: Document): void {
     frame.src = src;
     frame.title = marker.dataset.g7pbEmbedTitle ?? '';
     frame.loading = 'lazy';
-    frame.referrerPolicy = 'no-referrer';
+    // YouTube requires client identification; cross-origin requests expose only the origin.
+    frame.referrerPolicy = kind === 'video-youtube' ? 'strict-origin-when-cross-origin' : 'no-referrer';
     frame.allowFullscreen = kind[0] === 'v';
     if (marker.dataset.g7pbEmbedSizing === 'parent') {
       Object.assign(frame.style, { display: 'block', width: '100%', height: '100%', border: '0', minWidth: '0', minHeight: '0' });

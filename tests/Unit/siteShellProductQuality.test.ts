@@ -90,10 +90,12 @@ describe('Site Shell product release gate', () => {
     doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(doc.activeElement).toBe(toggle);
+    expect(host.querySelector<HTMLElement>('[data-g7pb-shell-panel="search"]')?.style.position).toBe('');
     toggle.click(); doc.body.click();
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     dispose(); toggle.click();
     expect(opened).toHaveBeenCalledTimes(2);
+    expect(host.querySelector<HTMLElement>('[data-g7pb-shell-panel="search"]')?.style.position).toBe('');
   });
 
   it('hides unavailable commerce and preserves authored footer text while safely inheriting site metadata', () => {

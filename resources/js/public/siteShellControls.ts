@@ -1,4 +1,5 @@
 import { decorateSystemMarkup } from './systemElementProjection';
+import { createShellPopoverPlacement } from './shellPopoverPlacement';
 
 /** Module-owned UI for the public G7 state/dispatch contract. Never stores auth in documents. */
 export type ShellOptions = Record<'search' | 'account' | 'cart' | 'notifications' | 'theme' | 'locale' | 'currency', boolean>;
@@ -160,13 +161,14 @@ export function shellAuthHeaders(view: Window): Record<string, string> {
 const disclosureState = new WeakMap<Document, { key: string; focus: number }>();
 export function installShellDisclosures(host: HTMLElement, onOpen?: (key: string) => void, preview = false): () => void {
   const doc = host.ownerDocument;
+  const placement = createShellPopoverPlacement(doc);
   const focusable = (panel: HTMLElement): HTMLElement[] => Array.from(panel.querySelectorAll<HTMLElement>('input, a, button, select')).filter((node) => !node.closest('[hidden]'));
   const close = (restore: boolean): void => {
     host.querySelectorAll<HTMLButtonElement>('[data-g7pb-shell-toggle][aria-expanded="true"]').forEach((button) => {
       if (!preview) disclosureState.delete(doc);
       button.setAttribute('aria-expanded', 'false');
       const panel = host.querySelector<HTMLElement>(`[data-g7pb-shell-panel="${button.dataset.g7pbShellToggle}"]`);
-      if (panel) panel.hidden = true;
+      if (panel) { placement.close(panel); panel.hidden = true; }
       if (restore) button.focus();
     });
   };
@@ -179,6 +181,7 @@ export function installShellDisclosures(host: HTMLElement, onOpen?: (key: string
     // G7 HtmlContent may replace its DOM after any public-state update. Keep the
     // user's open panel/focus, without restarting the entry animation each time.
     if (restored) panel.style.animation = 'none';
+    placement.open(button, panel);
     if (!preview) disclosureState.set(doc, { key, focus });
     const controls = focusable(panel);
     (controls[focus] ?? controls[0])?.focus();
@@ -221,7 +224,7 @@ export function installShellDisclosures(host: HTMLElement, onOpen?: (key: string
   doc.addEventListener('g7pb:shell-open', otherPanel); doc.defaultView?.addEventListener('resize', resized);
   const previous = !preview ? disclosureState.get(doc) : undefined;
   if (previous) openPanel(previous.key, previous.focus, true);
-  return () => { doc.removeEventListener('click', click); doc.removeEventListener('keydown', keydown); doc.removeEventListener('focusin', focus); host.removeEventListener('submit', submit); doc.removeEventListener('g7pb:shell-open', otherPanel); doc.defaultView?.removeEventListener('resize', resized); };
+  return () => { placement.dispose(); doc.removeEventListener('click', click); doc.removeEventListener('keydown', keydown); doc.removeEventListener('focusin', focus); host.removeEventListener('submit', submit); doc.removeEventListener('g7pb:shell-open', otherPanel); doc.defaultView?.removeEventListener('resize', resized); };
 }
 
 interface NotificationRequest { current: () => boolean; dispose: () => void }

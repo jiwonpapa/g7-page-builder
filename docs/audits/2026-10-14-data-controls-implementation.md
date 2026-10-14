@@ -23,3 +23,5 @@ CTRL-FIXTURE01: 첫 제출은 새 page_size=0 거부 사례의 기대 오류를 
 CTRL-TYPE01: 다음 downstream 타입 검사는 input/select union의 공통 listener가 Event를 받는데 KeyboardEvent 전용 콜백을 전달한 두 위치를 거부했습니다. Event에서 key 존재와 Enter를 실행 시 좁히도록 동일 콜백 한 곳만 보완했습니다(1/1). 우회 단언/any나 타입 기준 변경은 없습니다. 실패 보고서 submission-6e4d71975a2a4ba6beeb65e91ad1065e.json을 보존하고 변경 입력과 실패/downstream만 처리합니다.
 
 ENV-PHP01: PHP 공통 사례에서 새 missing reference를 허용한 원인은 제품 소스가 아니라 main/vendor 공유 symlink의 Composer baseDir였습니다. ReflectionClass가 DataBindings를 main/src에서 읽는 사실을 확인했습니다. 자체 생성한 47바이트 symlink를 `.runtime/vendor-shared-link-data-controls`로 보존 이동하고 같은 vendor를 worktree-local에 복사하여 의존성 버전/lock/제품 소스 변경 없이 autoload 기준을 바로잡았습니다(환경 보완 1회). 이 환경에서의 앞선 PHP 통과는 새 소스의 증거로 사용하지 않습니다. 실패 보고서 submission-ff14d5bbd2e04ae89c8f5c1b6b9e0220.json을 보존합니다. 기존 main/vendor와 사용자 파일은 변경/삭제하지 않았습니다.
+
+CTRL-IME01: 새 검색/필터 Enter의 외부 form 제출 방지가 한글 조합 확정까지 가로채지 않도록 isComposing=true를 제외하는 한 곳의 보완을 별도 3파일 task `editor-data-controls-ime-20261014`로 처리합니다(1/1). 기존 새 조작 단위 사례 안에 조합 중/일반 Enter 차이만 확인하며 새 브라우저/IME 감사는 실행하지 않습니다. 이는 CTRL-TYPE01의 listener 타입 문제와 다른 입력 소유권 보완이며 동일 문제의 추가 보완을 허용하지 않습니다.

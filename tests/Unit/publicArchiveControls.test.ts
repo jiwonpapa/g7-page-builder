@@ -44,6 +44,7 @@ describe('archive control lifetimes', () => {
     expect(status.hidden).toBe(false); expect(status.textContent).toBe('No matching rows'); expect(page.textContent).toBe('0 / 0');
     search.value = ''; search.dispatchEvent(new Event('input')); expect(status.hidden).toBe(true);
     const enter = new KeyboardEvent('keydown', { key: 'Enter', cancelable: true }); search.dispatchEvent(enter); expect(enter.defaultPrevented).toBe(true);
+    const composing = new KeyboardEvent('keydown', { key: 'Enter', isComposing: true, cancelable: true }); search.dispatchEvent(composing); expect(composing.defaultPrevented).toBe(false);
     expect(other.querySelector('input')?.value).toBe('other surface');
     const before = rows.map(row => row.outerHTML);
     dispose(); pagination.dispose(); dispose(); pagination.dispose();

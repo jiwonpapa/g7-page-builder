@@ -684,9 +684,9 @@
       "acceptance_ids": [
         "IND-07"
       ],
-      "owner_task": "editor-remaining-result-20261014",
-      "implementation_commit": "a14082bf9e2f26922e87f1cf7fccccf5a365a114",
-      "integrated_commit": "ead0f89d30c65bc2fc7c1e9ae93179e3d6888160",
+      "owner_task": "data04-visibility-reaudit-20261014",
+      "implementation_commit": "52aec0b00cfc5991e5b52506c510345337ca9c98",
+      "integrated_commit": "4098aacd8fc9efd90b73c99060aa38fd22879d48",
       "evidence": [
         {
           "acceptance_id": "IND-07",
@@ -876,6 +876,13 @@
           "commit": "3a60b05ef33c4df596c8897851ddb63605b49e22",
           "result": "pass",
           "path": "docs/audits/2026-10-14-ip7-dynamic-parts-reaudit.md"
+        },
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-data-row-visibility-reaudit",
+          "commit": "4098aacd8fc9efd90b73c99060aa38fd22879d48",
+          "result": "pass",
+          "path": "docs/audits/2026-10-14-data04-visibility-reaudit.md"
         }
       ],
       "blocked_reason": null,
@@ -888,7 +895,7 @@
         "src/Application/Compilation",
         "tests/E2E"
       ],
-      "completion": "공통 요소/시작 구성 91개/새 Header·Footer/문의·실행 컨트롤/동적 6종과 공통 검색·분류·페이지 조작을 소스 구현·통합했습니다. 기존 85개 원본은 보존하며 블록 이름별 편집·삽입·렌더 코드를 추가하지 않았습니다. DATA02는 별도 승인 수정으로 해소했고 새 조작·붙여넣기/참조·PHP/TS·타입·구조 관련 검사는 통과했습니다. 확정 잔여 소스 범위를 닫고 2026-10-14 사용자 지시로 모든 JS/CSS와 분리 구성 자산의 byte 초과 차단을 경고로 전환했습니다. a84b8eb4edfffa2f0aecb90f39605624a7394c39를 0.37.0-dev.20261014로 온라인 작업 사이트 https://www.g7devops.com에 배포하고 artifact 일치/공식 최소 smoke 및 정밀 편집기 자산 3개 HTTP 200을 확인했습니다. 실제 데이터/저장·출력/UX의 전체 제품 수용은 미확인입니다. docs/audits/2026-10-14-worksite-deployment.md에 배포 근거와 실패 1회 보완을, docs/audits/2026-10-14-editor-remaining-implementation.md에 제한된 검사와 재감사 필요성을 인계합니다. 기존 문서 처리는 독립 프로세스이고 확대 검증이나 제품 전체 합격으로 바꾸지 않습니다. 후속 명시 승인으로 docs/audits/2026-10-14-ip7-flow-reaudit.md의 기존 desktop 흐름 4건(편집/저장/재열기 1, 세 출력 발행 3)을 로컬에서 실행해 모두 첫 실행 통과했습니다(재시도/skip/제품 수정 0). 확인한 흐름의 부분 증거이며 동적 데이터·미디어·새 Site Part·전체 카탈로그·IP8~IP10의 수용을 대신하지 않습니다. 후속 동적·공통영역 제한 재감사에서 기존 Header/Footer 2건은 첫 실행 통과하고 원래 활성 세트를 복구했습니다. 동적 6종은 UI 삽입/저장/재열기 및 none 미리보기/명시 발행을 확인했지만 DATA04 목록 숨김은 미해결입니다. DATA03 공통 template 출력 차단만 1회 수정·통합했고, DATA04의 1회 보완은 기존 정리 시험 2건 실패로 32e65372c9f7bcfe248ae80afc1f3409b3035b86에 동결·main 제외했습니다. docs/audits/2026-10-14-ip7-dynamic-parts-reaudit.md에 실패와 부분 증거를 인계하며 추가 수정/재검증·온라인 재배포 없이 IP7 진행을 유지합니다."
+      "completion": "공통 요소/시작 구성 91개/새 Header·Footer/문의·실행 컨트롤/동적 6종과 검색·분류·페이지 조작의 소스는 구현·통합했습니다. 블록별 편집기 등록과 기존 문서 전환은 추가하지 않았습니다. DATA02/03은 후속 승인 보완으로 해소했고, 기본 desktop 흐름 4건·새 Header/Footer 2건과 동적 6종 UI 저장/재열기/none 미리보기·명시 발행은 부분 증거로 보존합니다. DATA04의 첫 실패 32e65372c9f7bcfe248ae80afc1f3409b3035b86은 그대로 보존하고, 다음 재감사의 추가 보완 1회로 행 표시·정리 문제를 해소했습니다(52aec0b0/4098aacd). 관련 단위 112건·타입·구조와 실제 네 목록의 숨김/검색/분류/페이지 제한 확인은 통과했습니다. 상품 표본은 1개·분류 없음으로 다중 페이지/실제 분류는 미실행입니다. 캡처에서 빈 이미지가 여백을 차지하는 DATA05를 관찰했으나 이번 행 표시 범위를 넓혀 수정하지 않았습니다. docs/audits/2026-10-14-data04-visibility-reaudit.md에 근거·한계·다음 범위를 인계하며 IP7 전체 수용 미완료를 유지합니다. JS/CSS byte 초과는 경고입니다. 온라인은 0.37.0-dev.20261014/a84b8eb4 배포 상태이며 이후 수정은 온라인 미배포입니다. 기존 v1/v2/Site Part 처리는 독립 프로세스로 유지합니다."
     },
     {
       "id": "IP8",

@@ -41,3 +41,13 @@
 - 목표/lease: integration-remaining-nine-20261014.
 - 1번 source: f0fc0573943df2cc37ba18a72a8472152568c7ef, main 7da2ec9da21148106d23e610ab7aae12f84f7d45. 관련 unit/type/구조 첫 제출 통과, runtime 자동 검사는 구현 인계로 구분했습니다.
 - 나머지 실행 결과·실패·원복·배포 근거는 이 원장에 이어 기록합니다. IP7~IP10 상태는 근거가 확보된 범위에서만 갱신합니다.
+
+### 2026-10-14 UI 지적 후 진행 결과
+
+- 문의 구성 5개: `structureFormCatalogProduct.spec.ts`의 기존 desktop 5개가 첫 실행에 통과했습니다(90.805초, skip/flaky/unexpected 0). 일반 문의·견적·예약·참가·뉴스레터의 실제 UI 작성/저장/재열기/미리보기·공개 출력/로컬 guest 제출 증거입니다. 해당 실행은 UI 변경 전 `ecfe4a88`이며 이후 UI의 전체 수용 근거로 승격하지 않습니다. 증거는 `output/playwright/gates/integration-remaining-nine-20261014/1367ffbbbb499793ed0327fa71edd67b624daed4bb9a1a7c7af2c9b0bb5f9427/d805afd9011e4cbaaff1323ebf5d0f42/{execution.json,results.json,report/}`입니다. 고정 G7 컨트롤 감사는 별도 잔여입니다.
+- UI source/통합: `361e3353` / `bf15c3c5`, 시각 우선순위 보완 `4d8bfd94` / `4df19a54`. 관련 unit·type·architecture·CSS 성공이며 전체 browser gate는 구현 인계로 명시했습니다. 브라우저 수용을 거짓 통과시키지 않았습니다.
+- 실제 UI: 시험 소유 문서 `0fbfe603-875c-411b-889f-957e6c7251ac`에 구성 템플릿을 실제 삽입하고 제목 레이어 선택·캔버스 한국어 입력·Undo 원문 복귀·Redo 수정문 복귀·저장 HTTP 200·재열기 수정문 보존을 확인했습니다. 첫 입력 직후의 동기 읽기는 상태 반영 전이므로 성공 근거에서 제외하고 원문/수정문 DOM의 도달을 기다려 확인했습니다. 구조 모드의 Puck 선택 경계는 heading 대신 button 역할이므로 재열기 확인의 첫 heading selector 대기는 만료됐지만 실제 원본 텍스트는 저장돼 있었습니다. 이름 없는 전체 status나 vendor 역할을 제품 저장 실패로 오판하지 않습니다.
+- 실제 화면 1756×1279와 1440×960: 왼쪽 레이어·삽입, 중앙 작성 캔버스, 오른쪽 현재 요소 속성을 분리했습니다. 제목에는 글자→크기→자동 배치 순서, 구조 명령에는 접근 가능한 이름·툴팁, 정밀 모드에는 선택 핸들 3개가 표시됐습니다. 1440 화면에서 좌/우 패널의 `scrollWidth == clientWidth`(248/288px)였으며 문서 원본은 PC 1280px인 채 세션 확대 61.71875%로 맞췄습니다. 실제 핸들 드래그·세 작업면 출력 일치·전체 키보드 수용은 이 관찰만으로 완료 처리하지 않습니다.
+- 잔여 UI 관찰: 1440×960에서 body/제품 root는 960px이지만 html scrollHeight가 1670px로 측정됐습니다. 바깥 스크롤 원인은 미판정이며 UI 최종 수용 결함/환경 구분이 남았습니다. 이미 보완한 화면을 완성으로 선언하거나 임의 CSS 강제로 숨기지 않습니다.
+- 화면 증거: `output/playwright/remaining-editor-before-ui-20261014.png` SHA256 `9220dad90b19c135bf083cd48ce0ed2afbeef2eb8ea95599d44f2b62442bb6c4`, `remaining-editor-ui-final-20261014.png` SHA256 `b53985b1fd25aaf39262eb93456ef3f0bb494d68cfaee0796bf0555894648b1d`, `remaining-editor-ui-1440-20261014.png` SHA256 `12800c938bc2a705b58c9534c5026c0e8e60f48bb57742858319fffc13b42610`(뒤 두 파일도 같은 디렉터리).
+- 현재 build fingerprint `7346944f4a815ed7097c9590f10f124681bf75800ed55f76973e0c8f1998df33`. 코어/테마·기존 문서·스키마·명령·저장/발행 계약 변경은 없습니다. 로컬 소스 통합/브라우저 관찰과 온라인 배포는 별개이며 현재 UI는 아직 온라인 미배포입니다. 1~9 목표는 계속 진행 중이며 피그마식 작성 UX 전체 완성을 선언하지 않습니다.

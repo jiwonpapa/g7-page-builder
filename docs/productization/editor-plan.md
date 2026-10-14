@@ -2,6 +2,8 @@
 
 <!-- editor-plan:independent-editor-20261012 -->
 
+2026-10-14 다음 제한 재감사: [동적 6종·새 Header/Footer 결과](../audits/2026-10-14-ip7-dynamic-parts-reaudit.md)에서 기존 Site Part desktop 2건 첫 실행 통과와 동적 UI 삽입/저장/재열기/미리보기/명시 발행을 확인했습니다. DATA03 공통 출력 차단은 1회 수정·통합했고, DATA04 목록 숨김 결함은 1회 보완 후 기존 정리 시험 2건 실패로 후보를 보존·main에서 제외했습니다. 추가 수정/재검증·온라인 재배포는 하지 않으며 IP7/제품 전체 수용 미완료를 유지합니다.
+
 2026-10-14 제한 재감사 승인 후: 기존 structureDocumentProduct.spec.ts의 desktop 4건(편집/저장/재열기 1건과 none/template/builder 발행 3건)만 실제 실행하여 첫 실행 4건 모두 통과했습니다. [범위·결과](../audits/2026-10-14-ip7-flow-reaudit.md)에 원본 증거·캡처·한계와 소유 문서 보존을 기록합니다. 새 시험/제품 수정/온라인 재배포는 없으며 IP7 전체나 IP8~IP10의 미실행 수용을 완료로 바꾸지 않습니다.
 
 2026-10-14 후속: 사용자 지시로 모든 JS/CSS 및 분리 구성 자산 byte 초과는 경고로 전환하고 현재 구현을 0.37.0-dev.20261014 / a84b8eb4edfffa2f0aecb90f39605624a7394c39로 [온라인 작업 사이트](https://www.g7devops.com/admin/page-builder)에 배포했습니다. [배포 근거](../audits/2026-10-14-worksite-deployment.md)의 artifact/최소 smoke 성공은 아래 추가 제품 수용 감사의 성공이 아닙니다. 아래 배포 전 기록은 당시 상태로 보존하며 IP1~6 완료·IP7~9 진행·IP10 계획을 유지합니다. 기존 문서 전환과 확대 검증은 실행하지 않습니다.

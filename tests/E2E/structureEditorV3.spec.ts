@@ -1016,7 +1016,7 @@ for (const zoom of [.5, 1, 2]) {
     await page.getByRole('region', { name: '작업면' }).evaluate(element => element.scrollTop = 40);
     const frame = page.frameLocator('iframe'), target = frame.locator('[data-v3-node="' + id + '"]');
     await target.click();
-    await expect(page.getByRole('heading', { name: '선택 1개', exact: true })).toBeVisible();
+    await expect(page.getByRole('complementary', { name: '구조 속성', exact: true }).getByText('선택 1개', { exact: true })).toBeVisible();
     const handle = frame.locator('.moveable-control[data-direction="e"]');
     await expect(handle).toBeVisible();
     const before = await read(page), box = await handle.boundingBox();
@@ -1074,7 +1074,7 @@ test('v3 multiple selection aligns distributes rotates and keeps keyboard and re
   await page.getByLabel('작업면 확대', { exact: true }).selectOption('0.5');
   const frame = page.frameLocator('iframe'), node = (id: string) => frame.locator('[data-v3-node="' + id + '"]');
   await node(ids[0]).click(); await node(ids[1]).click({ modifiers: ['Shift'] }); await node(ids[2]).click({ modifiers: ['Shift'] });
-  await expect(page.getByRole('heading', { name: '선택 3개', exact: true })).toBeVisible();
+  await expect(page.getByRole('complementary', { name: '구조 속성', exact: true }).getByText('선택 3개', { exact: true })).toBeVisible();
   await expect(page.getByRole('status', { name: '선택 속성 상태' })).toHaveText('혼합값');
   const before = await read(page);
   await click(page, '가로 간격 균등');
@@ -1111,7 +1111,7 @@ test('v3 marquee group resize snap and pan preserve canonical history', async ({
   if (!a || !b) throw Error('missing marquee targets');
   await page.mouse.move(a.x - 8, a.y - 8); await page.mouse.down();
   await page.mouse.move(b.x + b.width + 8, b.y + b.height + 8, { steps: 10 }); await page.mouse.up();
-  await expect(page.getByRole('heading', { name: '선택 2개', exact: true })).toBeVisible();
+  await expect(page.getByRole('complementary', { name: '구조 속성', exact: true }).getByText('선택 2개', { exact: true })).toBeVisible();
   await page.getByLabel('스냅 가이드', { exact: true }).uncheck();
   const before = await read(page), handle = frame.locator('.moveable-control[data-direction="e"]');
   await expect(handle).toBeVisible();
@@ -1176,7 +1176,7 @@ test('v3 pointer movement rotation and mixed property changes each use one Undo'
   await expect.poll(async () => Math.abs((await read(page)).blocks[0].slots.content![0].style.rotation ?? 0)).toBeGreaterThan(10);
   await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(source);
   await node(0).click(); await node(1).click({ modifiers: ['Shift'] });
-  await expect(page.getByRole('heading', { name: '선택 2개', exact: true })).toBeVisible();
+  await expect(page.getByRole('complementary', { name: '구조 속성', exact: true }).getByText('선택 2개', { exact: true })).toBeVisible();
   const groupTarget = await node(0).boundingBox(); if (!groupTarget) throw Error('missing group drag target');
   await page.mouse.move(groupTarget.x + 20, groupTarget.y + 20); await page.mouse.down();
   await page.mouse.move(groupTarget.x + 40, groupTarget.y + 20, { steps: 8 }); await page.mouse.up();

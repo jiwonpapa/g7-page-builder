@@ -33,3 +33,5 @@
 독립 90건에서는 공통 `canvasWidth()`가 문서 폭 360을 확대 변환 뒤 `getBoundingClientRect().width`와 비교했습니다. 새 작업면의 정상 초기 화면 맞춤 0.6375배에서는 화면 폭이 229.5px이므로 서로 다른 좌표계를 비교한 실패였습니다. 실제 스냅샷의 문서 폭/모바일 구분은 360px로 일치했습니다. 같은 helper에서 10건이 실패했고, 원인 확인 후 해당 Playwright 프로세스에 SIGINT를 전달해 반복을 중지했습니다. 1건 통과/10건 실패/1건 interrupted/78건 미실행을 성공으로 바꾸지 않습니다. reporter의 skipped 79는 interrupted/미실행을 포함하며, 제품 미구현을 skip으로 바꾼 것이 아닙니다.
 
 보존 경로는 `output/playwright/gates/integration-acceptance-closeout-20261014/6dc7042a25b0f536b0366a109195c194d953f05c06316e0ba7e620fb13b2da98/2c35315dd3044711b1aebb6a364bd947/`입니다. 제품 코드/초기 화면 맞춤은 유지하고, 후속 task에서 이 한 test helper만 문서 CSS 좌표와 배율 적용 화면 좌표로 구분합니다. 문서 폭은 정확 일치, 화면 폭은 배율을 반영한 1px 이내를 확인하며 기존 렌더/스타일/Undo/출력 기준을 지우지 않습니다. 성공한 설치 제품 13건은 같은 입력일 때 재사용하고 변경한 helper의 직접 영향인 90건 및 미실행 Site Part 2건만 이어갑니다.
+
+`test-canvas-coordinates-20261015`는 위 helper 한 곳의 측정만 보완합니다. iframe `clientWidth`는 요청 문서 폭과 정확 일치시켜 breakpoint 검사를 유지하고, 화면 `getBoundingClientRect().width`는 실제 workspace transform 배율을 적용한 폭과 1px 이내인지 별도로 확인합니다. 초기 0.6375배 맞춤을 100%로 강제하거나 기존 50/100/200% 시나리오를 제거하지 않습니다. 제품 소스는 변경하지 않으며, 제출의 수집 검사 성공을 실제 90건의 제품 실행 성공으로 세지 않습니다.

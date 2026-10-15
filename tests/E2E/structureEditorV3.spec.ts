@@ -1634,7 +1634,17 @@ async function canvasWidth(page: Page, width: number) {
   await page.getByLabel('캔버스 폭', { exact: true }).fill(String(width));
   await click(page, '폭 적용');
   await expect(page.locator('[data-v3-workspace]')).toHaveAttribute('data-v3-viewport', expectedViewport(width));
-  await expect.poll(() => page.locator('iframe').evaluate(element => element.getBoundingClientRect().width)).toBe(width);
+  // Canvas width is an untransformed CSS viewport; initial fit must not change
+  // the document breakpoint. Validate its scaled screen box separately.
+  const frame = page.locator('iframe');
+  await expect.poll(() => frame.evaluate(element => element.clientWidth)).toBe(width);
+  await expect.poll(() => frame.evaluate(element => {
+    const workspace = element.closest('[data-v3-workspace]');
+    if (!workspace) throw new Error('Missing authored workspace');
+    const transform = getComputedStyle(workspace).transform;
+    const scale = transform === 'none' ? 1 : new DOMMatrixReadOnly(transform).a;
+    return Math.abs(element.getBoundingClientRect().width - element.clientWidth * scale);
+  })).toBeLessThanOrEqual(1);
 }
 const expectedViewport = (width: number): Viewport => width < 640 ? 'mobile' : width < 1024 ? 'tablet' : 'base';
 function responsiveFixture(): DocumentV3 {

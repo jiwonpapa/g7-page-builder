@@ -2,11 +2,16 @@
   "schema_version": "g7pb-editor-progress/v2",
   "plan_id": "independent-editor-20261012",
   "baseline_sha": "df2aeedbbe016f30999ebeec128757329dd18530",
-  "updated_at": "2026-10-14",
+  "updated_at": "2026-10-15",
   "policy_file": "docs/productization/editing-policy.md",
   "plan_file": "docs/productization/editor-plan.md",
   "dashboard_file": "docs/productization/editor-progress.md",
   "documents": [
+    {
+      "path": "docs/audits/2026-10-15-acceptance-gates.md",
+      "role": "current",
+      "required_text": "미확인·비차단 예외"
+    },
     {
       "path": "docs/audits/2026-10-14-product-acceptance-closeout.md",
       "role": "current",
@@ -1059,7 +1064,7 @@
         "docs/productization",
         "docs/audits"
       ],
-      "completion": "현 8d00fe4f/build d41ce168에서 ACCESS-KBD 실제 Enter/화살표/한 Undo, 100/500노드 준비 1969.4/3903.9ms·포인터 선택 37.5/150.6ms·명령 113/497.9ms와 긴 작업면 끝 접근을 내장 브라우저로 확인했습니다. p95/drag-frame/장시간 부하 합격으로 확대하지 않습니다. 네이티브 앱 제어는 거부됐고 지원된 키 입력에는 실제 OS composition 이벤트가 없어 IME 직접 입력을 요청했습니다. 현재 지원 호스트 적용/원복과 승인된 모바일 헤더 보완은 확인했으나 전체 대상 UI/출력·provider 실제 재생 한계·정식 자동 gate·새 버전 배포는 남았습니다. 기존 headless gate 13+90+2건만 별도 허용을 요청했으며 응답 전 실행하지 않았습니다. docs/audits/2026-10-14-product-acceptance-closeout.md에 실패와 실제 증거를 보존하며 목표 진행 중/제품 수용 미완료를 유지합니다."
+      "completion": "현 소스의 키보드 경로·100/500 성능·긴 작업면 및 현재 지원 호스트 적용/원복 근거는 보존합니다. 2026-10-15 직접 승인으로 OS 한글 IME는 미확인·비차단 예외이며, 기존 headless 자동 gate 105건을 실행했습니다. 설치 편집/저장/발행 13건은 첫 실행 통과했습니다. 독립 묶음은 초기 화면 맞춤 0.6375배의 화면 폭과 문서 폭을 혼동한 공통 test helper에서 10건 실패하여 중지했고, 1건 통과/1건 중단/78건 미실행 및 Site Part 2건 미실행을 보존했습니다. 제품 초기 배율을 유지하고 test helper 한 곳의 좌표계만 구분해 직접 영향 범위를 이어갑니다. docs/audits/2026-10-15-acceptance-gates.md에 실제 결과/예외를 기록하며 전체 수용·새 버전 배포는 아직 미완료입니다."
     }
   ],
   "history": [

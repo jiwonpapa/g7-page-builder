@@ -43,3 +43,9 @@
 동시에 하네스는 수정한 spec에 product delta가 함께 있으면 기존 source mapping의 desktop project를 무시하고 세 project 270건을 선택했습니다. 승인된 90건을 넘겼으므로 실행을 SIGINT로 중지했습니다. 결과는 1 통과/4 실패/1 중단/264 미실행이며 추가 project의 수용 증거가 아닙니다. 원본은 `output/playwright/gates/integration-acceptance-closeout-20261014/162fd0f4ecc823736f4778f25a943cf24faa73a49722d31c46d7eedebcc63793/3f91aa18232a48efad93d19961ffb256/`에 보존합니다.
 
 `acceptance-test-scope-20261015`는 시험 fixture 시작 시 공개 확대 selector로 중립 100% 좌표를 명시합니다. 제품 초기 맞춤은 그대로이고 전용 50/100/200% 시험은 이후 자기 배율을 선택합니다. 기존 1px·폭·구조·출력·Undo 기준은 유지합니다. planner는 수정 spec의 모든 title을 유지하되 해당 product source mapping에 선언된 project만 선택합니다. 미등록 spec은 기존 configured project 동작을 유지하며, 등록만 고친 제출 검사를 제품 90건 성공으로 보고하지 않습니다. 총 수용 범위는 여전히 설치 13 + 독립 90 + Site Part 2건입니다.
+
+## 세 번째 실행 · 정밀 선택 표시의 오래된 locator
+
+`9dc3fe54b0c2fc1d38204939d81954406eea86c6`의 실행은 desktop 90건으로 제한됐고 앞선 폼·임베드·아이콘·구성/출력 73건이 통과했습니다. 이어진 정밀 50/100/200%, 다중 선택, marquee, 포인터/회전 시험 6건은 모두 오래된 `heading: 선택 N개` 조회에서 실패했습니다. 현재 UI의 실제 heading은 `속성`이고 같은 `구조 속성` aside 안 span이 정확한 선택 개수를 표시합니다. 실패 snapshot에서도 레이어의 해당 요소 selected 상태를 확인했습니다. 이 실패를 핸들/회전 성공으로 기록하지 않습니다.
+
+`selection-count-proof-20261015`는 공통 spec의 조회 네 곳만 `구조 속성` 영역 안의 정확한 `선택 N개` 텍스트로 보완합니다. 개수·가시성·단일 Undo·핸들 이동량·50/100/200%·readonly 합격 조건은 그대로이고 제품 코드는 변경하지 않습니다. 원본 결과는 `output/playwright/gates/integration-acceptance-closeout-20261014/88b6461283c5a9ebd9eb10fe56c01b111466ad1ac014d85608ab05a28f1748f3/2f6d3b3c62fb43169f5251393150bdb8/`에 보존합니다. 최종 건수는 실행 종료 후 확정합니다.

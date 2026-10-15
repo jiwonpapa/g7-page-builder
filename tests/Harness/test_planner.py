@@ -929,6 +929,7 @@ class PlannerTests(unittest.TestCase):
         gate = next(g for g in plan.gates if g.name.startswith("browser:"))
         self.assertTrue(gate.runtime)
         self.assertIn("--retries=0", gate.argv)
+        self.assertFalse(any(arg.startswith("--project") for arg in gate.argv))
 
     def test_mapped_controller_input_is_in_the_success_key(self):
         self.write("tests/Harness/test_planner.py", "pass")
@@ -1015,8 +1016,27 @@ class PlannerTests(unittest.TestCase):
         plan = build_plan(self.root, ["resources/js/editor/richTextEditing.tsx", spec], phase="integration")
         browser = next(g for g in plan.gates if g.name == "browser:" + spec)
         self.assertNotIn("--grep", browser.argv)
+        self.assertIn("--project=desktop", browser.argv)
+        self.assertIn("tools/g7pb/browser_requirements.py", browser.inputs)
         self.assertEqual(browser.depends_on, ("browser-assets",))
         self.assertEqual(plan.gates[-1], browser)
+
+    def test_changed_v3_spec_keeps_all_titles_in_reviewed_desktop_project(self):
+        source = "resources/js/editor/v3/StructureEditor.tsx"
+        spec = "tests/E2E/structureEditorV3.spec.ts"
+        self.write(source, "export const value = 1;")
+        self.write("tests/Unit/structureEditor.test.ts", "import '../../resources/js/editor/v3/StructureEditor';")
+        for name in (spec, "tests/E2E/structureDocumentProduct.spec.ts", "tests/E2E/structureSitePartProduct.spec.ts"):
+            self.write(name, "test('existing scenario', async()=>{});")
+        for phase in ("submission", "integration", "verification", "ci"):
+            with self.subTest(phase=phase):
+                plan = build_plan(self.root, [source, spec], phase=phase)
+                self.assertFalse(plan.full)
+                browser = next(g for g in plan.gates if g.name == "browser:" + spec)
+                self.assertEqual([arg for arg in browser.argv if arg.startswith("--project=")], ["--project=desktop"])
+                self.assertNotIn("--grep", browser.argv)
+                self.assertEqual(browser.depends_on, ("browser-assets",))
+                self.assertEqual(len(browser.browser_expectations), 90)
 
     def test_test_only_collection_does_not_prepare_runtime(self):
         plan = build_plan(self.root, ["tests/E2E/editorInteractionQuality.spec.ts"])

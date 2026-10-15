@@ -116,6 +116,10 @@ async function open(page: Page, source?: DocumentV3, readonly = false, compositi
   await expect(page.getByRole('main', { name: '독립 구조 편집기' })).toBeVisible();
   await expect(page.locator('iframe')).toBeVisible();
   await Promise.all(page.frames().map(frame => frame.evaluate(async () => { await document.fonts.ready; })));
+  // Geometry parity starts in neutral CSS coordinates. Dedicated zoom cases
+  // still select 50/100/200%; the product's initial auto-fit remains unchanged.
+  await page.getByRole('combobox', { name: '작업면 확대', exact: true }).selectOption('1');
+  await expect(page.getByRole('combobox', { name: '작업면 확대', exact: true })).toHaveValue('1');
 }
 const read = (page: Page) => page.evaluate(() => window.v3Proof.current);
 const click = (page: Page, name: string) => page.getByRole('button', { name, exact: true }).click();

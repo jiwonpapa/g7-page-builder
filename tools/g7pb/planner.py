@@ -814,7 +814,8 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
     covered_by_full = full_product_specs(root) if full else set()
     kit_changes = [path for path in plan.paths if path == "resources/site-kits/professional-services.json"]
     browser_changes = [*browser_sources(root, ts_sources, base), *php_sources, *css, *viewer_styles, *kit_changes]
-    for scenario in scenarios_for(browser_changes):
+    browser_scenarios = scenarios_for(browser_changes)
+    for scenario in browser_scenarios:
         if scenario.spec in covered_by_full:
             continue  # The unfiltered full suite already executes this exact spec.
         affected = [path for path in browser_changes if any(item.spec == scenario.spec for item in scenarios_for([path]))]
@@ -824,11 +825,19 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             plan.unresolved.append(f"Missing required browser scenario: {scenario.spec}")
             continue
         name = "browser:" + scenario.spec
-        # A changed spec requests all its tests. Source mapping must not
-        # overwrite that explicit scope with a narrower title/preset filter.
+        # A changed spec requests all its titles, not additional device
+        # projects beyond its reviewed source mapping. Unmapped specs retain
+        # their ordinary configured projects.
         expectations = tuple((project, title) for project in scenario.projects for title in scenario.titles)
         if name in gates:
-            gates[name] = replace(gates[name], inputs=tuple(sorted(set(gates[name].inputs) | set(affected))), browser_expectations=tuple(sorted(set(gates[name].browser_expectations + expectations))))
+            prior = gates[name]
+            argv = prior.argv
+            if not any(arg.startswith("--project=") or arg == "--project" for arg in argv):
+                projects = sorted({project for item in browser_scenarios if item.spec == scenario.spec for project in item.projects})
+                argv += tuple("--project=" + project for project in projects)
+            gates[name] = replace(prior, argv=argv,
+                                  inputs=tuple(sorted(set(prior.inputs) | set(affected) | {"tools/g7pb/browser_requirements.py"})),
+                                  browser_expectations=tuple(sorted(set(prior.browser_expectations + expectations))))
             continue
         try:
             environment = scenario.environment(root)
